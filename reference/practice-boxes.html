@@ -20,7 +20,7 @@
 <li><strong><a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's list is the source of truth.</a></strong> This map is curated from it (+ <a href="https://0xdf.gitlab.io/cheatsheets/offsec">0xdf's OffSec mapping</a>) for teaching; the live sheet is authoritative on what's currently in-scope. Ask me to verify any box.</li>
 <li><strong>Most HTB boxes here are <em>retired</em></strong> → they need an HTB <strong>VIP</strong> subscription (the retired-machines list). For OSCP prep that's the standard move.</li>
 <li><strong>"PEN-200" boxes aren't individually public anymore.</strong> OffSec replaced the named lab with six <strong>Challenge Labs</strong> — scenario (<em>Medtech, Relia, Skylark</em>) and exam-like (<em>OSCP A, B, C</em>). <strong>Proving Grounds Practice</strong> is the closest public stand-in to exam style.</li>
-<li><strong>Don't spoil the chain.</strong> Pick boxes you haven't seen a write-up for; only watch <a href="https://www.youtube.com/@ippsec">IppSec</a>/<a href="https://0xdf.gitlab.io/">0xdf</a> in review mode <em>after</em> you finish or exhaust yourself.</li>
+<li><strong>Don't spoil the chain.</strong> Pick boxes you haven't seen a write-up for; only watch <a href="https://www.youtube.com/@ippsec">IppSec</a>/<a href="https://0xdf.gitlab.io/">0xdf</a> in review mode <em>after</em> you finish or exhaust yourself. Each <strong>HTB</strong> box name below links straight to its <strong>0xdf</strong> walkthrough — strictly for that after-the-fact review.</li>
 </ul>
 </div>
 
@@ -31,8 +31,8 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>The whole chain in one box: Samba <code>username map script</code> (CVE-2007-2447) drops you straight to root — no privesc step.</td></tr>
-<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td>EternalBlue (MS17-010) → SYSTEM; foothold and privesc as a single motion.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>The whole chain in one box: Samba <code>username map script</code> (CVE-2007-2447) drops you straight to root — no privesc step.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>EternalBlue (MS17-010) → SYSTEM; foothold and privesc as a single motion.</td></tr>
 </tbody>
 </table>
 
@@ -41,7 +41,7 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td>A gentle first run of enumerate → exploit → loot, with a clean single vector.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>A gentle first run of enumerate → exploit → loot, with a clean single vector.</td></tr>
 <tr><td>Twiggy</td><td>PG</td><td>Linux</td><td>Easy</td><td>SaltStack CVE-2020-11651 → root; a clean attempt-first rep where enumeration points straight at the version.</td></tr>
 </tbody>
 </table>
@@ -51,9 +51,9 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Nibbles</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Foothold hides behind a <code>/nibbleblog/</code> path only thorough web enum reveals.</td></tr>
-<tr><td>OpenAdmin</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Internal OpenNetAdmin + a tunnelled port — rewards full port and web enumeration.</td></tr>
-<tr><td>Networked</td><td>HTB</td><td>Linux</td><td>Easy</td><td>An upload filter you only spot by enumerating the app carefully.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2018/06/30/htb-nibbles.html">Nibbles</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Foothold hides behind a <code>/nibbleblog/</code> path only thorough web enum reveals.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/05/02/htb-openadmin.html">OpenAdmin</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Internal OpenNetAdmin + a tunnelled port — rewards full port and web enumeration.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2019/11/16/htb-networked.html">Networked</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>An upload filter you only spot by enumerating the app carefully.</td></tr>
 <tr><td>Hetemit</td><td>PG</td><td>Linux</td><td>Inter</td><td>Obscure service you must enumerate to even find the vulnerable endpoint.</td></tr>
 <tr><td>ClamAV</td><td>PG</td><td>Linux</td><td>Easy</td><td>Non-standard ports — here the port scan basically <em>is</em> the box.</td></tr>
 </tbody>
@@ -64,9 +64,9 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Bashed</td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>gobuster</code> finds a <code>phpbash</code> web shell in <code>/dev/</code> — the payoff of dir-busting.</td></tr>
-<tr><td>Sense</td><td>HTB</td><td>BSD</td><td>Easy</td><td>pfSense creds in a hidden <code>.txt</code>, then a version-matched CVE — recon → exploit.</td></tr>
-<tr><td>Cronos</td><td>HTB</td><td>Linux</td><td>Med</td><td>vhost/DNS enum (AXFR) → a Laravel login <strong>SQLi auth bypass</strong>.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2018/04/29/htb-bashed.html">Bashed</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>gobuster</code> finds a <code>phpbash</code> web shell in <code>/dev/</code> — the payoff of dir-busting.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2021/03/11/htb-sense.html">Sense</a></td><td>HTB</td><td>BSD</td><td>Easy</td><td>pfSense creds in a hidden <code>.txt</code>, then a version-matched CVE — recon → exploit.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/04/14/htb-cronos.html">Cronos</a></td><td>HTB</td><td>Linux</td><td>Med</td><td>vhost/DNS enum (AXFR) → a Laravel login <strong>SQLi auth bypass</strong>.</td></tr>
 <tr><td>PayDay</td><td>PG</td><td>Linux</td><td>Easy</td><td>CS-Cart CMS admin → web RCE; a textbook web foothold.</td></tr>
 </tbody>
 </table>
@@ -76,9 +76,9 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Nibbles</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Nibbleblog <strong>image-upload RCE</strong> → reverse shell.</td></tr>
-<tr><td>Networked</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Double-extension upload bypass → PHP execution.</td></tr>
-<tr><td>Cronos</td><td>HTB</td><td>Linux</td><td>Med</td><td>SQLi bypass → command-injection panel → shell.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2018/06/30/htb-nibbles.html">Nibbles</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Nibbleblog <strong>image-upload RCE</strong> → reverse shell.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2019/11/16/htb-networked.html">Networked</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Double-extension upload bypass → PHP execution.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/04/14/htb-cronos.html">Cronos</a></td><td>HTB</td><td>Linux</td><td>Med</td><td>SQLi bypass → command-injection panel → shell.</td></tr>
 <tr><td>Astronaut</td><td>PG</td><td>Linux</td><td>Easy</td><td>Grav CMS PHP-template injection → RCE → shell.</td></tr>
 </tbody>
 </table>
@@ -88,10 +88,10 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Bashed</td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>sudo -l</code> NOPASSWD → a writable root <strong>cron</strong> script → root.</td></tr>
-<tr><td>Shocker</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Shellshock CGI foothold → <code>sudo perl</code> GTFOBin → root.</td></tr>
-<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Baseline easy box; good warm-up before the misconfiguration vectors.</td></tr>
-<tr><td>Beep</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Many privesc paths in one box — great for <em>interleaving</em> vectors.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2018/04/29/htb-bashed.html">Bashed</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>sudo -l</code> NOPASSWD → a writable root <strong>cron</strong> script → root.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2021/05/25/htb-shocker.html">Shocker</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Shellshock CGI foothold → <code>sudo perl</code> GTFOBin → root.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Baseline easy box; good warm-up before the misconfiguration vectors.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2021/02/23/htb-beep.html">Beep</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Many privesc paths in one box — great for <em>interleaving</em> vectors.</td></tr>
 <tr><td>Clue</td><td>PG</td><td>Linux</td><td>Inter</td><td>SUID / cron / capability chains; a PEAS-driven enumeration rep.</td></tr>
 </tbody>
 </table>
@@ -101,10 +101,10 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Optimum</td><td>HTB</td><td>Windows</td><td>Easy</td><td>HFS 2.3 RCE (CVE-2014-6287) → <strong>MS16-032</strong> kernel privesc.</td></tr>
-<tr><td>Devel</td><td>HTB</td><td>Windows</td><td>Easy</td><td>FTP → webroot <code>.aspx</code> shell → kernel exploit to SYSTEM.</td></tr>
-<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>Jenkins RCE → token / <code>SeImpersonate</code> to admin.</td></tr>
-<tr><td>Bastard</td><td>HTB</td><td>Windows</td><td>Med</td><td>Drupalgeddon → Churrasco / token abuse → SYSTEM.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2021/03/17/htb-optimum.html">Optimum</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>HFS 2.3 RCE (CVE-2014-6287) → <strong>MS16-032</strong> kernel privesc.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2019/03/05/htb-devel.html">Devel</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>FTP → webroot <code>.aspx</code> shell → kernel exploit to SYSTEM.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>Jenkins RCE → token / <code>SeImpersonate</code> to admin.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2019/03/12/htb-bastard.html">Bastard</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>Drupalgeddon → Churrasco / token abuse → SYSTEM.</td></tr>
 <tr><td>Algernon</td><td>PG</td><td>Windows</td><td>Easy</td><td>Service-binary RCE + <code>SeImpersonate</code> (PrintSpoofer) — the modern reflex.</td></tr>
 </tbody>
 </table>
@@ -114,9 +114,9 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td>AS-REP roast → hashcat → <strong>reuse</strong> autologon creds from the registry.</td></tr>
-<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP <code>cpassword</code> decrypt → Kerberoast → crack the admin SPN.</td></tr>
-<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass <code>.kdbx</code> → <code>keepass2john</code> → reuse the hash via psexec.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>AS-REP roast → hashcat → <strong>reuse</strong> autologon creds from the registry.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP <code>cpassword</code> decrypt → Kerberoast → crack the admin SPN.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass <code>.kdbx</code> → <code>keepass2john</code> → reuse the hash via psexec.</td></tr>
 <tr><td>Heist</td><td>PG</td><td>AD</td><td>Inter</td><td>Config/description-field creds → spray and reuse across the host.</td></tr>
 </tbody>
 </table>
@@ -126,9 +126,9 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td><strong>MS17-010</strong> EternalBlue → SYSTEM (foothold + privesc in one shot).</td></tr>
-<tr><td>Legacy</td><td>HTB</td><td>Windows</td><td>Easy</td><td>MS08-067 / MS17-010 on ancient SMB — the version-match reflex.</td></tr>
-<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>vsftpd 2.3.4 backdoor + Samba — a non-web service foothold.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td><strong>MS17-010</strong> EternalBlue → SYSTEM (foothold + privesc in one shot).</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2019/02/21/htb-legacy.html">Legacy</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>MS08-067 / MS17-010 on ancient SMB — the version-match reflex.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>vsftpd 2.3.4 backdoor + Samba — a non-web service foothold.</td></tr>
 <tr><td>Nickel</td><td>PG</td><td>Windows</td><td>Inter</td><td>Non-HTTP service exploitation chained to a foothold.</td></tr>
 </tbody>
 </table>
@@ -138,8 +138,8 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Forest</td><td>HTB</td><td>AD</td><td>Easy</td><td>Anonymous LDAP / rpcclient enum → <strong>BloodHound</strong> path discovery.</td></tr>
-<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td>Web → user list → <code>GetNPUsers</code>; ldapsearch + SharpHound flow.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/03/21/htb-forest.html">Forest</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>Anonymous LDAP / rpcclient enum → <strong>BloodHound</strong> path discovery.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>Web → user list → <code>GetNPUsers</code>; ldapsearch + SharpHound flow.</td></tr>
 <tr><td>OSCP A</td><td>PEN-200</td><td>AD set</td><td>&mdash;</td><td>Official multi-host AD enumeration at exam scale.</td></tr>
 <tr><td>Vault</td><td>PG</td><td>AD</td><td>Inter</td><td>LDAP + SMB share enumeration to seed the attack.</td></tr>
 </tbody>
@@ -150,9 +150,9 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>AS-REP roasting</strong> end-to-end (<code>GetNPUsers</code> → crack).</td></tr>
-<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>Kerberoasting</strong> (<code>GetUserSPNs</code>) + GPP <code>cpassword</code>.</td></tr>
-<tr><td>Resolute</td><td>HTB</td><td>AD</td><td>Med</td><td>rpcclient description-field password → <strong>spray</strong> → foothold.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>AS-REP roasting</strong> end-to-end (<code>GetNPUsers</code> → crack).</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>Kerberoasting</strong> (<code>GetUserSPNs</code>) + GPP <code>cpassword</code>.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/05/30/htb-resolute.html">Resolute</a></td><td>HTB</td><td>AD</td><td>Med</td><td>rpcclient description-field password → <strong>spray</strong> → foothold.</td></tr>
 <tr><td>Resourced</td><td>PG</td><td>AD</td><td>Inter</td><td>Pre-auth roasting + spraying reps.</td></tr>
 </tbody>
 </table>
@@ -162,10 +162,10 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Forest</td><td>HTB</td><td>AD</td><td>Easy</td><td>BloodHound <strong>WriteDacl</strong> → grant DCSync → <code>secretsdump</code>.</td></tr>
-<tr><td>Resolute</td><td>HTB</td><td>AD</td><td>Med</td><td><strong>DnsAdmins</strong> DLL load → SYSTEM on the DC.</td></tr>
-<tr><td>Cascade</td><td>HTB</td><td>AD</td><td>Med</td><td>Reversible / AD-recycle-bin credentials → move to admin.</td></tr>
-<tr><td>Blackfield</td><td>HTB</td><td>AD</td><td>Hard</td><td>ForceChangePassword ACL → <code>SeBackupPrivilege</code> → dump NTDS.dit.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/03/21/htb-forest.html">Forest</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>BloodHound <strong>WriteDacl</strong> → grant DCSync → <code>secretsdump</code>.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/05/30/htb-resolute.html">Resolute</a></td><td>HTB</td><td>AD</td><td>Med</td><td><strong>DnsAdmins</strong> DLL load → SYSTEM on the DC.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/07/25/htb-cascade.html">Cascade</a></td><td>HTB</td><td>AD</td><td>Med</td><td>Reversible / AD-recycle-bin credentials → move to admin.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/10/03/htb-blackfield.html">Blackfield</a></td><td>HTB</td><td>AD</td><td>Hard</td><td>ForceChangePassword ACL → <code>SeBackupPrivilege</code> → dump NTDS.dit.</td></tr>
 </tbody>
 </table>
 
@@ -177,7 +177,7 @@
 <tr><td>Dante (Pro Lab)</td><td>HTB</td><td>Mixed</td><td>&mdash;</td><td>A multi-host network — the canonical pivoting playground.</td></tr>
 <tr><td>OSCP B / C</td><td>PEN-200</td><td>AD set</td><td>&mdash;</td><td>Exam-shaped chains where you must tunnel to reach the internal DC.</td></tr>
 <tr><td>Relia / Skylark</td><td>PEN-200</td><td>Mixed</td><td>&mdash;</td><td>Larger scenario labs — deep double-pivot reps.</td></tr>
-<tr><td>Reddish</td><td>HTB</td><td>Linux</td><td>Hard</td><td>Classic Docker-network pivot (a stretch goal once tunnelling clicks).</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2019/01/26/htb-reddish.html">Reddish</a></td><td>HTB</td><td>Linux</td><td>Hard</td><td>Classic Docker-network pivot (a stretch goal once tunnelling clicks).</td></tr>
 </tbody>
 </table>
 
@@ -186,10 +186,10 @@
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td><code>secretsdump</code>, registry autologon, SAM/NTDS looting.</td></tr>
-<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP + Kerberoast loot; clean <code>secretsdump</code> practice.</td></tr>
-<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass database + credential files as loot.</td></tr>
-<tr><td>Cascade</td><td>HTB</td><td>AD</td><td>Med</td><td>LDAP / registry / recycle-bin credential harvesting.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><code>secretsdump</code>, registry autologon, SAM/NTDS looting.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP + Kerberoast loot; clean <code>secretsdump</code> practice.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass database + credential files as loot.</td></tr>
+<tr><td><a href="https://0xdf.gitlab.io/2020/07/25/htb-cascade.html">Cascade</a></td><td>HTB</td><td>AD</td><td>Med</td><td>LDAP / registry / recycle-bin credential harvesting.</td></tr>
 </tbody>
 </table>
 
@@ -230,5 +230,6 @@ Tell me which lesson you're on and I'll pick a box at the right difficulty, or c
 <span><a href="./links.html">Links</a> · <a href="./exam-format.html">Exam Format</a> · <a href="./glossary.html">Glossary</a></span>
 </footer>
 
+<script src="../assets/site-nav.js"></script>
 </body>
 </html>

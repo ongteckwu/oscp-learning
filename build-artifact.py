@@ -115,6 +115,8 @@ def process(path, sec):
     b = re.sub(r'<nav class="crumbs">.*?</nav>', "", b, flags=re.S)
     b = re.sub(r"<footer>.*?</footer>", "", b, flags=re.S)
     b = re.sub(r'<script src="\.\./assets/quiz\.js"></script>', "", b)
+    # the live sticky nav is injected by site-nav.js; the bundle has its own
+    b = re.sub(r'<script src="[^"]*assets/site-nav\.js"></script>', "", b)
     # make quiz container ids + render calls unique per section
     b = b.replace('id="quiz"', f'id="quiz-{sec}"')
     b = b.replace("renderQuiz('quiz'", f"renderQuiz('quiz-{sec}'")
@@ -141,16 +143,12 @@ css = (ROOT / "assets/lesson.css").read_text(encoding="utf-8")
 # text. Escaping the slash neutralizes the match without changing the JS.
 quizjs = (ROOT / "assets/quiz.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
 
+# .toc styling lives in assets/lesson.css (shared with index.html). Only the
+# bundle-only section framing lives here.
 extra_css = """
-.toc{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:2px solid var(--ink);
- margin:-3rem -1.5rem 1.6rem;padding:0.7rem 1.5rem;display:flex;flex-wrap:wrap;gap:0.15rem 0.9rem;
- font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:0.78rem;}
-.toc a{border:none;color:var(--ink-soft);white-space:nowrap;}
-.toc a:hover{color:var(--accent);}
-.toc a.home{font-weight:700;color:var(--accent);}
 section.page{scroll-margin-top:3.6rem;}
 section.page + section.page{border-top:1px solid var(--rule);margin-top:2.8rem;padding-top:1.4rem;}
-@media print{.toc{display:none;} section.page{break-before:page;}}
+@media print{section.page{break-before:page;}}
 """
 
 toc = (

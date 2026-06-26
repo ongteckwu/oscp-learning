@@ -102,6 +102,21 @@ nav.crumbs {
 }
 nav.crumbs a { border: none; }
 
+/* ---- Table-of-contents nav (contents page + single-file bundle) --------- */
+nav.toc {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+  margin: -3rem -1.5rem 1.6rem;
+  padding: 0.7rem 1.5rem;
+  display: flex; flex-wrap: wrap; gap: 0.15rem 0.9rem;
+  font-size: 0.78rem;
+}
+nav.toc a { border: none; color: var(--ink-soft); white-space: nowrap; }
+nav.toc a:hover { color: var(--accent); }
+nav.toc a.home,
+nav.toc a[aria-current="page"] { font-weight: 700; color: var(--accent); }
+
 /* ---- Code & terminal ---------------------------------------------------- */
 code {
   background: var(--paper-2);
@@ -301,7 +316,7 @@ footer a { border: none; }
   body { max-width: none; font-size: 11pt; padding: 0; color: #000; background: #fff; }
   pre { background: #f4f4f4; color: #111; border: 1px solid #ccc; }
   pre .p { color: #0a0; } pre .c { color: #777; } pre .h { color: #06c; }
-  .teacher, nav.crumbs { display: none; }
+  .teacher, nav.crumbs, nav.toc { display: none; }
   .quiz .options button { border: 1px solid #999; }
   a { color: #000; border: none; }
   h2 { break-after: avoid; }

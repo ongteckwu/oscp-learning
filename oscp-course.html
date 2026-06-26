@@ -109,6 +109,21 @@ nav.crumbs {
 }
 nav.crumbs a { border: none; }
 
+/* ---- Table-of-contents nav (contents page + single-file bundle) --------- */
+nav.toc {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+  margin: -3rem -1.5rem 1.6rem;
+  padding: 0.7rem 1.5rem;
+  display: flex; flex-wrap: wrap; gap: 0.15rem 0.9rem;
+  font-size: 0.78rem;
+}
+nav.toc a { border: none; color: var(--ink-soft); white-space: nowrap; }
+nav.toc a:hover { color: var(--accent); }
+nav.toc a.home,
+nav.toc a[aria-current="page"] { font-weight: 700; color: var(--accent); }
+
 /* ---- Code & terminal ---------------------------------------------------- */
 code {
   background: var(--paper-2);
@@ -308,7 +323,7 @@ footer a { border: none; }
   body { max-width: none; font-size: 11pt; padding: 0; color: #000; background: #fff; }
   pre { background: #f4f4f4; color: #111; border: 1px solid #ccc; }
   pre .p { color: #0a0; } pre .c { color: #777; } pre .h { color: #06c; }
-  .teacher, nav.crumbs { display: none; }
+  .teacher, nav.crumbs, nav.toc { display: none; }
   .quiz .options button { border: 1px solid #999; }
   a { color: #000; border: none; }
   h2 { break-after: avoid; }
@@ -321,15 +336,9 @@ footer a { border: none; }
 }
 
 
-.toc{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:2px solid var(--ink);
- margin:-3rem -1.5rem 1.6rem;padding:0.7rem 1.5rem;display:flex;flex-wrap:wrap;gap:0.15rem 0.9rem;
- font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:0.78rem;}
-.toc a{border:none;color:var(--ink-soft);white-space:nowrap;}
-.toc a:hover{color:var(--accent);}
-.toc a.home{font-weight:700;color:var(--accent);}
 section.page{scroll-margin-top:3.6rem;}
 section.page + section.page{border-top:1px solid var(--rule);margin-top:2.8rem;padding-top:1.4rem;}
-@media print{.toc{display:none;} section.page{break-before:page;}}
+@media print{section.page{break-before:page;}}
 
 </style>
 </head>
@@ -540,6 +549,7 @@ The roadmap is a guide, not a cage — if you want to jump to Active Directory, 
 
 
 
+
 </section>
 
 <section id="lesson-1" class="page">
@@ -735,6 +745,7 @@ renderQuiz('quiz-lesson-1', [
   }
 ]);
 </script>
+
 
 
 </section>
@@ -978,6 +989,7 @@ renderQuiz('quiz-lesson-2', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-3" class="page">
@@ -1208,6 +1220,7 @@ renderQuiz('quiz-lesson-3', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-4" class="page">
@@ -1430,6 +1443,7 @@ renderQuiz('quiz-lesson-4', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-5" class="page">
@@ -1622,6 +1636,7 @@ renderQuiz('quiz-lesson-5', [
   }
 ]);
 </script>
+
 
 
 </section>
@@ -1870,6 +1885,7 @@ renderQuiz('quiz-lesson-6', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-7" class="page">
@@ -2061,6 +2077,7 @@ renderQuiz('quiz-lesson-7', [
   }
 ]);
 </script>
+
 
 
 </section>
@@ -2306,6 +2323,7 @@ renderQuiz('quiz-lesson-8', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-9" class="page">
@@ -2528,6 +2546,7 @@ renderQuiz('quiz-lesson-9', [
   }
 ]);
 </script>
+
 
 
 </section>
@@ -2819,6 +2838,7 @@ renderQuiz('quiz-lesson-10', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-11" class="page">
@@ -3039,6 +3059,7 @@ renderQuiz('quiz-lesson-11', [
   }
 ]);
 </script>
+
 
 
 </section>
@@ -3307,6 +3328,7 @@ renderQuiz('quiz-lesson-12', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-13" class="page">
@@ -3514,6 +3536,7 @@ renderQuiz('quiz-lesson-13', [
   }
 ]);
 </script>
+
 
 
 </section>
@@ -3798,6 +3821,7 @@ renderQuiz('quiz-lesson-14', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-15" class="page">
@@ -4069,6 +4093,7 @@ renderQuiz('quiz-lesson-15', [
   }
 ]);
 </script>
+
 
 
 </section>
@@ -4359,6 +4384,7 @@ renderQuiz('quiz-lesson-16', [
 </script>
 
 
+
 </section>
 
 <section id="lesson-17" class="page">
@@ -4605,6 +4631,7 @@ renderQuiz('quiz-lesson-17', [
 </script>
 
 
+
 </section>
 
 <section id="glossary" class="page">
@@ -4777,6 +4804,7 @@ renderQuiz('quiz-lesson-17', [
 
 
 
+
 </section>
 
 <section id="exam-format" class="page">
@@ -4854,6 +4882,7 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 
 
 
+
 </section>
 
 <section id="practice-boxes" class="page">
@@ -4871,7 +4900,7 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <li><strong><a target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's list is the source of truth.</a></strong> This map is curated from it (+ <a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/cheatsheets/offsec">0xdf's OffSec mapping</a>) for teaching; the live sheet is authoritative on what's currently in-scope. Ask me to verify any box.</li>
 <li><strong>Most HTB boxes here are <em>retired</em></strong> → they need an HTB <strong>VIP</strong> subscription (the retired-machines list). For OSCP prep that's the standard move.</li>
 <li><strong>"PEN-200" boxes aren't individually public anymore.</strong> OffSec replaced the named lab with six <strong>Challenge Labs</strong> — scenario (<em>Medtech, Relia, Skylark</em>) and exam-like (<em>OSCP A, B, C</em>). <strong>Proving Grounds Practice</strong> is the closest public stand-in to exam style.</li>
-<li><strong>Don't spoil the chain.</strong> Pick boxes you haven't seen a write-up for; only watch <a target="_blank" rel="noopener" href="https://www.youtube.com/@ippsec">IppSec</a>/<a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/">0xdf</a> in review mode <em>after</em> you finish or exhaust yourself.</li>
+<li><strong>Don't spoil the chain.</strong> Pick boxes you haven't seen a write-up for; only watch <a target="_blank" rel="noopener" href="https://www.youtube.com/@ippsec">IppSec</a>/<a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/">0xdf</a> in review mode <em>after</em> you finish or exhaust yourself. Each <strong>HTB</strong> box name below links straight to its <strong>0xdf</strong> walkthrough — strictly for that after-the-fact review.</li>
 </ul>
 </div>
 
@@ -4882,8 +4911,8 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>The whole chain in one box: Samba <code>username map script</code> (CVE-2007-2447) drops you straight to root — no privesc step.</td></tr>
-<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td>EternalBlue (MS17-010) → SYSTEM; foothold and privesc as a single motion.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>The whole chain in one box: Samba <code>username map script</code> (CVE-2007-2447) drops you straight to root — no privesc step.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>EternalBlue (MS17-010) → SYSTEM; foothold and privesc as a single motion.</td></tr>
 </tbody>
 </table>
 
@@ -4892,7 +4921,7 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td>A gentle first run of enumerate → exploit → loot, with a clean single vector.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>A gentle first run of enumerate → exploit → loot, with a clean single vector.</td></tr>
 <tr><td>Twiggy</td><td>PG</td><td>Linux</td><td>Easy</td><td>SaltStack CVE-2020-11651 → root; a clean attempt-first rep where enumeration points straight at the version.</td></tr>
 </tbody>
 </table>
@@ -4902,9 +4931,9 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Nibbles</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Foothold hides behind a <code>/nibbleblog/</code> path only thorough web enum reveals.</td></tr>
-<tr><td>OpenAdmin</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Internal OpenNetAdmin + a tunnelled port — rewards full port and web enumeration.</td></tr>
-<tr><td>Networked</td><td>HTB</td><td>Linux</td><td>Easy</td><td>An upload filter you only spot by enumerating the app carefully.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/06/30/htb-nibbles.html">Nibbles</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Foothold hides behind a <code>/nibbleblog/</code> path only thorough web enum reveals.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/05/02/htb-openadmin.html">OpenAdmin</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Internal OpenNetAdmin + a tunnelled port — rewards full port and web enumeration.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/11/16/htb-networked.html">Networked</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>An upload filter you only spot by enumerating the app carefully.</td></tr>
 <tr><td>Hetemit</td><td>PG</td><td>Linux</td><td>Inter</td><td>Obscure service you must enumerate to even find the vulnerable endpoint.</td></tr>
 <tr><td>ClamAV</td><td>PG</td><td>Linux</td><td>Easy</td><td>Non-standard ports — here the port scan basically <em>is</em> the box.</td></tr>
 </tbody>
@@ -4915,9 +4944,9 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Bashed</td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>gobuster</code> finds a <code>phpbash</code> web shell in <code>/dev/</code> — the payoff of dir-busting.</td></tr>
-<tr><td>Sense</td><td>HTB</td><td>BSD</td><td>Easy</td><td>pfSense creds in a hidden <code>.txt</code>, then a version-matched CVE — recon → exploit.</td></tr>
-<tr><td>Cronos</td><td>HTB</td><td>Linux</td><td>Med</td><td>vhost/DNS enum (AXFR) → a Laravel login <strong>SQLi auth bypass</strong>.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/04/29/htb-bashed.html">Bashed</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>gobuster</code> finds a <code>phpbash</code> web shell in <code>/dev/</code> — the payoff of dir-busting.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/03/11/htb-sense.html">Sense</a></td><td>HTB</td><td>BSD</td><td>Easy</td><td>pfSense creds in a hidden <code>.txt</code>, then a version-matched CVE — recon → exploit.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/14/htb-cronos.html">Cronos</a></td><td>HTB</td><td>Linux</td><td>Med</td><td>vhost/DNS enum (AXFR) → a Laravel login <strong>SQLi auth bypass</strong>.</td></tr>
 <tr><td>PayDay</td><td>PG</td><td>Linux</td><td>Easy</td><td>CS-Cart CMS admin → web RCE; a textbook web foothold.</td></tr>
 </tbody>
 </table>
@@ -4927,9 +4956,9 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Nibbles</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Nibbleblog <strong>image-upload RCE</strong> → reverse shell.</td></tr>
-<tr><td>Networked</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Double-extension upload bypass → PHP execution.</td></tr>
-<tr><td>Cronos</td><td>HTB</td><td>Linux</td><td>Med</td><td>SQLi bypass → command-injection panel → shell.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/06/30/htb-nibbles.html">Nibbles</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Nibbleblog <strong>image-upload RCE</strong> → reverse shell.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/11/16/htb-networked.html">Networked</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Double-extension upload bypass → PHP execution.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/14/htb-cronos.html">Cronos</a></td><td>HTB</td><td>Linux</td><td>Med</td><td>SQLi bypass → command-injection panel → shell.</td></tr>
 <tr><td>Astronaut</td><td>PG</td><td>Linux</td><td>Easy</td><td>Grav CMS PHP-template injection → RCE → shell.</td></tr>
 </tbody>
 </table>
@@ -4939,10 +4968,10 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Bashed</td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>sudo -l</code> NOPASSWD → a writable root <strong>cron</strong> script → root.</td></tr>
-<tr><td>Shocker</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Shellshock CGI foothold → <code>sudo perl</code> GTFOBin → root.</td></tr>
-<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Baseline easy box; good warm-up before the misconfiguration vectors.</td></tr>
-<tr><td>Beep</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Many privesc paths in one box — great for <em>interleaving</em> vectors.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/04/29/htb-bashed.html">Bashed</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>sudo -l</code> NOPASSWD → a writable root <strong>cron</strong> script → root.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/05/25/htb-shocker.html">Shocker</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Shellshock CGI foothold → <code>sudo perl</code> GTFOBin → root.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Baseline easy box; good warm-up before the misconfiguration vectors.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/02/23/htb-beep.html">Beep</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Many privesc paths in one box — great for <em>interleaving</em> vectors.</td></tr>
 <tr><td>Clue</td><td>PG</td><td>Linux</td><td>Inter</td><td>SUID / cron / capability chains; a PEAS-driven enumeration rep.</td></tr>
 </tbody>
 </table>
@@ -4952,10 +4981,10 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Optimum</td><td>HTB</td><td>Windows</td><td>Easy</td><td>HFS 2.3 RCE (CVE-2014-6287) → <strong>MS16-032</strong> kernel privesc.</td></tr>
-<tr><td>Devel</td><td>HTB</td><td>Windows</td><td>Easy</td><td>FTP → webroot <code>.aspx</code> shell → kernel exploit to SYSTEM.</td></tr>
-<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>Jenkins RCE → token / <code>SeImpersonate</code> to admin.</td></tr>
-<tr><td>Bastard</td><td>HTB</td><td>Windows</td><td>Med</td><td>Drupalgeddon → Churrasco / token abuse → SYSTEM.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/03/17/htb-optimum.html">Optimum</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>HFS 2.3 RCE (CVE-2014-6287) → <strong>MS16-032</strong> kernel privesc.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/03/05/htb-devel.html">Devel</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>FTP → webroot <code>.aspx</code> shell → kernel exploit to SYSTEM.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>Jenkins RCE → token / <code>SeImpersonate</code> to admin.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/03/12/htb-bastard.html">Bastard</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>Drupalgeddon → Churrasco / token abuse → SYSTEM.</td></tr>
 <tr><td>Algernon</td><td>PG</td><td>Windows</td><td>Easy</td><td>Service-binary RCE + <code>SeImpersonate</code> (PrintSpoofer) — the modern reflex.</td></tr>
 </tbody>
 </table>
@@ -4965,9 +4994,9 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td>AS-REP roast → hashcat → <strong>reuse</strong> autologon creds from the registry.</td></tr>
-<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP <code>cpassword</code> decrypt → Kerberoast → crack the admin SPN.</td></tr>
-<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass <code>.kdbx</code> → <code>keepass2john</code> → reuse the hash via psexec.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>AS-REP roast → hashcat → <strong>reuse</strong> autologon creds from the registry.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP <code>cpassword</code> decrypt → Kerberoast → crack the admin SPN.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass <code>.kdbx</code> → <code>keepass2john</code> → reuse the hash via psexec.</td></tr>
 <tr><td>Heist</td><td>PG</td><td>AD</td><td>Inter</td><td>Config/description-field creds → spray and reuse across the host.</td></tr>
 </tbody>
 </table>
@@ -4977,9 +5006,9 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td><strong>MS17-010</strong> EternalBlue → SYSTEM (foothold + privesc in one shot).</td></tr>
-<tr><td>Legacy</td><td>HTB</td><td>Windows</td><td>Easy</td><td>MS08-067 / MS17-010 on ancient SMB — the version-match reflex.</td></tr>
-<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>vsftpd 2.3.4 backdoor + Samba — a non-web service foothold.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td><strong>MS17-010</strong> EternalBlue → SYSTEM (foothold + privesc in one shot).</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/02/21/htb-legacy.html">Legacy</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>MS08-067 / MS17-010 on ancient SMB — the version-match reflex.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>vsftpd 2.3.4 backdoor + Samba — a non-web service foothold.</td></tr>
 <tr><td>Nickel</td><td>PG</td><td>Windows</td><td>Inter</td><td>Non-HTTP service exploitation chained to a foothold.</td></tr>
 </tbody>
 </table>
@@ -4989,8 +5018,8 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Forest</td><td>HTB</td><td>AD</td><td>Easy</td><td>Anonymous LDAP / rpcclient enum → <strong>BloodHound</strong> path discovery.</td></tr>
-<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td>Web → user list → <code>GetNPUsers</code>; ldapsearch + SharpHound flow.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/03/21/htb-forest.html">Forest</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>Anonymous LDAP / rpcclient enum → <strong>BloodHound</strong> path discovery.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>Web → user list → <code>GetNPUsers</code>; ldapsearch + SharpHound flow.</td></tr>
 <tr><td>OSCP A</td><td>PEN-200</td><td>AD set</td><td>&mdash;</td><td>Official multi-host AD enumeration at exam scale.</td></tr>
 <tr><td>Vault</td><td>PG</td><td>AD</td><td>Inter</td><td>LDAP + SMB share enumeration to seed the attack.</td></tr>
 </tbody>
@@ -5001,9 +5030,9 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>AS-REP roasting</strong> end-to-end (<code>GetNPUsers</code> → crack).</td></tr>
-<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>Kerberoasting</strong> (<code>GetUserSPNs</code>) + GPP <code>cpassword</code>.</td></tr>
-<tr><td>Resolute</td><td>HTB</td><td>AD</td><td>Med</td><td>rpcclient description-field password → <strong>spray</strong> → foothold.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>AS-REP roasting</strong> end-to-end (<code>GetNPUsers</code> → crack).</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>Kerberoasting</strong> (<code>GetUserSPNs</code>) + GPP <code>cpassword</code>.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/05/30/htb-resolute.html">Resolute</a></td><td>HTB</td><td>AD</td><td>Med</td><td>rpcclient description-field password → <strong>spray</strong> → foothold.</td></tr>
 <tr><td>Resourced</td><td>PG</td><td>AD</td><td>Inter</td><td>Pre-auth roasting + spraying reps.</td></tr>
 </tbody>
 </table>
@@ -5013,10 +5042,10 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Forest</td><td>HTB</td><td>AD</td><td>Easy</td><td>BloodHound <strong>WriteDacl</strong> → grant DCSync → <code>secretsdump</code>.</td></tr>
-<tr><td>Resolute</td><td>HTB</td><td>AD</td><td>Med</td><td><strong>DnsAdmins</strong> DLL load → SYSTEM on the DC.</td></tr>
-<tr><td>Cascade</td><td>HTB</td><td>AD</td><td>Med</td><td>Reversible / AD-recycle-bin credentials → move to admin.</td></tr>
-<tr><td>Blackfield</td><td>HTB</td><td>AD</td><td>Hard</td><td>ForceChangePassword ACL → <code>SeBackupPrivilege</code> → dump NTDS.dit.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/03/21/htb-forest.html">Forest</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>BloodHound <strong>WriteDacl</strong> → grant DCSync → <code>secretsdump</code>.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/05/30/htb-resolute.html">Resolute</a></td><td>HTB</td><td>AD</td><td>Med</td><td><strong>DnsAdmins</strong> DLL load → SYSTEM on the DC.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/25/htb-cascade.html">Cascade</a></td><td>HTB</td><td>AD</td><td>Med</td><td>Reversible / AD-recycle-bin credentials → move to admin.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/10/03/htb-blackfield.html">Blackfield</a></td><td>HTB</td><td>AD</td><td>Hard</td><td>ForceChangePassword ACL → <code>SeBackupPrivilege</code> → dump NTDS.dit.</td></tr>
 </tbody>
 </table>
 
@@ -5028,7 +5057,7 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <tr><td>Dante (Pro Lab)</td><td>HTB</td><td>Mixed</td><td>&mdash;</td><td>A multi-host network — the canonical pivoting playground.</td></tr>
 <tr><td>OSCP B / C</td><td>PEN-200</td><td>AD set</td><td>&mdash;</td><td>Exam-shaped chains where you must tunnel to reach the internal DC.</td></tr>
 <tr><td>Relia / Skylark</td><td>PEN-200</td><td>Mixed</td><td>&mdash;</td><td>Larger scenario labs — deep double-pivot reps.</td></tr>
-<tr><td>Reddish</td><td>HTB</td><td>Linux</td><td>Hard</td><td>Classic Docker-network pivot (a stretch goal once tunnelling clicks).</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/01/26/htb-reddish.html">Reddish</a></td><td>HTB</td><td>Linux</td><td>Hard</td><td>Classic Docker-network pivot (a stretch goal once tunnelling clicks).</td></tr>
 </tbody>
 </table>
 
@@ -5037,10 +5066,10 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <table>
 <thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
 <tbody>
-<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td><code>secretsdump</code>, registry autologon, SAM/NTDS looting.</td></tr>
-<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP + Kerberoast loot; clean <code>secretsdump</code> practice.</td></tr>
-<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass database + credential files as loot.</td></tr>
-<tr><td>Cascade</td><td>HTB</td><td>AD</td><td>Med</td><td>LDAP / registry / recycle-bin credential harvesting.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><code>secretsdump</code>, registry autologon, SAM/NTDS looting.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP + Kerberoast loot; clean <code>secretsdump</code> practice.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass database + credential files as loot.</td></tr>
+<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/25/htb-cascade.html">Cascade</a></td><td>HTB</td><td>AD</td><td>Med</td><td>LDAP / registry / recycle-bin credential harvesting.</td></tr>
 </tbody>
 </table>
 
@@ -5075,6 +5104,7 @@ Tell me which lesson you're on and I'll pick a box at the right difficulty, or c
 <ol class="sources">
 <li><a target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's OSCP prep list (NetSecFocus Trophy Room)</a> · <a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/cheatsheets/offsec">0xdf — OffSec exam HTB lists</a> · <a target="_blank" rel="noopener" href="https://www.offsec.com/labs/">OffSec Proving Grounds</a> · <a target="_blank" rel="noopener" href="https://www.offsec.com/courses/pen-200/">PEN-200 (Challenge Labs)</a>. Curated for teaching; cross-check live availability against the sheet. See also the full <a href="#links">links board</a>.</li>
 </ol>
+
 
 
 
@@ -5150,6 +5180,7 @@ Tell me which lesson you're on and I'll pick a box at the right difficulty, or c
 <span class="box-title">The reflex that beats every service</span>
 For anything you don't recognise: (1) get the exact version, (2) <code>searchsploit</code> it, (3) try anonymous/default access, (4) see what it exposes, (5) try reusing creds you've already found. The <a href="#lesson-3">five questions</a> work even when the cheatsheet doesn't list the port.
 </div>
+
 
 
 
@@ -5232,6 +5263,7 @@ sqlmap, Metasploit exploit modules, and other automated exploitation tools may b
 
 
 
+
 </section>
 
 <section id="linux-privesc" class="page">
@@ -5299,6 +5331,7 @@ sqlmap, Metasploit exploit modules, and other automated exploitation tools may b
 <span class="box-title">Always grab proof</span>
 After rooting: <code>id</code> to confirm <code>uid=0</code>, then <code>cat /root/proof.txt</code> (and the earlier <code>local.txt</code>). No proof file in the report = no points.
 </div>
+
 
 
 
@@ -5413,6 +5446,7 @@ After rooting: <code>id</code> to confirm <code>uid=0</code>, then <code>cat /ro
 <span class="box-title">Always grab proof</span>
 After landing SYSTEM, confirm with <code>whoami</code> (expect <code>nt authority\system</code>), then read both flags: <code>type C:\Users\Administrator\Desktop\proof.txt</code> and the earlier user <code>local.txt</code>. No proof in the report = no points.
 </div>
+
 
 
 
@@ -5533,6 +5567,7 @@ On Active Directory there's usually an account-lockout policy (often 5 bad tries
 <span class="box-title">No GPU? Lean on lookups</span>
 For unsalted hashes (MD5, NTLM, SHA1) try <a target="_blank" rel="noopener" href="https://crackstation.net/">CrackStation</a> first — a precomputed lookup cracks a leaked corporate password in seconds, no cracking rig needed (salted <code>$6$</code>/bcrypt won't be there). When you're unsure which <code>-m</code> mode a hash needs, the <a target="_blank" rel="noopener" href="https://hashcat.net/wiki/doku.php?id=example_hashes">hashcat example-hashes page</a> shows one sample of every format — match yours against the list.
 </div>
+
 
 
 
@@ -5692,6 +5727,7 @@ Collect <code>proof.txt</code> from <strong>every</strong> host you own (and eac
 
 
 
+
 </section>
 
 <section id="pivoting" class="page">
@@ -5821,6 +5857,7 @@ A third subnet hides behind <code>172.16.5.10</code>? Chain another hop. With <s
 
 
 
+
 </section>
 
 <section id="report-writing" class="page">
@@ -5934,6 +5971,7 @@ proof.txt: <span class="h">e99a18c428cb38d5f260853678922e03</span></pre>
 
 
 
+
 </section>
 
 <section id="links" class="page">
@@ -6036,6 +6074,7 @@ proof.txt: <span class="h">e99a18c428cb38d5f260853678922e03</span></pre>
 <li><a target="_blank" rel="noopener" href="https://www.netsecfocus.com/">NetSecFocus (TJ Null's Mattermost)</a> — active OSCP study channels; home of the prep list.</li>
 <li><a target="_blank" rel="noopener" href="https://discord.com/invite/offsec">OffSec Discord</a> — official community server.</li>
 </ul>
+
 
 
 
