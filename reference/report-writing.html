@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Report Writing Cheatsheet</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference · <strong>Report Writing</strong> · <a href="./glossary.html">Glossary</a> · <a href="./exam-format.html">Exam Format</a></nav>
+
+<span class="kicker">Reference · Proof → points</span>
+<h1>Report Writing Cheatsheet</h1>
+<p class="lead">Checklist for <a href="../lessons/0015-writing-the-report.html">Lesson 15</a>. The report is <strong>graded, not the boxes</strong> — a rooted machine you can't prove or can't reproduce scores nothing. Two rules pay the bills: <strong>reproducibility</strong> (a grader follows your exact steps) and <strong>proof</strong> (a screenshot tying the flag to the host). Everything below serves those two.</p>
+
+<h2>The deliverable</h2>
+<p>One PDF, archived, uploaded before the report deadline. Get the mechanics right — a missed upload or oversized file is an automatic fail. See <a href="./exam-format.html">Exam Format</a> for the timeline.</p>
+<table>
+<thead><tr><th>Step</th><th>What</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Format</td><td>Single <strong>PDF</strong></td><td>Scripts &amp; PoCs go <em>inside</em> the PDF as <strong>text</strong> — never as separate attachments or screenshots of code.</td></tr>
+<tr><td>Naming</td><td><code>OSCP-OS-XXXXX-Exam-Report.pdf</code></td><td>Use your own OS-ID in place of <code>XXXXX</code>.</td></tr>
+<tr><td>Archive</td><td><code>.7z</code> (7-Zip)</td><td><code>7z a OSCP-OS-XXXXX-Exam-Report.7z OSCP-OS-XXXXX-Exam-Report.pdf</code></td></tr>
+<tr><td>Upload</td><td>OffSec upload portal</td><td><strong>200 MB</strong> hard limit. Upload early; confirm the success page.</td></tr>
+<tr><td>Results</td><td>Manual grading</td><td>Graded by a human; expect a result in <strong>~10 business days</strong>.</td></tr>
+</tbody>
+</table>
+
+<h2>Report structure</h2>
+<p>Lead with the summary; bury the bulk. Graders skim the top and verify the proofs — make both easy.</p>
+<ol class="steps">
+<li><strong>Executive / high-level summary.</strong> Plain-language: what you were asked to do, what you achieved (which hosts, what access), and overall risk. One page, no jargon.</li>
+<li><strong>Methodology.</strong> Your repeatable approach — recon, enumeration, exploitation, post-exploitation. Short; this frames the per-machine detail.</li>
+<li><strong>Per-machine sections.</strong> One per standalone, each as: <strong>Enumeration → Initial Access / Foothold → Privilege Escalation → Proof</strong>. Every step = the exact command + a screenshot + the result.</li>
+<li><strong>Active Directory chain.</strong> Host-by-host narrative of the <strong>credential path</strong>: where each user/hash/ticket came from and what it unlocked next, ending at Domain Admin. Make the chain unambiguous.</li>
+<li><strong>Appendix.</strong> Full exploit code (with your edits marked) and any large command output that would clutter the body.</li>
+</ol>
+
+<div class="box warn">
+<span class="box-title">Per-compromise proof checklist</span>
+For <em>every</em> foothold and every privesc, before you move on:
+<ul>
+<li>One screenshot, <strong>one frame</strong>, showing all three: the <strong>flag contents</strong>, the machine <strong>IP</strong> (<code>ip a</code> / <code>ipconfig</code>), and <code>whoami</code> + <code>hostname</code>.</li>
+<li>Paste the flag value as <strong>text</strong> too (graders copy-check it; a blurry screenshot alone can be rejected).</li>
+<li>Record the <strong>exact</strong> command / payload / URL / file path you used — copy-pasteable, no "I then ran a script".</li>
+<li>Include any exploit code, and <strong>mark the lines you changed</strong> (target IP, LHOST/LPORT, offsets).</li>
+</ul>
+Missing proof = <strong>no points</strong>, even if you genuinely rooted the box.
+</div>
+
+<h2>Capture as you go</h2>
+<p>Don't write the report after the exam — you'll have forgotten the exact commands and lost the screenshots. Capture <em>during</em>, paste afterward.</p>
+<ul>
+<li><strong>Notes:</strong> Obsidian, CherryTree, or even Sublime — one note per host, timestamped.</li>
+<li><strong>Screenshots:</strong> flameshot (annotate + save instantly). Name them <code>host_step.png</code>.</li>
+<li><strong>Per-host folder:</strong> keep scans, loot, and screenshots together so nothing gets orphaned.</li>
+</ul>
+<pre><span class="c"># log a whole terminal session (timestamped, append mode)</span>
+<span class="p">$</span> <span class="o">script -a 10.10.10.5_session.log</span>
+<span class="c"># or capture a tmux pane's scrollback at any time</span>
+<span class="p">$</span> <span class="o">tmux capture-pane -pS -10000 &gt; 10.10.10.5_pane.txt</span>
+<span class="c"># or record an asciinema cast for the tricky parts</span>
+<span class="p">$</span> <span class="o">asciinema rec 10.10.10.5_root.cast</span>
+<span class="c"># one folder per host keeps scans + shots + loot together</span>
+<span class="p">$</span> <span class="o">mkdir -p ~/exam/10.10.10.5/{scans,loot,screens}</span></pre>
+<p class="cite">Logging is your safety net: if a screenshot is missing, a clean session log can sometimes back up a step — but a screenshot is the only thing that counts as proof.</p>
+
+<h2>Templates &amp; build</h2>
+<p>Pick a template <strong>before</strong> exam day and pre-fill all the boilerplate (your details, methodology, headings) so on the day you only paste commands, output, and screenshots.</p>
+<ul>
+<li><strong>Official OffSec template</strong> — the canonical structure and the exam guide rules: <a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">help.offsec.com — OSCP Exam Guide</a>.</li>
+<li><strong>noraj — Markdown → PDF</strong> — write in Markdown, build with pandoc: <a href="https://github.com/noraj/OSCP-Exam-Report-Template-Markdown">github.com/noraj/OSCP-Exam-Report-Template-Markdown</a>.</li>
+<li><strong>whoisflynn</strong> — popular community template: <a href="https://github.com/whoisflynn/OSCP-Exam-Report-Template">github.com/whoisflynn/OSCP-Exam-Report-Template</a>.</li>
+</ul>
+<pre><span class="c"># Markdown → PDF in one shot (eisvogel template renders code nicely)</span>
+<span class="p">$</span> <span class="o">pandoc report.md -o OSCP-OS-XXXXX-Exam-Report.pdf --template eisvogel --listings</span></pre>
+
+<div class="box tip">
+<span class="box-title">Pre-fill the boilerplate</span>
+The night before, your template should already build to a valid (mostly empty) PDF with your name, OS-ID, methodology, and section headings in place. Exam day is for content, not for fighting pandoc.
+</div>
+
+<h2>Reproducible section skeleton</h2>
+<p>The minimum for one standalone. Every action: command → screenshot → result. Copy this per host.</p>
+<pre><span class="c">## Host 10.10.10.5</span>
+
+<span class="c">### Enumeration</span>
+nmap -p- -sC -sV -oN scans/nmap.txt 10.10.10.5
+<span class="c">(paste key open ports + service versions; [screenshot])</span>
+
+<span class="c">### Initial Access / Foothold</span>
+<span class="c">exact command / payload / URL used:</span>
+curl -s 'http://10.10.10.5/upload?...' --data '...'
+<span class="c">[screenshot: shell + ip a + whoami + hostname in one frame]</span>
+local.txt: <span class="h">d41d8cd98f00b204e9800998ecf8427e</span>
+
+<span class="c">### Privilege Escalation</span>
+<span class="c">exact command used:</span>
+sudo /usr/bin/find . -exec /bin/sh \; -quit
+<span class="c">[screenshot: root shell + id + ip a + hostname in one frame]</span>
+proof.txt: <span class="h">e99a18c428cb38d5f260853678922e03</span></pre>
+
+<div class="box warn">
+<span class="box-title">Common failure modes — re-check before you upload</span>
+<ul>
+<li>No proof screenshot for a flag.</li>
+<li>Steps that can't be reproduced ("ran my script", no actual command).</li>
+<li>IP / <code>whoami</code> / <code>hostname</code> missing from the proof screenshot.</li>
+<li>Exploit code referenced but not included (or included without marking your edits).</li>
+<li>Vague AD chain — graders can't trace which credential unlocked which host.</li>
+<li>Writing from memory after the exam instead of capturing live.</li>
+</ul>
+</div>
+
+<footer>
+<span><a href="../lessons/0015-writing-the-report.html">← Lesson 15: Writing the Penetration Test Report</a></span>
+<span><a href="./glossary.html">Glossary</a> · <a href="./exam-format.html">Exam Format</a></span>
+</footer>
+
+</body>
+</html>

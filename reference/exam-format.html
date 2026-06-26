@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · OSCP+ Exam Format (2026)</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference ·<strong>Exam Format</strong> · <a href="./glossary.html">Glossary →</a></nav>
+
+<span class="kicker">Reference · Verified June 2026</span>
+<h1>OSCP+ Exam Format</h1>
+<p class="meta">The rules of the game. Everything below is verified against OffSec's official help portal — re-read the live <a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">exam guide</a> close to exam day, as OffSec can change details.</p>
+
+<p class="lead">As of 1 November 2024 the certification is <strong>OSCP+</strong>. Same course (PEN-200), same exam — but the format changed in ways that older guides get wrong.</p>
+
+<h2>OSCP vs OSCP+</h2>
+<p>Both are earned from the same PEN-200 course and the same exam.<sup class="ref"><a href="#s1">1</a></sup> The "+" is the current designation; it adds <strong>enhanced Active Directory</strong> content and <strong>removed bonus points</strong>.</p>
+<table>
+<thead><tr><th>Aspect</th><th>OSCP (base)</th><th>OSCP+ (current)</th></tr></thead>
+<tbody>
+<tr><td>Earned from</td><td>PEN-200 exam</td><td>Same PEN-200 exam</td></tr>
+<tr><td>Validity</td><td>Lifetime, never expires</td><td>"+" expires after 3 years</td></tr>
+<tr><td>If "+" lapses</td><td>—</td><td>You keep the lifetime OSCP, minus the "+"</td></tr>
+</tbody>
+</table>
+<p class="cite">Maintaining the "+": keep active maintenance and either pass a recert exam within 6 months of expiry, pass another qualifying OffSec exam, or complete OffSec's CPE program.<sup class="ref"><a href="#s1">1</a></sup></p>
+
+<h2>Key facts</h2>
+<table>
+<tbody>
+<tr><td><strong>Hands-on duration</strong></td><td>23 hours 45 minutes</td></tr>
+<tr><td><strong>Report window</strong></td><td>A further 24 hours after the hands-on portion</td></tr>
+<tr><td><strong>Total points</strong></td><td>100</td></tr>
+<tr><td><strong>Passing score</strong></td><td>70</td></tr>
+<tr><td><strong>Machines</strong></td><td>6 total (3 standalone + a 3-host AD set)</td></tr>
+<tr><td><strong>Proctoring</strong></td><td>Live-proctored for the entire exam</td></tr>
+<tr><td><strong>Results</strong></td><td>Within ~10 business days</td></tr>
+</tbody>
+</table>
+<p class="cite">Source: OSCP+ Exam Guide.<sup class="ref"><a href="#s2">2</a></sup></p>
+
+<h2>How the 100 points break down</h2>
+<table>
+<thead><tr><th>Target</th><th>Points</th><th>How they're scored</th></tr></thead>
+<tbody>
+<tr><td>Standalone #1</td><td>20</td><td>10 for initial access + 10 for privilege escalation</td></tr>
+<tr><td>Standalone #2</td><td>20</td><td>10 for initial access + 10 for privilege escalation</td></tr>
+<tr><td>Standalone #3</td><td>20</td><td>10 for initial access + 10 for privilege escalation</td></tr>
+<tr><td>Active Directory set</td><td>40</td><td>3 chained hosts (10 / 10 / 20); partial AD points now possible</td></tr>
+</tbody>
+</table>
+<div class="box note">
+<span class="box-title">The arithmetic that matters</span>
+The 40-point AD set is the largest single block — you cannot reach 70 comfortably by ignoring it. A common passing shape: full AD (40) + one full standalone (20) + one foothold (10) = 70. Plan to be competent at AD, not just standalones.
+</div>
+
+<h2>What is NOT on the current exam</h2>
+<div class="box warn">
+<span class="box-title">Don't waste time here</span>
+<ul style="margin:0.3rem 0 0; padding-left:1.1rem;">
+<li><strong>Stack buffer overflow</strong> — removed in the PEN-200 2023 update.<sup class="ref"><a href="#s3">3</a></sup> It is no longer in the exam body of knowledge. (Many older study plans still drill it — skip.)</li>
+<li><strong>Bonus points</strong> — removed at the Nov 2024 OSCP+ transition.<sup class="ref"><a href="#s1">1</a></sup> The old format gave 10 bonus points for course exercises + lab boxes. Do not plan around them.</li>
+<li><strong>AI / LLM tools</strong> — strictly prohibited during the exam.<sup class="ref"><a href="#s2">2</a></sup> (Yes, including me. Learn it for real — that's the whole point.)</li>
+</ul>
+</div>
+
+<h2>The report</h2>
+<p>A PDF, archived as a <code>.7z</code> and uploaded via OffSec's portal (200 MB limit). Every script and proof-of-concept must be included as <em>text inside the PDF</em>. Results come within ~10 business days.<sup class="ref"><a href="#s2">2</a></sup> The report is graded — a working exploit you can't document clearly does not earn points. We will treat report-writing as a first-class skill, not an afterthought.</p>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://help.offsec.com/hc/en-us/articles/29840452210580-Changes-to-the-OSCP">OffSec — Changes to the OSCP</a> (OSCP+ transition, bonus removal, 3-year expiry)</li>
+<li id="s2"><a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">OffSec — OSCP+ Exam Guide</a> (duration, points, proctoring, reporting)</li>
+<li id="s3"><a href="https://www.offsec.com/blog/pen-200-2023/">OffSec — PEN-200 2023 Update</a> (buffer overflow removed)</li>
+</ol>
+
+<footer>
+<span><a href="../lessons/0001-the-oscp-attack-chain.html">← Lesson 01: The Attack Chain</a></span>
+<span><a href="./glossary.html">Glossary →</a></span>
+</footer>
+
+</body>
+</html>

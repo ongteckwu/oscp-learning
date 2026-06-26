@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Practice Box Map</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference · <strong>Practice Boxes</strong> · <a href="./exam-format.html">Exam Format</a> · <a href="./glossary.html">Glossary</a></nav>
+
+<span class="kicker">Reference · What to practise on, per lesson</span>
+<h1>Practice Box Map</h1>
+<p class="lead">Every skill lesson, tied to concrete machines. Each block lists 2–4 boxes from <a href="https://www.hackthebox.com/">HTB</a>, <a href="https://www.offsec.com/labs/">Proving Grounds</a>, <a href="https://www.offsec.com/courses/pen-200/">PEN-200</a> and others — OS-split, with a one-line tell of the technique it drills. Work them <strong>attempt-first</strong> (<a href="../lessons/0002-the-deliberate-practice-loop.html">Lesson 02</a>): enumerate yourself, spend a struggle budget, take <em>one</em> nudge, then review.</p>
+
+<div class="box warn">
+<span class="box-title">Read before you queue a box</span>
+<ul>
+<li><strong><a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's list is the source of truth.</a></strong> This map is curated from it (+ <a href="https://0xdf.gitlab.io/cheatsheets/offsec">0xdf's OffSec mapping</a>) for teaching; the live sheet is authoritative on what's currently in-scope. Ask me to verify any box.</li>
+<li><strong>Most HTB boxes here are <em>retired</em></strong> → they need an HTB <strong>VIP</strong> subscription (the retired-machines list). For OSCP prep that's the standard move.</li>
+<li><strong>"PEN-200" boxes aren't individually public anymore.</strong> OffSec replaced the named lab with six <strong>Challenge Labs</strong> — scenario (<em>Medtech, Relia, Skylark</em>) and exam-like (<em>OSCP A, B, C</em>). <strong>Proving Grounds Practice</strong> is the closest public stand-in to exam style.</li>
+<li><strong>Don't spoil the chain.</strong> Pick boxes you haven't seen a write-up for; only watch <a href="https://www.youtube.com/@ippsec">IppSec</a>/<a href="https://0xdf.gitlab.io/">0xdf</a> in review mode <em>after</em> you finish or exhaust yourself.</li>
+</ul>
+</div>
+
+<p class="cite"><strong>Legend.</strong> Source: <strong>HTB</strong> Hack The Box · <strong>PG</strong> Proving Grounds Practice · <strong>PEN-200</strong> OffSec Challenge Labs · <strong>THM</strong> TryHackMe · <strong>VH</strong> VulnHub. OS: <strong>AD</strong> = Windows + Active Directory · <strong>Mixed</strong> = multi-host network.</p>
+
+<h2 id="pb-01"><a href="../lessons/0001-the-oscp-attack-chain.html">01 · The OSCP Attack Chain</a></h2>
+<p>Goal here isn't a technique — it's to feel the whole chain once. Own <em>one</em> easy box end-to-end.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>The whole chain in one box: Samba <code>username map script</code> (CVE-2007-2447) drops you straight to root — no privesc step.</td></tr>
+<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td>EternalBlue (MS17-010) → SYSTEM; foothold and privesc as a single motion.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-02"><a href="../lessons/0002-the-deliberate-practice-loop.html">02 · The Deliberate-Practice Loop</a></h2>
+<p>Your <em>first</em> attempt-first box. Forgiving targets so you practise the loop, not just the box.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td>A gentle first run of enumerate → exploit → loot, with a clean single vector.</td></tr>
+<tr><td>Twiggy</td><td>PG</td><td>Linux</td><td>Easy</td><td>SaltStack CVE-2020-11651 → root; a clean attempt-first rep where enumeration points straight at the version.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-03"><a href="../lessons/0003-service-enumeration.html">03 · Service Enumeration</a></h2>
+<p>Boxes where the <em>enumeration is the challenge</em> — the foothold is invisible until you look properly.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Nibbles</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Foothold hides behind a <code>/nibbleblog/</code> path only thorough web enum reveals.</td></tr>
+<tr><td>OpenAdmin</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Internal OpenNetAdmin + a tunnelled port — rewards full port and web enumeration.</td></tr>
+<tr><td>Networked</td><td>HTB</td><td>Linux</td><td>Easy</td><td>An upload filter you only spot by enumerating the app carefully.</td></tr>
+<tr><td>Hetemit</td><td>PG</td><td>Linux</td><td>Inter</td><td>Obscure service you must enumerate to even find the vulnerable endpoint.</td></tr>
+<tr><td>ClamAV</td><td>PG</td><td>Linux</td><td>Easy</td><td>Non-standard ports — here the port scan basically <em>is</em> the box.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-04"><a href="../lessons/0004-attacking-the-web-service.html">04 · Attacking the Web Service</a></h2>
+<p>Web recon, directory busting, version → CVE, and the classic web vulnerability classes.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Bashed</td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>gobuster</code> finds a <code>phpbash</code> web shell in <code>/dev/</code> — the payoff of dir-busting.</td></tr>
+<tr><td>Sense</td><td>HTB</td><td>BSD</td><td>Easy</td><td>pfSense creds in a hidden <code>.txt</code>, then a version-matched CVE — recon → exploit.</td></tr>
+<tr><td>Cronos</td><td>HTB</td><td>Linux</td><td>Med</td><td>vhost/DNS enum (AXFR) → a Laravel login <strong>SQLi auth bypass</strong>.</td></tr>
+<tr><td>PayDay</td><td>PG</td><td>Linux</td><td>Easy</td><td>CS-Cart CMS admin → web RCE; a textbook web foothold.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-05"><a href="../lessons/0005-exploiting-the-web-foothold.html">05 · Exploiting the Web Foothold</a></h2>
+<p>Turning a web vuln into a shell: upload bypass, RCE, command injection, SQLi → exec.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Nibbles</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Nibbleblog <strong>image-upload RCE</strong> → reverse shell.</td></tr>
+<tr><td>Networked</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Double-extension upload bypass → PHP execution.</td></tr>
+<tr><td>Cronos</td><td>HTB</td><td>Linux</td><td>Med</td><td>SQLi bypass → command-injection panel → shell.</td></tr>
+<tr><td>Astronaut</td><td>PG</td><td>Linux</td><td>Easy</td><td>Grav CMS PHP-template injection → RCE → shell.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-06"><a href="../lessons/0006-linux-privilege-escalation.html">06 · Linux Privilege Escalation</a></h2>
+<p>Low-priv shell → root: <code>sudo</code>, SUID, cron, capabilities, writable files.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Bashed</td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>sudo -l</code> NOPASSWD → a writable root <strong>cron</strong> script → root.</td></tr>
+<tr><td>Shocker</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Shellshock CGI foothold → <code>sudo perl</code> GTFOBin → root.</td></tr>
+<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Baseline easy box; good warm-up before the misconfiguration vectors.</td></tr>
+<tr><td>Beep</td><td>HTB</td><td>Linux</td><td>Easy</td><td>Many privesc paths in one box — great for <em>interleaving</em> vectors.</td></tr>
+<tr><td>Clue</td><td>PG</td><td>Linux</td><td>Inter</td><td>SUID / cron / capability chains; a PEAS-driven enumeration rep.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-07"><a href="../lessons/0007-windows-privilege-escalation.html">07 · Windows Privilege Escalation</a></h2>
+<p>Service abuse, token privileges (<code>SeImpersonate</code>), and kernel exploits as a last resort.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Optimum</td><td>HTB</td><td>Windows</td><td>Easy</td><td>HFS 2.3 RCE (CVE-2014-6287) → <strong>MS16-032</strong> kernel privesc.</td></tr>
+<tr><td>Devel</td><td>HTB</td><td>Windows</td><td>Easy</td><td>FTP → webroot <code>.aspx</code> shell → kernel exploit to SYSTEM.</td></tr>
+<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>Jenkins RCE → token / <code>SeImpersonate</code> to admin.</td></tr>
+<tr><td>Bastard</td><td>HTB</td><td>Windows</td><td>Med</td><td>Drupalgeddon → Churrasco / token abuse → SYSTEM.</td></tr>
+<tr><td>Algernon</td><td>PG</td><td>Windows</td><td>Easy</td><td>Service-binary RCE + <code>SeImpersonate</code> (PrintSpoofer) — the modern reflex.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-08"><a href="../lessons/0008-password-attacks-and-credential-reuse.html">08 · Password Attacks &amp; Credential Reuse</a></h2>
+<p>Hash cracking, spraying, and reusing every credential you find everywhere you can.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td>AS-REP roast → hashcat → <strong>reuse</strong> autologon creds from the registry.</td></tr>
+<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP <code>cpassword</code> decrypt → Kerberoast → crack the admin SPN.</td></tr>
+<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass <code>.kdbx</code> → <code>keepass2john</code> → reuse the hash via psexec.</td></tr>
+<tr><td>Heist</td><td>PG</td><td>AD</td><td>Inter</td><td>Config/description-field creds → spray and reuse across the host.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-09"><a href="../lessons/0009-footholds-beyond-the-web.html">09 · Footholds Beyond the Web</a></h2>
+<p>SMB, FTP, and other non-HTTP services — version-matched exploits and share abuse.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Blue</td><td>HTB</td><td>Windows</td><td>Easy</td><td><strong>MS17-010</strong> EternalBlue → SYSTEM (foothold + privesc in one shot).</td></tr>
+<tr><td>Legacy</td><td>HTB</td><td>Windows</td><td>Easy</td><td>MS08-067 / MS17-010 on ancient SMB — the version-match reflex.</td></tr>
+<tr><td>Lame</td><td>HTB</td><td>Linux</td><td>Easy</td><td>vsftpd 2.3.4 backdoor + Samba — a non-web service foothold.</td></tr>
+<tr><td>Nickel</td><td>PG</td><td>Windows</td><td>Inter</td><td>Non-HTTP service exploitation chained to a foothold.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-10"><a href="../lessons/0010-active-directory-enumeration.html">10 · Active Directory Enumeration</a></h2>
+<p>ldapsearch, rpcclient, BloodHound — mapping the domain before you touch it.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Forest</td><td>HTB</td><td>AD</td><td>Easy</td><td>Anonymous LDAP / rpcclient enum → <strong>BloodHound</strong> path discovery.</td></tr>
+<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td>Web → user list → <code>GetNPUsers</code>; ldapsearch + SharpHound flow.</td></tr>
+<tr><td>OSCP A</td><td>PEN-200</td><td>AD set</td><td>&mdash;</td><td>Official multi-host AD enumeration at exam scale.</td></tr>
+<tr><td>Vault</td><td>PG</td><td>AD</td><td>Inter</td><td>LDAP + SMB share enumeration to seed the attack.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-11"><a href="../lessons/0011-active-directory-authentication-attacks.html">11 · AD Authentication Attacks</a></h2>
+<p>AS-REP roasting, Kerberoasting, and password spraying against the domain.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>AS-REP roasting</strong> end-to-end (<code>GetNPUsers</code> → crack).</td></tr>
+<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>Kerberoasting</strong> (<code>GetUserSPNs</code>) + GPP <code>cpassword</code>.</td></tr>
+<tr><td>Resolute</td><td>HTB</td><td>AD</td><td>Med</td><td>rpcclient description-field password → <strong>spray</strong> → foothold.</td></tr>
+<tr><td>Resourced</td><td>PG</td><td>AD</td><td>Inter</td><td>Pre-auth roasting + spraying reps.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-12"><a href="../lessons/0012-active-directory-lateral-movement.html">12 · AD Lateral Movement → Domain Admin</a></h2>
+<p>Pass-the-hash, ACL abuse, DCSync, and dangerous group memberships.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Forest</td><td>HTB</td><td>AD</td><td>Easy</td><td>BloodHound <strong>WriteDacl</strong> → grant DCSync → <code>secretsdump</code>.</td></tr>
+<tr><td>Resolute</td><td>HTB</td><td>AD</td><td>Med</td><td><strong>DnsAdmins</strong> DLL load → SYSTEM on the DC.</td></tr>
+<tr><td>Cascade</td><td>HTB</td><td>AD</td><td>Med</td><td>Reversible / AD-recycle-bin credentials → move to admin.</td></tr>
+<tr><td>Blackfield</td><td>HTB</td><td>AD</td><td>Hard</td><td>ForceChangePassword ACL → <code>SeBackupPrivilege</code> → dump NTDS.dit.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-13"><a href="../lessons/0013-pivoting-and-tunneling.html">13 · Pivoting &amp; Tunneling</a></h2>
+<p>Multi-host networks: <code>ligolo-ng</code>, <code>chisel</code>, proxychains, and reaching an internal DC.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Dante (Pro Lab)</td><td>HTB</td><td>Mixed</td><td>&mdash;</td><td>A multi-host network — the canonical pivoting playground.</td></tr>
+<tr><td>OSCP B / C</td><td>PEN-200</td><td>AD set</td><td>&mdash;</td><td>Exam-shaped chains where you must tunnel to reach the internal DC.</td></tr>
+<tr><td>Relia / Skylark</td><td>PEN-200</td><td>Mixed</td><td>&mdash;</td><td>Larger scenario labs — deep double-pivot reps.</td></tr>
+<tr><td>Reddish</td><td>HTB</td><td>Linux</td><td>Hard</td><td>Classic Docker-network pivot (a stretch goal once tunnelling clicks).</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-14"><a href="../lessons/0014-post-exploitation-looting.html">14 · Post-Exploitation Looting</a></h2>
+<p>Harvesting creds, hashes, and config secrets to fuel the next hop. Reuse the AD boxes here.</p>
+<table>
+<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
+<tbody>
+<tr><td>Sauna</td><td>HTB</td><td>AD</td><td>Easy</td><td><code>secretsdump</code>, registry autologon, SAM/NTDS looting.</td></tr>
+<tr><td>Active</td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP + Kerberoast loot; clean <code>secretsdump</code> practice.</td></tr>
+<tr><td>Jeeves</td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass database + credential files as loot.</td></tr>
+<tr><td>Cascade</td><td>HTB</td><td>AD</td><td>Med</td><td>LDAP / registry / recycle-bin credential harvesting.</td></tr>
+</tbody>
+</table>
+
+<h2 id="pb-15"><a href="../lessons/0015-writing-the-report.html">15 · Writing the Report</a></h2>
+<p>No new box — pick one you've already rooted and write it up to exam standard (every command, every screenshot, proof files). Run it through the <code>/box-notes</code> skill.</p>
+
+<h2 id="pb-16"><a href="../lessons/0016-exam-strategy.html">16 · Exam Strategy</a></h2>
+<p>No new box — this is decision-making, not a new technique. Rehearse the time-boxing and "when to move on" rules on the <a href="#pb-17">Lesson 17 mock-exam sets</a>.</p>
+
+<h2 id="pb-17"><a href="../lessons/0017-mock-exam.html">17 · Mock Exam</a></h2>
+<p>A full, timed, no-walkthrough simulation: roughly three standalone targets plus a small AD set.</p>
+<table>
+<thead><tr><th>Set</th><th>Source</th><th>Shape</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>OSCP A / B / C</td><td>PEN-200</td><td>3 standalone + 1 AD set</td><td>Purpose-built exam dry-run — closest to the real thing.</td></tr>
+<tr><td>PG "exam-like" picks</td><td>PG</td><td>3–4 standalone</td><td>OffSec's own grading philosophy; build your 24-hour rhythm.</td></tr>
+<tr><td>TJ Null "OSCP-like" tier</td><td>HTB</td><td>mix</td><td>Time-boxed standalones under exam rules (one-machine automation only).</td></tr>
+</tbody>
+</table>
+
+<div class="box tip">
+<span class="box-title">How to drive this map</span>
+Interleave OS and box type — don't binge five Linux privesc boxes in a row (that builds false fluency; see <a href="../lessons/0002-the-deliberate-practice-loop.html">Lesson 02</a>). After each box, run it through <code>/box-notes</code> so the transferable technique lands in your growing box-techniques cheat sheet. When you can pick the right box for a weakness <em>without</em> this table, you've internalised the map.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Tell me which lesson you're on and I'll pick a box at the right difficulty, or confirm whether one is still live on TJ Null's current sheet. Stuck mid-box? Paste your enumeration and we'll find the thread together — attempt-first, one nudge at a time.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li><a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's OSCP prep list (NetSecFocus Trophy Room)</a> · <a href="https://0xdf.gitlab.io/cheatsheets/offsec">0xdf — OffSec exam HTB lists</a> · <a href="https://www.offsec.com/labs/">OffSec Proving Grounds</a> · <a href="https://www.offsec.com/courses/pen-200/">PEN-200 (Challenge Labs)</a>. Curated for teaching; cross-check live availability against the sheet. See also the full <a href="./links.html">links board</a>.</li>
+</ol>
+
+<footer>
+<span><a href="../lessons/0002-the-deliberate-practice-loop.html">← Lesson 02: The Deliberate-Practice Loop</a></span>
+<span><a href="./links.html">Links</a> · <a href="./exam-format.html">Exam Format</a> · <a href="./glossary.html">Glossary</a></span>
+</footer>
+
+</body>
+</html>

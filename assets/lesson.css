@@ -1,0 +1,314 @@
+/* ============================================================================
+   OSCP Learning — shared lesson stylesheet
+   One consistent, print-friendly, Tufte-inspired look across every lesson.
+   Linked by every lesson and reference document.
+   ========================================================================== */
+
+:root {
+  --ink:        #1a1a1a;
+  --ink-soft:   #4a4a4a;
+  --ink-faint:  #777;
+  --paper:      #fdfcf9;
+  --paper-2:    #f4f1ea;
+  --rule:       #e2ddd2;
+  --accent:     #8a1c1c;   /* offsec-ish deep red */
+  --accent-2:   #0b6b5e;   /* teal for "defender/secondary" */
+  --link:       #1c5d8a;
+  --code-bg:    #1e2127;   /* terminal dark */
+  --code-fg:    #e6e6e6;
+  --code-dim:   #8a929e;
+  --term-green: #5fd75f;
+  --term-blue:  #5fafff;
+  --warn-bg:    #fdf3e7;
+  --warn-bd:    #e0a44a;
+  --tip-bg:     #eaf5f1;
+  --tip-bd:     #0b6b5e;
+  --note-bg:    #f0f3f7;
+  --note-bd:    #1c5d8a;
+  --maxw:       720px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0 auto;
+  max-width: var(--maxw);
+  padding: 3rem 1.5rem 6rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+  font-size: 19px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---- Typographic hierarchy --------------------------------------------- */
+h1, h2, h3, h4, .kicker, nav, .quiz, .meta, code, kbd, pre {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+               Arial, sans-serif;
+}
+
+h1 {
+  font-size: 2.1rem;
+  line-height: 1.15;
+  margin: 0.2rem 0 0.4rem;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: 1.35rem;
+  margin: 2.6rem 0 0.6rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--rule);
+  letter-spacing: -0.01em;
+}
+h3 { font-size: 1.08rem; margin: 1.8rem 0 0.4rem; }
+
+p, li { color: var(--ink); }
+strong { font-weight: 700; }
+em { font-style: italic; }
+
+a { color: var(--link); text-decoration: none; border-bottom: 1px solid rgba(28,93,138,0.3); }
+a:hover { border-bottom-color: var(--link); }
+
+/* ---- Lesson header ------------------------------------------------------ */
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.meta {
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+  margin: 0.3rem 0 1.6rem;
+}
+.lead {
+  font-size: 1.12rem;
+  color: var(--ink-soft);
+  margin: 0 0 1.4rem;
+}
+
+/* ---- Breadcrumb / nav --------------------------------------------------- */
+nav.crumbs {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  margin-bottom: 1.6rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 2px solid var(--ink);
+}
+nav.crumbs a { border: none; }
+
+/* ---- Code & terminal ---------------------------------------------------- */
+code {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.06em 0.35em;
+  font-size: 0.84em;
+  color: var(--accent);
+}
+pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 1rem 1.1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 1.1rem 0;
+}
+pre code {
+  background: none; border: none; padding: 0; color: inherit; font-size: 1em;
+}
+/* terminal prompt + comments inside <pre> */
+pre .p   { color: var(--term-green); }   /* prompt $ / # */
+pre .o   { color: var(--code-fg); }      /* command */
+pre .c   { color: var(--code-dim); }     /* comment */
+pre .h   { color: var(--term-blue); }    /* highlight value */
+
+kbd {
+  background: #fff;
+  border: 1px solid #bbb;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0.05em 0.4em;
+  font-size: 0.8em;
+  color: var(--ink);
+}
+
+/* ---- Callout boxes ------------------------------------------------------ */
+.box {
+  border-left: 4px solid var(--note-bd);
+  background: var(--note-bg);
+  padding: 0.8rem 1rem;
+  margin: 1.3rem 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.95rem;
+}
+.box .box-title {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+.box.note { border-color: var(--note-bd); background: var(--note-bg); }
+.box.note .box-title { color: var(--note-bd); }
+.box.tip  { border-color: var(--tip-bd);  background: var(--tip-bg); }
+.box.tip  .box-title { color: var(--tip-bd); }
+.box.warn { border-color: var(--warn-bd); background: var(--warn-bg); }
+.box.warn .box-title { color: #a8631a; }
+.box.mantra {
+  border: none;
+  background: linear-gradient(180deg, var(--paper-2), var(--paper));
+  border-top: 3px solid var(--accent);
+  border-bottom: 3px solid var(--accent);
+  border-radius: 0;
+  text-align: center;
+  font-size: 1.15rem;
+  padding: 1.2rem;
+}
+
+/* ---- Phase / step lists ------------------------------------------------- */
+ol.steps { counter-reset: step; list-style: none; padding-left: 0; }
+ol.steps > li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 2.6rem;
+  margin: 0.9rem 0;
+}
+ol.steps > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 0;
+  width: 1.8rem; height: 1.8rem;
+  background: var(--accent); color: #fff;
+  border-radius: 50%;
+  font-family: -apple-system, sans-serif;
+  font-size: 0.85rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ---- Tables ------------------------------------------------------------- */
+table { border-collapse: collapse; width: 100%; margin: 1.3rem 0; font-size: 0.9rem; }
+th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--rule); }
+th {
+  font-family: -apple-system, sans-serif;
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ink-faint); border-bottom: 2px solid var(--ink);
+}
+
+/* ---- Citations ---------------------------------------------------------- */
+.cite { font-size: 0.78rem; color: var(--ink-faint); }
+sup.ref a { font-size: 0.7em; border: none; color: var(--accent); font-weight: 700; }
+.sources { font-size: 0.82rem; color: var(--ink-soft); }
+.sources li { margin: 0.3rem 0; }
+
+/* ---- Primary source highlight ------------------------------------------ */
+.primary {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  margin: 1.5rem 0;
+}
+.primary .box-title { color: var(--accent); }
+
+/* ---- "Ask your teacher" reminder --------------------------------------- */
+.teacher {
+  margin-top: 3rem;
+  padding: 1rem 1.1rem;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.92rem;
+}
+.teacher .box-title { color: var(--accent); }
+
+/* ---- Quiz widget (paired with assets/quiz.js) -------------------------- */
+.quiz { margin: 1.6rem 0; }
+.quiz .q {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  margin: 1rem 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.quiz .q-prompt { font-weight: 700; margin-bottom: 0.8rem; font-size: 0.98rem; }
+.quiz .q-prompt .num { color: var(--accent); margin-right: 0.4rem; }
+.quiz .options { display: flex; flex-direction: column; gap: 0.5rem; }
+.quiz .options button {
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.quiz .options button:hover:not(:disabled) { background: var(--paper-2); border-color: var(--ink-faint); }
+.quiz .options button:disabled { cursor: default; opacity: 0.85; }
+.quiz .options button.correct {
+  background: #e6f4ea; border-color: #2e7d4f; color: #1d5b38; font-weight: 700;
+}
+.quiz .options button.wrong {
+  background: #fbeaea; border-color: #b13b3b; color: #8a1c1c;
+}
+.quiz .feedback {
+  margin-top: 0.8rem;
+  font-size: 0.88rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  display: none;
+}
+.quiz .feedback.show { display: block; }
+.quiz .feedback.ok  { background: #e6f4ea; color: #1d5b38; }
+.quiz .feedback.no  { background: #fbeaea; color: #8a1c1c; }
+.quiz .score {
+  font-family: -apple-system, sans-serif;
+  font-weight: 700;
+  margin-top: 1rem;
+  padding: 0.7rem 1rem;
+  background: var(--paper-2);
+  border-radius: 8px;
+  text-align: center;
+  display: none;
+}
+.quiz .score.show { display: block; }
+
+/* ---- Footer ------------------------------------------------------------- */
+footer {
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
+}
+footer a { border: none; }
+
+/* ---- Print -------------------------------------------------------------- */
+@media print {
+  body { max-width: none; font-size: 11pt; padding: 0; color: #000; background: #fff; }
+  pre { background: #f4f4f4; color: #111; border: 1px solid #ccc; }
+  pre .p { color: #0a0; } pre .c { color: #777; } pre .h { color: #06c; }
+  .teacher, nav.crumbs { display: none; }
+  .quiz .options button { border: 1px solid #999; }
+  a { color: #000; border: none; }
+  h2 { break-after: avoid; }
+  .box, .primary, .quiz .q { break-inside: avoid; }
+}
+
+@media (max-width: 480px) {
+  body { font-size: 17px; padding: 1.5rem 1rem 4rem; }
+  h1 { font-size: 1.7rem; }
+}

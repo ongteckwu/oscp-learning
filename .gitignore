@@ -1,0 +1,10 @@
+# Local agent + tooling
+.claude/
+.ruff_cache/
+.DS_Store
+
+# Personal learning notes — kept local, never published
+MISSION.md
+NOTES.md
+RESOURCES.md
+learning-records/

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · OSCP Glossary</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference ·<strong>Glossary</strong> · <a href="./exam-format.html">Exam Format →</a></nav>
+
+<span class="kicker">Reference · Canonical nomenclature</span>
+<h1>OSCP Glossary</h1>
+<p class="lead">The shared vocabulary of the course. Every lesson uses these terms exactly as defined here. New terms get added as we go — this is the single source of truth for what a word means.</p>
+
+<h2>The attack chain — phases</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Recon</strong> (reconnaissance)</td><td>Discovering what targets exist and which ports/services are alive. On a single OSCP box this is mostly a port scan; in a network it includes host discovery.</td></tr>
+<tr><td><strong>Enumeration</strong></td><td>Systematically interrogating every discovered service for versions, content, users, and misconfigurations. The phase where ~90% of OSCP work happens.</td></tr>
+<tr><td><strong>Foothold</strong> / initial access</td><td>The first code execution on a target — turning a found weakness into a shell. Worth 10 pts per standalone on the exam.</td></tr>
+<tr><td><strong>Privilege escalation</strong> (privesc / PE)</td><td>Going from a low-privilege user to <code>root</code> (Linux) or <code>SYSTEM</code>/Administrator (Windows) on the same host. Worth the other 10 pts per standalone.</td></tr>
+<tr><td><strong>Lateral movement</strong></td><td>Using access on one host to reach <em>another</em> host — typically by reusing harvested credentials. The heart of the Active Directory set.</td></tr>
+<tr><td><strong>Pivoting / tunneling</strong></td><td>Routing your traffic <em>through</em> a compromised host to reach a network you can't touch directly (e.g. an internal AD subnet).</td></tr>
+<tr><td><strong>Post-exploitation / looting</strong></td><td>After access: harvesting credentials, hashes, config files, and proof flags; setting up persistence for the engagement.</td></tr>
+</tbody>
+</table>
+
+<h2>Shells & access</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Reverse shell</strong></td><td>The target connects <em>out</em> to a listener on your machine, giving you a shell. Usually beats a bind shell because outbound traffic survives most firewalls.</td></tr>
+<tr><td><strong>Bind shell</strong></td><td>The target opens a listening port and you connect <em>in</em> to it. Fails when the target's firewall blocks inbound connections.</td></tr>
+<tr><td><strong>Listener</strong></td><td>A program on your box (e.g. <code>nc -lvnp 4444</code>) waiting to receive a reverse shell.</td></tr>
+<tr><td><strong>Payload</strong></td><td>The code/command delivered to the target to make it execute something — e.g. a reverse-shell one-liner.</td></tr>
+<tr><td><strong>TTY upgrade</strong></td><td>Turning a raw, crippled shell into a fully interactive terminal (tab-completion, job control, <code>sudo</code> prompts). A reflex you do right after every foothold.</td></tr>
+</tbody>
+</table>
+
+<h2>Enumeration</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Version detection</strong> / fingerprinting</td><td>Identifying the exact software and version behind a port (nmap <code>-sV</code>). "Apache 2.4.49" is a lead; "port 80 open" is not.</td></tr>
+<tr><td><strong>Banner grabbing</strong></td><td>Reading the text a service announces on connect (e.g. via <code>nc</code>) to learn its software/version.</td></tr>
+<tr><td><strong>Content discovery</strong> (directory brute-forcing)</td><td>Guessing hidden web paths/files from a wordlist (gobuster/feroxbuster/ffuf) to map an app's surface.</td></tr>
+<tr><td><strong>Virtual host (vhost)</strong></td><td>Multiple sites served from one IP, selected by the HTTP <code>Host</code> header. Fuzzing the header reveals hidden sites.</td></tr>
+<tr><td><strong>Null session</strong></td><td>An unauthenticated SMB connection. When allowed, it leaks shares, users, and policies for free.</td></tr>
+<tr><td><strong>searchsploit</strong></td><td>Offline CLI search of Exploit-DB. Your fastest "is this version exploitable?" check — the bridge from CVE triage to a live target.</td></tr>
+</tbody>
+</table>
+
+<h2>Web exploitation</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>SQL injection (SQLi)</strong></td><td>Injecting input that alters a database query — to bypass auth, dump data/creds, or (sometimes) write a web shell.</td></tr>
+<tr><td><strong>File inclusion (LFI / RFI)</strong></td><td>Abusing a parameter that names a file. <em>LFI</em> reads/executes local files; <em>RFI</em> pulls in a remote file. Both can chain to code execution.</td></tr>
+<tr><td><strong>Path traversal</strong> (directory traversal)</td><td>Using <code>../</code> sequences to escape the intended directory and reach arbitrary files (e.g. <code>/etc/passwd</code>).</td></tr>
+<tr><td><strong>Web shell</strong></td><td>A script (e.g. <code>&lt;?php system($_GET['c']);?&gt;</code>) you plant on the server to run commands through the browser. Upgrade it to a reverse shell.</td></tr>
+<tr><td><strong>Command injection</strong></td><td>Input that reaches a system shell, letting you append your own OS commands directly (<code>; | $()</code>).</td></tr>
+<tr><td><strong>SSTI</strong> (server-side template injection)</td><td>Input rendered by a template engine; a probe like <code>{{7*7}}</code> returning <code>49</code> signals it, and it commonly escalates to code execution.</td></tr>
+<tr><td><strong>IDOR / broken access control</strong></td><td>Reaching objects or actions you shouldn't by changing an identifier or hitting an unprotected endpoint — no exploit code required.</td></tr>
+</tbody>
+</table>
+
+<h2>Privilege escalation tooling</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>LinPEAS / WinPEAS</strong></td><td>Enumeration scripts (PEASS-ng) that automatically flag likely privesc paths on Linux / Windows. Run early on any shell.</td></tr>
+<tr><td><strong>GTFOBins</strong></td><td>Catalogue of standard Unix binaries that can be abused (via SUID, sudo, capabilities) to escalate or break out of restricted shells.</td></tr>
+<tr><td><strong>LOLBAS</strong></td><td>The Windows equivalent of GTFOBins — "living off the land" binaries already present on Windows that can be abused.</td></tr>
+<tr><td><strong>SUID / sudo</strong></td><td>Two of the most common Linux privesc vectors: SUID binaries run as their owner (often root); misconfigured <code>sudo</code> rights let a user run commands as root.</td></tr>
+</tbody>
+</table>
+
+<h2>Linux privilege-escalation vectors</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>sudo rights</strong></td><td>Commands your user may run as root (<code>sudo -l</code>). A misconfigured entry is the most common OSCP root.</td></tr>
+<tr><td><strong>Cron job abuse</strong></td><td>A scheduled task running as root that executes a script <em>you</em> can modify → inject your command.</td></tr>
+<tr><td><strong>Linux capabilities</strong></td><td>Fine-grained root powers on a single binary (<code>getcap</code>); e.g. <code>cap_setuid</code> lets it become root.</td></tr>
+<tr><td><strong>PATH hijacking</strong></td><td>A privileged script calls a binary by relative name; you place a malicious one earlier in <code>PATH</code>.</td></tr>
+<tr><td><strong>Kernel exploit</strong></td><td>Exploiting the OS kernel itself for root. Powerful but can crash the box — a last resort.</td></tr>
+</tbody>
+</table>
+
+<h2>Active Directory</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Domain Controller (DC)</strong></td><td>The server that runs Active Directory and authenticates the domain. Owning the DC ≈ owning the network.</td></tr>
+<tr><td><strong>NTLM hash</strong></td><td>A Windows password hash. Often usable <em>directly</em> to authenticate without cracking it.</td></tr>
+<tr><td><strong>Pass-the-Hash (PtH)</strong></td><td>Authenticating to a host using an NTLM hash instead of the plaintext password.</td></tr>
+<tr><td><strong>Kerberoasting</strong></td><td>Requesting service tickets for accounts with an SPN, then cracking them offline to recover service-account passwords.</td></tr>
+<tr><td><strong>AS-REP roasting</strong></td><td>Recovering crackable material for accounts that don't require Kerberos pre-authentication.</td></tr>
+<tr><td><strong>BloodHound</strong></td><td>Tool that maps AD relationships into a graph to reveal attack paths to Domain Admin.</td></tr>
+</tbody>
+</table>
+
+<h2>Windows privilege-escalation vectors</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Token impersonation / Potato attacks</strong></td><td>Abusing <code>SeImpersonatePrivilege</code> (common on service accounts, IIS, MSSQL) with PrintSpoofer / GodPotato / JuicyPotato to act as <code>SYSTEM</code>. Check <code>whoami /priv</code> first — it's the cheapest tell.</td></tr>
+<tr><td><strong>Unquoted service path</strong></td><td>A service whose executable path contains spaces and no quotes; if a parent directory is writable you plant a binary Windows runs instead.</td></tr>
+<tr><td><strong>Weak service permissions</strong></td><td>A service you can reconfigure (<code>sc config binpath=</code>) so it runs your command as its account (often SYSTEM) on restart.</td></tr>
+<tr><td><strong>AlwaysInstallElevated</strong></td><td>A policy (both HKLM and HKCU registry values = 1) that runs any <code>.msi</code> as SYSTEM via <code>msiexec</code>.</td></tr>
+<tr><td><strong>DLL hijacking</strong></td><td>Placing a malicious DLL where a privileged process loads it (a writable directory earlier in the search order).</td></tr>
+<tr><td><strong>WinPEAS</strong></td><td>The Windows counterpart to LinPEAS — auto-flags likely Windows privesc paths. Run early on any shell.</td></tr>
+</tbody>
+</table>
+
+<h2>Password attacks &amp; cracking</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Brute force vs. password spraying</strong></td><td>Brute force = many passwords against one account (locks accounts); spraying = one password against many accounts (the safe choice against AD). Always read the lockout policy first.</td></tr>
+<tr><td><strong>Hash cracking</strong></td><td>Recovering a plaintext from a hash offline with <code>hashcat</code> or <code>john</code> plus a wordlist (rockyou) and rules. Offline cracking is <em>unrestricted</em> on the exam (unlike automated exploitation tools).</td></tr>
+<tr><td><strong>hashcat mode (<code>-m</code>)</strong></td><td>The number selecting the hash type: 1000 NTLM, 1800 sha512crypt, 3200 bcrypt, 5600 NetNTLMv2, 13100 Kerberoast, 18200 AS-REP.</td></tr>
+<tr><td><strong>Credential reuse</strong></td><td>Trying any found username / password / hash on every other service and host. The single highest-yield OSCP habit.</td></tr>
+<tr><td><strong>NetExec / CrackMapExec</strong> (<code>nxc</code> / <code>cme</code>)</td><td>Swiss-army tool to validate and spray credentials across SMB / WinRM / SSH on a whole subnet; <code>Pwn3d!</code> means local admin.</td></tr>
+</tbody>
+</table>
+
+<h2>Active Directory — tickets, movement &amp; tooling</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>SPN</strong> (Service Principal Name)</td><td>An identifier tying a service to a domain account. Any authenticated user can request a ticket for an SPN — the basis of Kerberoasting.</td></tr>
+<tr><td><strong>TGT / TGS</strong></td><td>Kerberos tickets: the TGT proves who you are; a TGS grants access to a specific service. Their encryption is what the roasting attacks crack offline.</td></tr>
+<tr><td><strong>Pass-the-Ticket (PtT)</strong></td><td>Reusing a stolen Kerberos ticket to authenticate as its owner.</td></tr>
+<tr><td><strong>DCSync</strong></td><td>Abusing replication rights to ask a DC for password hashes (including <code>krbtgt</code> and Administrator) — effectively owning the domain. Run via <code>secretsdump</code>.</td></tr>
+<tr><td><strong>Golden Ticket</strong></td><td>A forged TGT signed with the <code>krbtgt</code> hash, granting arbitrary domain access — post-Domain-Admin persistence.</td></tr>
+<tr><td><strong>GPP cpassword</strong></td><td>A weakly-encrypted password left in SYSVOL Group Policy Preferences; decrypt with <code>gpp-decrypt</code>.</td></tr>
+<tr><td><strong>ACL abuse</strong></td><td>Exploiting dangerous object permissions (GenericAll, WriteDACL, ForceChangePassword) that BloodHound surfaces, to escalate inside the domain.</td></tr>
+<tr><td><strong>Impacket</strong></td><td>A Python suite (psexec.py, wmiexec.py, secretsdump.py, GetUserSPNs.py, GetNPUsers.py) that powers most AD attacks from Linux.</td></tr>
+<tr><td><strong>evil-winrm</strong></td><td>An interactive WinRM (port 5985) shell — the go-to once you hold valid Windows creds or an NTLM hash.</td></tr>
+<tr><td><strong>secretsdump / mimikatz</strong></td><td>Credential-dumping tools: secretsdump pulls SAM/LSA/cached/NTDS hashes remotely; mimikatz reads them from LSASS on the host.</td></tr>
+<tr><td><strong>kerbrute</strong></td><td>Fast Kerberos user-enumeration and password-spraying tool (works pre-auth).</td></tr>
+</tbody>
+</table>
+
+<h2>Pivoting &amp; tunneling</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Local / remote / dynamic forward</strong></td><td>SSH tunneling modes: <code>-L</code> exposes a remote service on your localhost; <code>-R</code> exposes your service to the target; <code>-D</code> opens a SOCKS proxy routing any tool into the remote network.</td></tr>
+<tr><td><strong>SOCKS proxy</strong></td><td>A generic TCP proxy (e.g. on 127.0.0.1:1080) that tools route through to reach an internal network. TCP only — no ICMP/UDP.</td></tr>
+<tr><td><strong>proxychains</strong></td><td>Wrapper that forces another tool's TCP connections through a SOCKS/HTTP proxy (<code>proxychains nmap -sT -Pn …</code>).</td></tr>
+<tr><td><strong>chisel</strong></td><td>A single-binary TCP tunnel over HTTP; commonly used for a reverse SOCKS proxy when you only have a shell (no SSH).</td></tr>
+<tr><td><strong>ligolo-ng</strong></td><td>Modern tun-interface pivoting tool — add a route to the internal subnet and use your tools natively, no proxychains.</td></tr>
+<tr><td><strong>Double pivot</strong></td><td>Chaining a second tunnel through an already-pivoted host to reach a third, deeper network.</td></tr>
+</tbody>
+</table>
+
+<h2>Exam & general</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Standalone machine</strong></td><td>An exam target scored independently (20 pts: 10 access + 10 privesc), not part of the AD set.</td></tr>
+<tr><td><strong>AD set</strong></td><td>The chained 3-host Active Directory environment on the exam, worth 40 pts total.</td></tr>
+<tr><td><strong>local.txt / proof.txt</strong></td><td>The proof flags you collect (user-level and root/admin-level) to demonstrate access for scoring.</td></tr>
+<tr><td><strong>Low-hanging fruit</strong></td><td>The easy, obvious win (default creds, a known CVE, an exposed file). Always check these before anything clever.</td></tr>
+<tr><td><strong>CVE / PoC</strong></td><td>A catalogued vulnerability (CVE) and the proof-of-concept code that exploits it. The new skill is <em>operationalising</em> a PoC against a live box — and if you've done CVE/vulnerability work as an engineer, that's a head start.</td></tr>
+<tr><td><strong>Methodology</strong></td><td>Your repeatable, written process for working any target. The thing that turns "I got lucky" into "I can do this every time."</td></tr>
+</tbody>
+</table>
+
+<footer>
+<span><a href="../lessons/0001-the-oscp-attack-chain.html">← Lesson 01: The Attack Chain</a></span>
+<span><a href="./exam-format.html">Exam Format →</a></span>
+</footer>
+
+</body>
+</html>

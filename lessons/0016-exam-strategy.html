@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 16 · Exam Strategy &amp; Time Management</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0015-writing-the-report.html">Lesson 15</a> · <strong>Lesson 16</strong> · <a href="../reference/exam-format.html">Exam format</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 16 · Exam Readiness</span>
+<h1>Exam Strategy &amp; Time Management</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: a concrete 24-hour game plan that converts your skills into a 70+.</p>
+
+<p class="lead">Here's the uncomfortable truth the debriefs keep repeating: most people who fail the OSCP could technically own every box. They lose on <strong>strategy</strong> — one box swallows nine hours, the easy foothold next door never gets touched, and screenshots are missing when the report is due. You've spent fifteen lessons building the skills. This lesson is the <em>meta-game</em> that turns those skills into points before the clock runs out.</p>
+
+<div class="box mantra">
+The exam doesn't test whether you <em>can</em> own the boxes.<br>
+It tests whether you can do it in time, with proof.
+</div>
+
+<h2>The points math — know exactly what 70 looks like</h2>
+<p>You can't manage time well until you know what you're spending it on. The scoring is fixed, public, and worth memorising cold (full breakdown in the <a href="../reference/exam-format.html">exam format reference</a>):</p>
+<table>
+<thead><tr><th>Component</th><th>Structure</th><th>Points</th></tr></thead>
+<tbody>
+<tr><td><strong>Active Directory set</strong></td><td>Chained: 10 + 10 + 20 across the domain</td><td>40</td></tr>
+<tr><td><strong>Standalone #1</strong></td><td>10 foothold + 10 privesc</td><td>20</td></tr>
+<tr><td><strong>Standalone #2</strong></td><td>10 foothold + 10 privesc</td><td>20</td></tr>
+<tr><td><strong>Standalone #3</strong></td><td>10 foothold + 10 privesc</td><td>20</td></tr>
+<tr><td colspan="2"><strong>Total available</strong></td><td>100</td></tr>
+<tr><td colspan="2"><strong>Pass mark</strong></td><td>70</td></tr>
+</tbody>
+</table>
+
+<p>The AD set is scored as a chain — you generally need the whole domain to bank the 40, so it's all-or-mostly-nothing. The three standalones pay <strong>partial credit</strong>: every foothold is a guaranteed 10 whether or not you ever get root.</p>
+
+<p>That changes how you think. There are several passing shapes; the most common one in the debriefs is the cleanest:</p>
+<div class="box note">
+<span class="box-title">A common 70-point shape</span>
+Full AD set (<strong>40</strong>) + one fully owned standalone (<strong>20</strong>) + a foothold on one more standalone (<strong>10</strong>) = <strong>70</strong>. You do not need to root everything. You need 70, and footholds are the cheapest points on the board — so grab every single one.
+</div>
+
+<h2>The 24-hour plan — an opinionated schedule</h2>
+<p>Treat the ~24-hour hands-on window like an incident with a deadline, not an open-ended hacking session. Here is the plan I'd recommend you adapt into your own playbook. Times are elapsed hours from the moment the boxes unlock.</p>
+
+<table>
+<thead><tr><th>Hour</th><th>What you're doing</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>0:00–0:15</td><td>Launch enumeration on <strong>every</strong> target at once (full <code>nmap</code> + service scans)</td><td>Scans take time; they run in the background while you think</td></tr>
+<tr><td>0:15–0:45</td><td>Sweep results for the <strong>easiest standalone foothold</strong>; start AD enumeration</td><td>Bank early points for momentum + start the 40-pointer working</td></tr>
+<tr><td>0:45–6:00</td><td>Drive the AD set as far as it goes; pivot to standalones when AD stalls</td><td>AD is 40 chained points — give it real, early runway</td></tr>
+<tr><td>6:00–6:30</td><td><strong>Meal + walk away from the screen</strong></td><td>Energy management is point management</td></tr>
+<tr><td>6:30–12:00</td><td>Work standalones; rotate the moment any step time-boxes out</td><td>Spread effort across boxes, don't sink it into one</td></tr>
+<tr><td>12:00–13:00</td><td>Meal; honest scoreboard check — <em>am I at/near 70?</em></td><td>A mid-exam audit tells you where to spend the back half</td></tr>
+<tr><td>13:00–16:00</td><td>Attack your highest-probability remaining points</td><td>Chase what's likely, not what's interesting</td></tr>
+<tr><td>16:00–20:00</td><td><strong>Planned sleep / nap block</strong> (4–6h) once points are banked</td><td>A rested brain spots the misconfig a fried one walks past</td></tr>
+<tr><td>20:00–22:00</td><td>Fresh eyes on your "come back to" list</td><td>The thing that blocked you at hour 4 often falls in 20 minutes rested</td></tr>
+<tr><td>22:00–23:30</td><td><strong>Stop hacking. Verify every proof and screenshot.</strong></td><td>Unproven points are zero points — this is non-negotiable</td></tr>
+<tr><td>23:30–24:00</td><td>Final sweep, submit flags, confirm notes are complete</td><td>Clean handoff into the report window</td></tr>
+</tbody>
+</table>
+
+<h3>AD-first or standalone-first? My recommendation</h3>
+<p>This is the most-argued question in the debriefs, and the honest answer is "a hybrid, in this order":</p>
+<ol class="steps">
+<li><strong>Start AD enumeration immediately</strong> — it's 40 chained points and the single biggest block on the board. The earlier it's working, the more time you have to recover when (not if) one hop is fiddly.</li>
+<li><strong>But bank one easy standalone foothold first</strong>, in that opening half-hour while AD scans run. Ten points in the bag at hour 0:30 settles your nerves and proves your workflow works.</li>
+<li><strong>Then commit your main early hours to AD.</strong> If it falls, you're at 40 + 10 = 50 and only need one more standalone to pass. That's a commanding position by lunch.</li>
+</ol>
+<div class="box tip">
+<span class="box-title">The tradeoff, stated plainly</span>
+Going AD-first risks pouring hours into the 40-pointer and stalling with little to show. The hybrid hedges it: a quick standalone foothold guarantees you're not at zero, while AD still gets its early runway. If you're weaker on AD than standalones, flip the weighting — own two standalones fully first (40 pts), then treat AD as upside. Pick your version <em>before</em> exam day, not at hour 3.
+</div>
+
+<h2>Anti-rabbit-hole discipline — the struggle budget, weaponised</h2>
+<p>Back in <a href="./0002-the-deliberate-practice-loop.html">Lesson 02</a> you learned the <strong>struggle budget</strong>: struggle is where learning happens, but only up to a time-box. In <em>practice</em>, blowing the budget costs you a lesson. In the <em>exam</em>, blowing it costs you the exam. The rabbit hole is the number-one killer in the debriefs.</p>
+
+<p>Run every stuck moment through the same loop:</p>
+<ol class="steps">
+<li><strong>Time-box each stuck step.</strong> 30–45 minutes on a single enumeration thread or exploit attempt, max. Set an actual timer.</li>
+<li><strong>When it rings, rotate.</strong> Move to a different target. Progress on box B frees your subconscious to crack box A.</li>
+<li><strong>Keep a "come back to" list.</strong> One line per dead end: the box, what you tried, your next idea. You'll work it later with fresh eyes — and it's the start of your scoreboard.</li>
+<li><strong>"Enumerate harder" before "find a new exploit."</strong> When you're stuck, the answer is almost always a port, vhost, directory, or service version you haven't looked at yet — not a cleverer payload.</li>
+<li><strong>If a box behaves weirdly, revert it.</strong> A previous attempt or another candidate may have left it in a broken state. A clean revert costs five minutes; chasing a phantom bug costs hours.</li>
+</ol>
+
+<div class="box warn">
+<span class="box-title">The tell you're in a rabbit hole</span>
+You've been on the same box for over an hour, you're trying variations of the same idea, and you haven't written anything new on your "come back to" list. That's the signal — rotate <em>now</em>. The box isn't going anywhere; your clock is.</div>
+
+<h2>The one-tool rule — spend it deliberately</h2>
+<p>OSCP+ permits automated exploitation tools — Metasploit exploit/post modules, <code>sqlmap</code>, the Meterpreter payload, automated exploit chains — on <strong>exactly one</strong> machine of your choosing. Everything else must be done by hand. Auxiliary scanners and manual tooling don't count; it's <em>automated exploitation</em> that's capped.</p>
+
+<p>So treat that one slot as a scarce resource:</p>
+<ul>
+<li><strong>Decide in advance what it's for.</strong> Most people save it for the box where a public exploit is finicky to run manually, or as an emergency unblock late in the exam.</li>
+<li><strong>Don't burn it early on a box you could've done by hand.</strong> Once it's spent on machine X, it's gone everywhere else.</li>
+<li><strong>Everything else is manual.</strong> That's exactly the muscle this whole course built — by exam day, doing it by hand should be the comfortable path, not the fallback.</li>
+</ul>
+<div class="box note">
+<span class="box-title">Read the current rules yourself</span>
+The exact restricted-tool list shifts over time. Re-read the official OSCP Exam Guide the week before you sit, and confirm what counts as "automated" — don't trust a year-old forum post. Detail in the <a href="../reference/exam-format.html">exam format reference</a>.
+</div>
+
+<h2>Proof discipline — screenshot the moment you win</h2>
+<p>This is where good hackers throw away real points, so tie it back to <a href="./0015-writing-the-report.html">Lesson 15</a> hard: <strong>an unproven compromise is worth zero.</strong> The grader scores your report, not your memory of the night.</p>
+
+<p>The instant you read a flag, before you do <em>anything</em> else:</p>
+<pre><span class="p">#</span> <span class="o">id; hostname; ip a | grep inet</span>     <span class="c"># context in one shot</span>
+<span class="h">uid=0(root) gid=0(root) groups=0(root)</span>
+<span class="h">target01</span>
+<span class="h">    inet 10.10.10.5/24 ...</span>
+<span class="p">#</span> <span class="o">cat /root/proof.txt</span>
+<span class="h">a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6</span></pre>
+<p>Now <strong>screenshot</strong> that single screen — the proof flag, your user (<code>whoami</code>/<code>id</code>), and the target's IP all visible together. On Windows the equivalent is <code>type proof.txt</code> next to <code>whoami</code> and <code>ipconfig</code>. That one image is the evidence a 10- or 20-point claim lives or dies on.</p>
+
+<div class="box warn">
+<span class="box-title">You get no second chance after a revert</span>
+The moment you revert a box — or it crashes, or your shell dies — that proof is gone, and the new instance generates a new flag. Capture proof <em>before</em> you touch anything risky. "I'll grab the screenshot later" is how people fail with the points already earned.</div>
+
+<h2>Keep a live scoreboard — always know where you stand</h2>
+<p>The mid-exam panic ("do I even have enough?") comes from not tracking points as you earn them. Fix it with one habit: a running scoreboard at the top of your notes, updated the instant proof is captured. It costs ten seconds and it drives every decision in the back half.</p>
+<pre><span class="c"># SCOREBOARD — update on every confirmed + screenshotted proof</span>
+<span class="o">AD set ........ 40 / 40   DONE (foothold+lateral+DA, proofs saved)</span>
+<span class="o">Standalone-A .. 20 / 20   DONE</span>
+<span class="o">Standalone-B .. 10 / 20   foothold only (privesc on come-back list)</span>
+<span class="o">Standalone-C ..  0 / 20   enum done, no foothold yet</span>
+<span class="c"># ---------------------------------------------</span>
+<span class="h"># TOTAL: 70 / 100  -> PASS LINE CLEARED, now build buffer</span></pre>
+<p>The scoreboard turns a vague feeling into a decision: at 70 you can sleep on purpose and chase buffer; at 50 you know exactly which footholds to hunt next. It's also the skeleton of your <a href="./0015-writing-the-report.html">report</a> — every "DONE" line already points at a saved screenshot.</p>
+
+<h2>Logistics &amp; proctoring — no surprises on the day</h2>
+<p>The exam is <strong>live-proctored for the entire hands-on window</strong>. Treat the setup as part of the exam, because a botched check-in eats your clock. Confirm all of this against the <a href="../reference/exam-format.html">exam format reference</a> and the official guide before the day:</p>
+<table>
+<thead><tr><th>Item</th><th>What to expect</th></tr></thead>
+<tbody>
+<tr><td><strong>Check-in</strong></td><td>Government-issued photo ID, plus a webcam scan of your room and desk</td></tr>
+<tr><td><strong>Monitoring</strong></td><td>Webcam + screen share running the whole time; stay on camera</td></tr>
+<tr><td><strong>Allowed tooling</strong></td><td>Your own attack VM (Kali-style); standard tools, with the one-machine automation cap</td></tr>
+<tr><td><strong>Strictly forbidden</strong></td><td><strong>No AI assistants, no spoilers/walkthroughs, no outside help</strong>, no asking anyone — that's an automatic fail</td></tr>
+<tr><td><strong>Report window</strong></td><td>A separate ~24-hour window <em>after</em> the hands-on, for writing and submitting the report</td></tr>
+</tbody>
+</table>
+<p>Practical knock-ons: pre-test your webcam, mic, and connection; have ID ready; clear your desk; line up snacks and water in reach so a break is a break, not a supply run. The report window is its own job — don't burn your hacking hours polishing prose you can write tomorrow.</p>
+
+<h2>Mindset &amp; endurance — manage energy, not just time</h2>
+<p>Twenty-four hours is a stamina event. The failure mode at hour 18 isn't lack of skill — it's a tired brain that walks past the obvious <code>sudo -l</code> win. A few rules from the debriefs that hold up:</p>
+<ul>
+<li><strong>Partial credit is a mindset, not just a rule.</strong> A foothold is 10 points, always. Take the guaranteed points before the glamorous ones.</li>
+<li><strong>Don't panic at hour 6 with nothing.</strong> It's normal and recoverable. Plenty of pass stories were stuck near zero past the halfway mark, then strung together footholds in the back half. Trust the methodology you drilled.</li>
+<li><strong>Sleep is a strategy, not a weakness.</strong> A planned nap beats 24 hours awake every time — rested judgement finds the misconfiguration. Bank enough points to feel safe, then sleep on purpose.</li>
+<li><strong>Eat and hydrate on a schedule.</strong> You make worse decisions hungry. Your time plan should have meals <em>in</em> it.</li>
+<li><strong>When fully stuck, return to fundamentals.</strong> Re-enumerate from scratch. The exam rewards thoroughness over cleverness — the same instinct from <a href="./0003-service-enumeration.html">Lesson 03</a>.</li>
+<li><strong>Read each box's instructions before you attack it.</strong> Some targets ship with specific notes or an assumed starting point in the control panel; skipping them wastes hours chasing a path the exam already told you not to take.</li>
+</ul>
+
+<h2>Worked example — a sample decision timeline</h2>
+<p>Here's how the plan looks as a running log of decisions. Yours will differ, but the <em>shape</em> — enumerate everything, bank cheap points, time-box, verify before you stop — should not.</p>
+<pre><span class="c"># Elapsed time · decision</span>
+<span class="o">0:00</span>  launch nmap + service scans on ALL targets at once
+<span class="o">0:20</span>  AD scans still running; spot an easy web foothold on Standalone-A
+<span class="o">0:35</span>  <span class="h">Standalone-A foothold (+10)</span> — screenshot proof immediately
+<span class="o">0:45</span>  begin AD enumeration in earnest (BloodHound, shares, users)
+<span class="o">2:30</span>  AD initial foothold landed — <span class="h">(+10)</span>, proof captured
+<span class="o">4:00</span>  AD lateral hop stuck 40 min -> time-box hit -> ROTATE
+<span class="o">4:00</span>  pivot to Standalone-B; privesc on A still on "come back" list
+<span class="o">5:30</span>  Standalone-A rooted by hand <span class="h">(+10, A now 20 total)</span>
+<span class="o">6:00</span>  MEAL + walk
+<span class="o">7:00</span>  fresh eyes -> AD lateral hop falls -> DA in reach
+<span class="o">9:00</span>  <span class="h">AD set complete (+20) = 40 AD total</span> -> at 60 pts
+<span class="o">10:30</span> Standalone-B foothold <span class="h">(+10)</span> -> <span class="h">at 70 — PASS line</span>
+<span class="o">12:00</span> meal + honest scoreboard: 70 banked, push for buffer
+<span class="o">16:00</span> PLANNED SLEEP (points are safe) — 5h
+<span class="o">21:00</span> fresh on Standalone-C + B-privesc come-back list
+<span class="o">22:00</span> STOP HACKING -> verify every screenshot has flag+ip+whoami
+<span class="o">23:30</span> all proofs confirmed, flags submitted -> into report window</pre>
+
+<div class="box tip">
+<span class="box-title">Your "if stuck for 45 minutes" rule</span>
+Carry one hard rule into the exam: <em>if a single step shows no new progress for 45 minutes → screenshot anything already earned, write the dead end on your come-back list, and rotate to a different target.</em> No exceptions, no "just one more idea." That single rule prevents the failure that sinks the most otherwise-capable candidates.</div>
+
+<div class="box mantra">
+Skills get you to the box.<br>
+Strategy gets you to 70.
+</div>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — read it the week before you sit</span>
+The <a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">official OffSec OSCP Exam Guide</a> is the only authority on scoring, allowed tooling, proctoring, and proof requirements — and it changes, so re-read the current version close to your exam. Pair it with the passed-exam debriefs on <a href="https://www.reddit.com/r/oscp/">r/oscp</a> for hard-won time-management wisdom from people who just did it.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 17</span>
+Write your personal <strong>exam-day playbook</strong> as a one-pager: your target order (AD-first vs standalone-first, and why), your time-box rules, which box gets the one automation slot, and your sleep + meal schedule with clock times. Keep it next to your keyboard on the day. A plan written calm beats decisions made tired.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>No new box</strong> — rehearse the time-boxing and "when to move on" calls on exam-like sets (see Lesson 17). <a href="../reference/practice-boxes.html#pb-16">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Paste me your draft playbook and we'll pressure-test it — where's the rabbit-hole risk, is the AD/standalone split right for your strengths, is the nap real? Next: <strong>Lesson 17 — The Mock Exam: Putting It All Together</strong>, where you run this whole plan end to end against a fresh box set under real conditions.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">OffSec — OSCP/OSCP+ Exam Guide</a> (authoritative scoring, points breakdown, allowed tooling, proctoring, and proof rules) · <a href="https://www.reddit.com/r/oscp/">r/oscp</a> (passed-exam debriefs for community time-management strategy). Local: <a href="../reference/exam-format.html">Exam format reference</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0015-writing-the-report.html">← Lesson 15: Writing the Penetration Test Report</a></span>
+<span><a href="./0017-mock-exam.html">Next → Lesson 17: The Mock Exam — Putting It All Together</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "It's hour 0:00 and the boxes just unlocked. What is your very first move across the whole target set?",
+    options: [
+      "Kick off enumeration scans on every target at once",
+      "Pick the AD set and fully exploit it before touching anything else",
+      "Re-read the entire exam guide one more time first",
+      "Manually port-scan one box and finish it before the next"
+    ],
+    answer: 0,
+    explain: "Scans take real time — launch them on all targets immediately so enumeration runs in the background while you start working the first box."
+  },
+  {
+    prompt: "You have a www-data shell on a standalone but can't escalate after an hour. The points-smart move is to:",
+    options: [
+      "Keep grinding privesc until root finally falls",
+      "Revert the box and start the whole thing over",
+      "Screenshot the foothold proof, then rotate to another target",
+      "Leave the proof for later and just note the IP"
+    ],
+    answer: 2,
+    explain: "A foothold is a guaranteed 10 points — capture proof now, bank it, and spend your remaining time where points are still available."
+  },
+  {
+    prompt: "You've been stuck on one enumeration thread for 40 minutes with nothing new. The exam struggle budget says:",
+    options: [
+      "Push through — stopping now wastes the 40 minutes",
+      "Time-box it, log it on your come-back list, and rotate targets",
+      "Immediately download a fresh exploit and throw it at the box",
+      "Reboot your own attack VM to clear any weird state"
+    ],
+    answer: 1,
+    explain: "Time-box each stuck step, write the dead end down to revisit, and rotate — progress on another box often unblocks the stuck one with fresh eyes."
+  },
+  {
+    prompt: "On how many exam machines may you use automated exploitation tools (Metasploit exploit modules, sqlmap, etc.)?",
+    options: [
+      "Every machine except the AD set",
+      "All standalone machines but never the AD set",
+      "As many machines as you like once you pass 70",
+      "Exactly one machine of your own choosing"
+    ],
+    answer: 3,
+    explain: "Auto-exploitation is allowed on a single machine only — decide in advance which box gets it and do everything else by hand."
+  },
+  {
+    prompt: "You just read a proof flag on a freshly rooted box. Before anything else you should:",
+    options: [
+      "Submit the flag in the control panel and move on",
+      "Copy the flag string into your notes file",
+      "Screenshot the flag next to whoami/id and the box's IP",
+      "Revert the box to a clean state to confirm persistence"
+    ],
+    answer: 2,
+    explain: "Proof needs the flag plus host context (user + IP) in one shot — a revert or crash regenerates the flag, and there is no second chance."
+  },
+  {
+    prompt: "How should sleep fit into your ~24-hour hands-on window?",
+    options: [
+      "Plan a deliberate nap once you've banked enough points",
+      "Stay awake the full 24 hours to maximise hacking time",
+      "Sleep only if you happen to finish every machine early",
+      "Nap only at the moment you feel yourself crashing"
+    ],
+    answer: 0,
+    explain: "A planned nap restores the judgement that catches the obvious misconfiguration a fried brain walks past — schedule it once points are safe."
+  }
+]);
+</script>
+
+</body>
+</html>

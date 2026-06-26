@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Enumeration Cheatsheet</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference ·<strong>Enumeration Cheatsheet</strong> · <a href="./glossary.html">Glossary</a> · <a href="./exam-format.html">Exam Format</a></nav>
+
+<span class="kicker">Reference · Commands you'll reuse on every box</span>
+<h1>Enumeration Cheatsheet</h1>
+<p class="lead">The compressed muscle-memory for <a href="../lessons/0003-service-enumeration.html">Lesson 03</a>. Replace <code>10.10.10.5</code> with your target. For anything not here, go to <a href="https://book.hacktricks.wiki/">HackTricks</a>. Wordlists assume <a href="https://github.com/danielmiessler/SecLists">SecLists</a> is installed (default on Kali).</p>
+
+<h2>Nmap — the two-pass workflow</h2>
+<pre><span class="c"># 1. all TCP ports, fast</span>
+<span class="p">$</span> <span class="o">nmap -p- --min-rate 2000 -T4 10.10.10.5 -oN ports.txt</span>
+<span class="c"># 2. deep scan the open ones (default scripts + version detection)</span>
+<span class="p">$</span> <span class="o">nmap -sC -sV -p 21,22,80,445 10.10.10.5 -oN deep.txt</span>
+<span class="c"># 3. top UDP ports (don't skip this)</span>
+<span class="p">$</span> <span class="o">nmap -sU --top-ports 20 10.10.10.5 -oN udp.txt</span>
+<span class="c"># targeted vuln scripts when you suspect something</span>
+<span class="p">$</span> <span class="o">nmap --script "smb-vuln-*" -p445 10.10.10.5</span></pre>
+
+<h2>FTP — port 21</h2>
+<pre><span class="p">$</span> <span class="o">ftp 10.10.10.5</span>          <span class="c"># try user 'anonymous', blank password</span>
+<span class="p">$</span> <span class="o">nmap --script ftp-anon,ftp-bounce -p21 10.10.10.5</span>
+<span class="p">$</span> <span class="o">searchsploit vsftpd 2.3.4</span>  <span class="c"># always check the version</span></pre>
+<p class="cite">Check: anonymous login? known-vuln version? can you read/write files? Inside ftp use <code>binary</code>, <code>get</code>, <code>put</code>.</p>
+
+<h2>SSH — port 22</h2>
+<pre><span class="p">$</span> <span class="o">nc 10.10.10.5 22</span>            <span class="c"># grab banner / version</span>
+<span class="p">$</span> <span class="o">ssh user@10.10.10.5</span>         <span class="c"># reuse creds found elsewhere</span></pre>
+<p class="cite">Rarely the initial foothold. Its real value: <strong>credential reuse</strong>. Note the version for the odd user-enum CVE, but don't camp here.</p>
+
+<h2>HTTP / HTTPS — ports 80 / 443 (the biggest surface)</h2>
+<pre><span class="c"># fingerprint the stack</span>
+<span class="p">$</span> <span class="o">whatweb http://10.10.10.5</span>
+<span class="p">$</span> <span class="o">nikto -h http://10.10.10.5</span>
+<span class="c"># content discovery (directories + files)</span>
+<span class="p">$</span> <span class="o">gobuster dir -u http://10.10.10.5 \
+      -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt \
+      -x php,html,txt</span>
+<span class="c"># virtual-host discovery (when the box has a domain name)</span>
+<span class="p">$</span> <span class="o">ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt \
+      -u http://10.10.10.5 -H "Host: FUZZ.target.tld" -fs 0</span></pre>
+<p class="cite">Always read by hand too: <code>robots.txt</code>, page source (HTML comments!), <code>/sitemap.xml</code>, login pages, default creds. If it's a known CMS, use <code>wpscan</code> (WordPress) etc. <code>-fs</code> filters a baseline response size — set it to whatever the bogus-host response returns.</p>
+
+<h2>SMB — ports 139 / 445</h2>
+<pre><span class="p">$</span> <span class="o">smbclient -L //10.10.10.5/ -N</span>      <span class="c"># list shares, null session</span>
+<span class="p">$</span> <span class="o">smbclient //10.10.10.5/share -N</span>     <span class="c"># connect to a share</span>
+<span class="p">$</span> <span class="o">smbmap -H 10.10.10.5</span>                <span class="c"># shares + access levels</span>
+<span class="p">$</span> <span class="o">enum4linux-ng -A 10.10.10.5</span>         <span class="c"># users, shares, policies</span>
+<span class="p">$</span> <span class="o">nmap --script smb-vuln-ms17-010 -p445 10.10.10.5</span>  <span class="c"># EternalBlue check</span></pre>
+<p class="cite">Check: null/guest session? readable shares (configs, scripts, creds)? known SMB vulns? SMB frequently leaks the usernames and passwords you reuse everywhere else.</p>
+
+<h2>Quick hits — the rest</h2>
+<table>
+<thead><tr><th>Service / port</th><th>First moves</th></tr></thead>
+<tbody>
+<tr><td>DNS · 53</td><td><code>dig axfr @10.10.10.5 target.tld</code> (zone transfer); <code>dnsenum target.tld</code></td></tr>
+<tr><td>SMTP · 25</td><td>Banner via <code>nc</code>; user enum: <code>smtp-user-enum -M VRFY -U users.txt -t 10.10.10.5</code></td></tr>
+<tr><td>SNMP · 161/udp</td><td><code>onesixtyone -c community.txt 10.10.10.5</code> then <code>snmpwalk -v2c -c public 10.10.10.5</code></td></tr>
+<tr><td>POP3/IMAP · 110/143</td><td>Banner via <code>nc</code>; log in with creds found elsewhere to read mail</td></tr>
+<tr><td>MySQL · 3306</td><td><code>mysql -h 10.10.10.5 -u root -p</code> (try blank / default creds)</td></tr>
+<tr><td>MSSQL · 1433</td><td><code>impacket-mssqlclient user:pass@10.10.10.5</code></td></tr>
+<tr><td>RDP · 3389</td><td><code>xfreerdp /v:10.10.10.5 /u:user /p:pass</code> (validate harvested creds)</td></tr>
+</tbody>
+</table>
+
+<div class="box note">
+<span class="box-title">The reflex that beats every service</span>
+For anything you don't recognise: (1) get the exact version, (2) <code>searchsploit</code> it, (3) try anonymous/default access, (4) see what it exposes, (5) try reusing creds you've already found. The <a href="../lessons/0003-service-enumeration.html">five questions</a> work even when the cheatsheet doesn't list the port.
+</div>
+
+<footer>
+<span><a href="../lessons/0003-service-enumeration.html">← Lesson 03: Service Enumeration</a></span>
+<span><a href="./glossary.html">Glossary</a> · <a href="./exam-format.html">Exam Format</a></span>
+</footer>
+
+</body>
+</html>

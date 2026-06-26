@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Useful Links</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <strong>Useful Links</strong> · <a href="./glossary.html">Glossary</a> · <a href="./exam-format.html">Exam Format</a> · <a href="./enumeration-cheatsheet.html">Enum Cheatsheet</a></nav>
+
+<span class="kicker">Reference · Quick-launch board</span>
+<h1>Useful Links</h1>
+<p class="lead">Your launch pad — the external sites you'll reach for constantly, in one place. This mirrors the annotated set in <code>RESOURCES.md</code> as a clickable board. New links land here as we find them; tell me to add one and I will.</p>
+
+<div class="box tip">
+<span class="box-title">The four you'll use most</span>
+<a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit"><strong>TJ Null's box list</strong></a> · <a href="https://book.hacktricks.wiki/"><strong>HackTricks</strong></a> · <a href="https://www.youtube.com/@ippsec"><strong>IppSec</strong></a> (search at <a href="https://ippsec.rocks/">ippsec.rocks</a>) · <a href="https://0xdf.gitlab.io/"><strong>0xdf</strong></a>
+</div>
+
+<h2>Practice &amp; box selection</h2>
+<ul>
+<li><a href="./practice-boxes.html"><strong>Practice Box Map (this course)</strong></a> — per-lesson recommended boxes mapped to each technique, OS-split, with a one-line summary of each. Start here, then cross-check the live sheet below.</li>
+<li><a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's OSCP prep list</a> — the canonical tiered box list (HTB / PG / VulnLab). Start every study block here.</li>
+<li><a href="https://www.hackthebox.com/">Hack The Box</a> — realistic exam-style boxes; work the TJ Null HTB tier. <a href="https://app.hackthebox.com/prolabs/overview/dante">Dante</a> Pro Lab for pivoting practice.</li>
+<li><a href="https://www.offsec.com/labs/">OffSec Proving Grounds</a> — closest in style and grading to the real exam.</li>
+<li><a href="https://tryhackme.com/path/outline/pentesting">TryHackMe — Offensive Pentesting</a> — gentler guided ramp before HTB/PG.</li>
+<li><a href="https://0xdf.gitlab.io/cheatsheets/offsec">0xdf — OffSec exam HTB lists</a> — which HTB boxes map to each OffSec exam.</li>
+</ul>
+
+<h2>Methodology &amp; references</h2>
+<ul>
+<li><a href="https://book.hacktricks.wiki/">HackTricks</a> — the default "what do I do against service X / how do I escalate here" wiki. First stop.</li>
+<li><a href="https://github.com/swisskyrepo/PayloadsAllTheThings">PayloadsAllTheThings</a> — payloads/techniques for nearly every attack class, strong AD section.</li>
+<li><a href="https://gtfobins.github.io/">GTFOBins</a> — abusable Unix binaries (SUID/sudo/caps). First stop for Linux privesc.</li>
+<li><a href="https://lolbas-project.github.io/">LOLBAS</a> — Windows living-off-the-land binaries (the GTFOBins counterpart).</li>
+<li><a href="https://github.com/peass-ng/PEASS-ng">PEASS-ng (LinPEAS / WinPEAS)</a> — the standard privesc enumeration scripts.</li>
+<li><a href="https://wadcoms.github.io/">WADComs</a> — interactive Windows/AD tool+command cheat sheet.</li>
+<li><a href="https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet">PentestMonkey — Reverse Shell Cheat Sheet</a> — the classic one-liner reverse shells.</li>
+<li><a href="https://www.revshells.com/">revshells.com</a> — interactive reverse-shell generator (pick shell, IP, port, encoding).</li>
+</ul>
+
+<h2>Exploitation &amp; post-exploitation tooling</h2>
+<ul>
+<li><a href="https://www.exploit-db.com/">Exploit-DB</a> / <code>searchsploit</code> — the public exploit archive; your CVE-triage instinct, operationalised against a live version.</li>
+<li><a href="https://github.com/fortra/impacket">Impacket</a> — the Python suite behind most Windows/AD attacks (psexec.py, wmiexec.py, secretsdump.py, GetUserSPNs.py, GetNPUsers.py).</li>
+<li><a href="https://github.com/Pennyw0rth/NetExec">NetExec (nxc)</a> — the maintained successor to CrackMapExec; validate/spray creds and run commands across a subnet.</li>
+<li><a href="https://github.com/Hackplayers/evil-winrm">evil-winrm</a> — the go-to interactive WinRM shell once you hold Windows creds or an NTLM hash.</li>
+<li><a href="https://github.com/SpecterOps/BloodHound">BloodHound</a> — graphs AD relationships into attack paths to Domain Admin (collect with SharpHound / bloodhound-python).</li>
+<li><a href="https://github.com/ParrotSec/mimikatz">mimikatz</a> — the canonical Windows credential-dumping tool (LSASS, SAM, tickets).</li>
+<li><a href="https://github.com/itm4n/PrintSpoofer">PrintSpoofer</a> / <a href="https://github.com/BeichenDream/GodPotato">GodPotato</a> — abuse <code>SeImpersonatePrivilege</code> to reach SYSTEM on Windows.</li>
+</ul>
+
+<h2>Password cracking &amp; wordlists</h2>
+<ul>
+<li><a href="https://hashcat.net/hashcat/">hashcat</a> — the GPU password cracker; see the <a href="https://hashcat.net/wiki/doku.php?id=example_hashes">example-hashes</a> page to pick the right <code>-m</code> mode.</li>
+<li><a href="https://www.openwall.com/john/">John the Ripper</a> — CPU cracker with the handy <code>*2john</code> helpers (ssh2john, keepass2john, zip2john).</li>
+<li><a href="https://crackstation.net/">CrackStation</a> — fast online lookup for already-known hashes.</li>
+<li><a href="https://github.com/danielmiessler/SecLists">SecLists</a> — the standard wordlist collection (users, passwords, discovery) bundled with Kali.</li>
+</ul>
+
+<h2>Pivoting &amp; tunneling</h2>
+<ul>
+<li><a href="https://github.com/nicocha30/ligolo-ng">ligolo-ng</a> — modern tun-based pivoting; add a route and use your tools natively (no proxychains).</li>
+<li><a href="https://github.com/jpillora/chisel">chisel</a> — single-binary TCP tunnel over HTTP; reverse SOCKS when you only have a shell.</li>
+<li><a href="https://github.com/sshuttle/sshuttle">sshuttle</a> — VPN-like routing over SSH for Linux pivots.</li>
+</ul>
+
+<h2>Walkthroughs &amp; teaching</h2>
+<ul>
+<li><a href="https://www.youtube.com/@ippsec">IppSec — YouTube</a> — deeply explained HTB video walkthroughs; the best way to learn methodology (use in review mode).</li>
+<li><a href="https://ippsec.rocks/">ippsec.rocks</a> — search IppSec's videos by technique; jump straight to the segment you need.</li>
+<li><a href="https://0xdf.gitlab.io/">0xdf — write-ups</a> — best-in-class written HTB/CTF walkthroughs; pair with IppSec.</li>
+</ul>
+
+<h2>Active Directory</h2>
+<ul>
+<li><a href="https://github.com/S1ckB0y1337/Active-Directory-Exploitation-Cheat-Sheet">S1ckB0y1337 — AD Exploitation Cheat Sheet</a> — concise AD enumeration + attack commands.</li>
+<li><a href="https://orange-cyberdefense.github.io/ocd-mindmaps/">Orange Cyberdefense — AD Pentest Mindmap</a> — visual AD kill-chain map (use as a map, not a checklist).</li>
+<li><a href="https://tryhackme.com/module/hacking-active-directory">TryHackMe — Compromising AD</a> — guided AD attack chain for fundamentals.</li>
+<li><a href="https://tryhackme.com/room/attacktivedirectory">TryHackMe — Attacktive Directory</a> — hands-on AD initial-access + escalation room.</li>
+<li><a href="https://github.com/ropnop/kerbrute">kerbrute</a> — fast Kerberos user-enumeration and password-spraying (works pre-auth).</li>
+<li><a href="https://wadcoms.github.io/">WADComs</a> — interactive Windows/AD command lookup when you know the goal but forget the syntax.</li>
+</ul>
+
+<h2>Report writing</h2>
+<ul>
+<li><a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">Official OffSec exam report template</a> — linked from the exam guide; use as your baseline.</li>
+<li><a href="https://github.com/noraj/OSCP-Exam-Report-Template-Markdown">noraj — OSCP Report Template (Markdown)</a> — well-maintained Markdown→PDF template.</li>
+<li><a href="https://github.com/whoisflynn/OSCP-Exam-Report-Template">whoisflynn — OSCP Report Template</a> — the classic known-good starting point.</li>
+</ul>
+
+<h2>Official &amp; exam</h2>
+<ul>
+<li><a href="https://www.offsec.com/courses/pen-200/">PEN-200</a> — the official OSCP/OSCP+ course.</li>
+<li><a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">OSCP+ Exam Guide</a> — authoritative exam rules. Re-read near exam day.</li>
+<li><a href="https://help.offsec.com/hc/en-us/articles/4412170923924-OSCP-Exam-FAQ">OSCP Exam FAQ</a> — practical logistics and edge cases.</li>
+<li><a href="https://help.offsec.com/hc/en-us/articles/29840452210580-Changes-to-the-OSCP">Changes to the OSCP</a> — the OSCP+ transition (no bonus points, 3-year "+" expiry).</li>
+</ul>
+
+<h2>Communities (the wisdom layer)</h2>
+<ul>
+<li><a href="https://www.reddit.com/r/oscp/">r/oscp</a> — exam logistics, passed/failed debriefs, current-format discussion.</li>
+<li><a href="https://www.netsecfocus.com/">NetSecFocus (TJ Null's Mattermost)</a> — active OSCP study channels; home of the prep list.</li>
+<li><a href="https://discord.com/invite/offsec">OffSec Discord</a> — official community server.</li>
+</ul>
+
+<footer>
+<span><a href="../lessons/0003-service-enumeration.html">← Lesson 03: Service Enumeration</a></span>
+<span><a href="./glossary.html">Glossary</a> · <a href="./exam-format.html">Exam Format</a></span>
+</footer>
+
+</body>
+</html>

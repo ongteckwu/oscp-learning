@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 10 · Active Directory: Fundamentals &amp; Enumeration</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0009-footholds-beyond-the-web.html">Lesson 09</a> · <strong>Lesson 10</strong> · <a href="../reference/active-directory.html">Active Directory</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 10 · Active Directory</span>
+<h1>Active Directory: Fundamentals &amp; Enumeration</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: with one domain credential, map the domain and find a path toward Domain Admin.</p>
+
+<p class="lead">Everything so far has been about a single box. Active Directory is different: it's a <strong>network of trust</strong>, where one cracked password can ripple into total control of dozens of machines. This is the largest single block on the exam — <strong>40 of the 100 points</strong> — and you can't comfortably reach 70 without it. The good news: it's not a wall of new exploits. It's a new <em>terrain</em>, and the way you cross it is a loop you'll run until you own the domain.</p>
+
+<div class="box note">
+<span class="box-title">Where this sits</span>
+This lesson is the first of three on AD. Today: the concepts and the <strong>enumeration</strong> half — how to read the domain from a single identity. Lesson 11 turns enumeration into stolen credentials (Kerberoasting, AS-REP, relaying); Lesson 12 chains those into lateral movement up to Domain Admin. Master the loop here and the next two are just new edges on the same graph.
+</div>
+
+<h2>Why AD is the block you can't skip</h2>
+<p>The OSCP+ exam is 100 points, 70 to pass. Three standalone boxes give 60 points (10 foothold + 10 privesc each). The remaining <strong>40 points are one Active Directory set</strong>: three machines chained together — typically scored <strong>10 / 10 / 20</strong> — where compromising one feeds credentials into the next.</p>
+<p>Two things make this block decisive. First, it's the largest single chunk of points on the exam — bigger than any standalone box. Second, the modern exam awards <strong>partial points</strong> within the AD set, so even an incomplete chain is worth chasing. But here's the math that matters: skip AD entirely and your ceiling is 60 — a fail. You don't have to fully own the domain, but you <em>do</em> have to make real progress in it. Treat AD as the centre of gravity of your prep, not an afterthought.</p>
+
+<div class="box mantra">
+A standalone box is a locked room.<br>
+Active Directory is a city — and every door opens another.
+</div>
+
+<h2>AD for engineers — the terrain, fast</h2>
+<p>You already understand directory services, auth protocols, and central databases. AD is just Microsoft's version, wired into how Windows networks log in. Here's the dense version — enough vocabulary to read every tool's output.</p>
+
+<h3>The objects</h3>
+<ul>
+<li><strong>Domain</strong> — a logical boundary of trust (e.g. <code>corp.local</code>). Everything inside shares one authentication authority and one user/group database.</li>
+<li><strong>Domain Controller (DC)</strong> — the server that <em>is</em> that authority. It runs the authentication services (Kerberos + NTLM) and hosts the directory database over <strong>LDAP</strong>. Own the DC and you own the domain. It's your primary target and your richest source of information.</li>
+<li><strong>Objects</strong> — users, groups, and computers are all entries in the LDAP database, each with attributes (password-last-set, group membership, service accounts, etc.). When you "enumerate the domain" you're really reading these attributes.</li>
+<li><strong>Groups</strong> — membership grants rights. The high-value ones to hunt: <strong>Domain Admins</strong> (full control of the domain) and <strong>Enterprise Admins</strong> (full control across the whole forest). Reaching either is the AD set's win condition. Watch also for Account Operators, Backup Operators, and Server Operators — near-admin in practice.</li>
+<li><strong>OUs &amp; GPOs</strong> — Organizational Units are containers for objects; Group Policy Objects push configuration (and sometimes credentials or scheduled tasks) down onto machines. A GPO you can edit is a path to code execution on every machine it applies to.</li>
+</ul>
+
+<h3>How logins actually work</h3>
+<p>Two protocols authenticate users, and the attacks in Lesson 11 target both:</p>
+<ul>
+<li><strong>Kerberos</strong> (the default, port 88) — ticket-based. The DC's Key Distribution Center hands out tickets (TGTs, then service tickets) instead of passing passwords around. Tickets are the currency you'll learn to forge and crack.</li>
+<li><strong>NTLM</strong> (legacy, runs over SMB/445) — challenge-response on a password hash. Weaker, still everywhere, and the basis of pass-the-hash and relay attacks.</li>
+</ul>
+<p>One more term you'll meet constantly: a <strong>Service Principal Name (SPN)</strong>. It's a label tying a service (SQL, web, etc.) to the account that runs it. Any user account with an SPN can have a service ticket requested for it — and that ticket is crackable offline. That's <em>Kerberoasting</em>, and you'll see why SPN-bearing accounts are gold.</p>
+
+<h3>Reading the room — ports that flag a DC</h3>
+<p>When an <code>nmap</code> scan comes back looking like the following, you're almost certainly staring at a Domain Controller. The combination of Kerberos, LDAP, and DNS on one host is the tell:</p>
+<pre><span class="p">$</span> <span class="o">nmap -p- --min-rate 2000 -sV 10.10.10.10</span>
+<span class="o">53/tcp    open  domain        Simple DNS Plus</span>
+<span class="h">88/tcp    open  kerberos-sec  Microsoft Windows Kerberos</span>
+<span class="o">135/tcp   open  msrpc         Microsoft Windows RPC</span>
+<span class="o">389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: corp.local)</span>
+<span class="o">445/tcp   open  microsoft-ds  Windows Server SMB</span>
+<span class="o">636/tcp   open  ldapssl</span>
+<span class="o">3268/tcp  open  ldap          Global Catalog (Domain: corp.local)</span>
+<span class="o">5985/tcp  open  http          Microsoft HTTPAPI (WinRM)</span></pre>
+<p>Note the domain name LDAP leaks for free (<code>corp.local</code>) — you'll need it for almost every command. The full port-to-meaning map:</p>
+<table>
+<thead><tr><th>Port</th><th>Service</th><th>Why it matters</th></tr></thead>
+<tbody>
+<tr><td><strong>88</strong></td><td>Kerberos</td><td>The auth heart of AD — its presence basically <em>means</em> "DC".</td></tr>
+<tr><td><strong>389 / 636</strong></td><td>LDAP / LDAPS</td><td>The directory database — query it for users, groups, computers.</td></tr>
+<tr><td><strong>3268</strong></td><td>Global Catalog</td><td>Forest-wide LDAP index — search the whole forest, not just one domain.</td></tr>
+<tr><td><strong>445</strong></td><td>SMB</td><td>Shares, NTLM auth, remote exec — the workhorse port for AD tooling.</td></tr>
+<tr><td><strong>135</strong></td><td>RPC</td><td>Remote management plumbing; backs <code>rpcclient</code> and impacket.</td></tr>
+<tr><td><strong>53</strong></td><td>DNS</td><td>DCs are usually the domain's DNS server — confirms the domain name.</td></tr>
+<tr><td><strong>5985</strong></td><td>WinRM</td><td>Remote PowerShell — your shell of choice once you have creds (<code>evil-winrm</code>).</td></tr>
+</tbody>
+</table>
+
+<h2>The AD attack loop</h2>
+<p>This is the single most important idea in the whole block. AD isn't "find one bug and win" — it's a <strong>loop you re-run for every identity you steal</strong>. Each new credential is a new vantage point, so you go back and enumerate <em>again</em> from that identity. The graph looks different through every user's eyes.</p>
+<ol class="steps">
+<li><strong>Get a foothold on the first host.</strong> The entry box often plays like a standalone — a web app, a service, a weak credential. Everything from Lessons 03–09 applies. The goal here is narrow: get <em>any</em> code execution or, better, any account.</li>
+<li><strong>Obtain ANY domain credential.</strong> A single low-privilege <code>user:password</code> (or hash) is the key that unlocks the whole directory. It doesn't need to be powerful — it just needs to be <em>valid in the domain</em>.</li>
+<li><strong>Enumerate the domain from that identity.</strong> Authenticate to the DC and read everything that identity can see: users, groups, shares, policies, sessions, ACLs. This is where today's lesson lives.</li>
+<li><strong>Find a privilege path.</strong> Look for the route from "who you are" to "Domain Admin" — a Kerberoastable service account, a misconfigured ACL, an admin who left a session on a box you can reach. BloodHound draws this for you.</li>
+<li><strong>Move laterally.</strong> Use the path: crack a ticket, pass a hash, abuse a right, or log into the next machine with reused creds. (That's Lessons 11–12.)</li>
+<li><strong>Repeat — re-enumerate as the new identity.</strong> Every machine and account you take owns a different slice of the domain. Go back to step 3 with the new identity and look again. You loop until a path lands you in Domain Admins.</li>
+</ol>
+<p>Internalise the loop and AD stops being intimidating. You're never "stuck" — you're just somewhere in the cycle, and the next move is almost always <em>enumerate again from what you now have</em>.</p>
+
+<h2>What to run first — order of operations</h2>
+<p>Like every OSCP topic, AD rewards going for the cheap, safe wins before the noisy ones. With a fresh credential, resist the urge to start cracking. Run the cheap reads first; they shape every decision after:</p>
+<ol class="steps">
+<li><strong>Policy &amp; shape (free, safe).</strong> <code>--pass-pol</code> first, then users, groups, and shares. You now know the lockout limit, the high-value groups, and any readable share that might hold a config with a second credential.</li>
+<li><strong>The full graph (BloodHound).</strong> One collection run hands you the whole attack surface at once — far more than you'd piece together by hand. This is the single highest-value action in the loop.</li>
+<li><strong>Loot the easy stuff.</strong> Readable shares (<code>SYSVOL</code>, <code>NETLOGON</code>, file shares) often leak scripts, GPP passwords, or config files with plaintext creds — a free second identity, no cracking needed.</li>
+<li><strong>Targeted attacks last.</strong> Kerberoasting, AS-REP roasting, and password spraying come <em>after</em> you know the policy and the paths — that's Lessons 11–12.</li>
+</ol>
+<p>One theme runs through all of it: <strong>credential reuse</strong>. A password recovered on the foothold box, in a share, or cracked from a ticket should be tried everywhere — every user, every host (<code>nxc smb &lt;range&gt; -u user -p pass</code>). Admins reuse passwords; so should you. Reuse is often the cheapest edge in the whole graph.</p>
+
+<h2>Authenticated enumeration from Kali</h2>
+<p>Once you have one credential (step 2), you point your Kali tools at the DC and read the domain. These are the workhorses — learn the first one cold; it does 70% of the job.</p>
+
+<h3>NetExec (the Swiss army knife)</h3>
+<p><strong>NetExec</strong> (<code>nxc</code>, the maintained successor to CrackMapExec / <code>crackmapexec</code>) authenticates to the DC and dumps almost anything you ask for. Start here every time:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u bob -p 'Spring2025!' --users</span>      <span class="c"># domain users</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u bob -p 'Spring2025!' --groups</span>     <span class="c"># groups + members</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u bob -p 'Spring2025!' --shares</span>     <span class="c"># readable/writable shares</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u bob -p 'Spring2025!' --pass-pol</span>   <span class="c"># password + LOCKOUT policy</span>
+<span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u bob -p 'Spring2025!' --loggedon-users</span> <span class="c"># who's on this box now</span></pre>
+<p><code>--pass-pol</code> is not optional housekeeping — read it <em>before</em> you do anything noisy (see the warning below). <code>--loggedon-users</code> matters because a logged-on admin is a credential waiting to be stolen — exactly the lateral-movement opening you're hunting for.</p>
+
+<h3>rpcclient and enum4linux-ng</h3>
+<p>When you want to poke the directory by hand over RPC, <code>rpcclient</code> is the classic. It also frequently works with a <em>null</em> session (no creds) — more on that below.</p>
+<pre><span class="p">$</span> <span class="o">rpcclient -U 'bob%Spring2025!' 10.10.10.10</span>
+<span class="p">rpcclient $&gt;</span> <span class="o">enumdomusers</span>          <span class="c"># list all users (and their RIDs)</span>
+<span class="p">rpcclient $&gt;</span> <span class="o">querygroupmem 0x200</span>     <span class="c"># members of a group by RID</span>
+<span class="p">rpcclient $&gt;</span> <span class="o">queryuser bob</span>          <span class="c"># detail on one user</span></pre>
+<p><strong>enum4linux-ng</strong> wraps all of this into one sweep — run it early for a fast overview:</p>
+<pre><span class="p">$</span> <span class="o">enum4linux-ng -A 10.10.10.10 -u bob -p 'Spring2025!'</span></pre>
+
+<h3>ldapsearch and impacket</h3>
+<p>For raw directory queries, <code>ldapsearch</code> talks LDAP directly — verbose, but nothing is hidden. And the <strong>impacket</strong> suite gives you purpose-built scripts; two you'll use constantly:</p>
+<pre><span class="p">$</span> <span class="o">ldapsearch -x -H ldap://10.10.10.10 -D 'bob@corp.local' -w 'Spring2025!' \</span>
+<span class="o">  -b 'DC=corp,DC=local' '(objectClass=user)' sAMAccountName</span>
+<span class="p">$</span> <span class="o">GetADUsers.py -all corp.local/bob:'Spring2025!' -dc-ip 10.10.10.10</span>   <span class="c"># every user</span>
+<span class="p">$</span> <span class="o">GetUserSPNs.py corp.local/bob:'Spring2025!' -dc-ip 10.10.10.10</span>       <span class="c"># Kerberoastable accounts</span></pre>
+<p><code>GetUserSPNs.py</code> is a preview of Lesson 11: it lists every account with an SPN — the Kerberoasting targets. Note them now; you'll attack them next lesson.</p>
+
+<h3>kerbrute (validate names cheaply)</h3>
+<p><strong>kerbrute</strong> abuses Kerberos pre-authentication to confirm which usernames exist — quietly and without a single SMB login. Feed it a wordlist of likely names:</p>
+<pre><span class="p">$</span> <span class="o">kerbrute userenum -d corp.local --dc 10.10.10.10 users.txt</span>
+<span class="o">[+] VALID USERNAME:    bob@corp.local</span>
+<span class="o">[+] VALID USERNAME:    svc-sql@corp.local</span></pre>
+
+<h3>Turning a credential into a shell</h3>
+<p>Enumeration tells you <em>where</em> a credential is admin. NetExec flags it for you: when <code>nxc</code> prints <code>(Pwn3d!)</code> next to a host, that account is a <strong>local administrator</strong> there — a foothold on the next box. If WinRM (5985) is open, drop into an interactive PowerShell with <strong>evil-winrm</strong>:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.20 -u bob -p 'Spring2025!'</span>
+<span class="h">SMB  10.10.10.20  445  WS01  [+] corp.local\bob:Spring2025! (Pwn3d!)</span>
+<span class="p">$</span> <span class="o">evil-winrm -i 10.10.10.20 -u bob -p 'Spring2025!'</span>
+<span class="p">*Evil-WinRM* PS&gt;</span> <span class="o">whoami</span>
+<span class="h">corp\bob</span></pre>
+<p>That shell is a new identity on a new host — so you loop straight back to step 3 and enumerate again from it (and re-run BloodHound's collector from this vantage if it can reach more).</p>
+
+<h2>BloodHound — the centrepiece</h2>
+<p>Everything above produces lists. <strong>BloodHound</strong> turns those lists into a <em>map</em>. AD's real attack surface isn't any single object — it's the tangle of relationships between them: who is a member of what, who has rights over whom, who is logged in where. That graph is far too big to hold in your head. BloodHound ingests it and answers the only question that matters: <em>"From where I stand, what's the shortest path to Domain Admin?"</em></p>
+
+<h3>Collect</h3>
+<p>From Kali, the Python collector talks to the DC with your credential and pulls the whole graph:</p>
+<pre><span class="p">$</span> <span class="o">bloodhound-python -c all -u bob -p 'Spring2025!' -d corp.local -ns 10.10.10.10</span>
+<span class="o">INFO: Found 1 domains</span>
+<span class="o">INFO: Found 42 users</span>
+<span class="o">INFO: Found 13 groups</span>
+<span class="o">INFO: Found 5 computers</span>
+<span class="o">INFO: Compressing output into 20260626_bloodhound.zip</span></pre>
+<p>On a Windows foothold instead, run <strong>SharpHound</strong> (the native collector) and copy the resulting zip back to Kali. Either way you get a zip of JSON.</p>
+
+<h3>Import and ask</h3>
+<p>Start the BloodHound GUI, drag the zip in to ingest it, then <strong>mark your owned principal</strong> (right-click <code>BOB@CORP.LOCAL</code> → "Mark as Owned"). Now run the pre-built Cypher queries from the Analysis tab — these encode years of attacker knowledge so you don't have to write graph queries:</p>
+<table>
+<thead><tr><th>Pre-built query</th><th>What it surfaces</th></tr></thead>
+<tbody>
+<tr><td><strong>Shortest Paths to Domain Admins</strong></td><td>The literal route from owned to DA — your headline objective.</td></tr>
+<tr><td><strong>Find Kerberoastable accounts</strong></td><td>SPN accounts whose tickets you can crack offline (Lesson 11).</td></tr>
+<tr><td><strong>AS-REP Roastable users</strong></td><td>Accounts with pre-auth disabled — crackable with no password at all.</td></tr>
+<tr><td><strong>Principals with DCSync rights</strong></td><td>Who can replicate password hashes from the DC — an instant win if you reach them.</td></tr>
+</tbody>
+</table>
+<p>The output is a graph: nodes are users/groups/computers, edges are abusable relationships (<code>MemberOf</code>, <code>HasSession</code>, <code>GenericAll</code>, <code>AddMember</code>…). Click any edge and BloodHound tells you <em>how</em> to abuse it. Your job shrinks to "walk the path the graph drew" — which is exactly the lateral movement of Lesson 12.</p>
+
+<h2>Pre-auth enumeration — before you have any credential</h2>
+<p>Step 2 assumes a credential, but what if you have none yet? You're not blind. Several things leak without authentication, and one of them can hand you a credential outright.</p>
+<ul>
+<li><strong>Anonymous / null SMB sessions.</strong> Misconfigured DCs answer some queries with no login at all. Try <code>nxc smb 10.10.10.10 -u '' -p ''</code> and <code>rpcclient -U '' -N 10.10.10.10</code> then <code>enumdomusers</code> — sometimes you get the full user list for free.</li>
+<li><strong>Username enumeration via kerbrute.</strong> As above, <code>kerbrute userenum</code> validates names against Kerberos without any password — turning a guessed list into a confirmed one.</li>
+<li><strong>AS-REP roasting with only a username.</strong> If an account has Kerberos pre-authentication disabled, the DC will hand you an encrypted blob you can crack offline — <em>no password required</em>. Confirm a username with kerbrute, then try to roast it. That's the bridge into Lesson 11, where it's a headline attack.</li>
+</ul>
+<p>So the very first move against an unknown DC is: scan for the DC ports, try null sessions, enumerate usernames, and test for AS-REP roastable accounts. Any one of them can promote you from "no creds" to "one credential" — and then the whole loop opens up.</p>
+
+<div class="box warn">
+<span class="box-title">Pull the password &amp; lockout policy FIRST</span>
+Before you spray a single password or brute anything, run <code>nxc smb DC -u user -p pass --pass-pol</code> (or <code>enum4linux-ng</code>). If the lockout threshold is, say, 5 bad attempts, a careless spray <strong>locks out real accounts</strong> — which can break the box's intended path, alert no one but cost <em>you</em> the machine, and burn precious exam time waiting for lockouts to reset. Know the threshold, then stay one attempt under it. This is the discipline that separates a clean AD run from a self-inflicted dead end.
+</div>
+
+<h2>Worked example — one credential to a path</h2>
+<p>You've finished the foothold box and recovered a single domain credential: <code>bob:Spring2025!</code>. The DC is <code>10.10.10.10</code>, domain <code>corp.local</code>. Run the loop.</p>
+
+<p><strong>1 · Enumerate and read the policy first.</strong></p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u bob -p 'Spring2025!' --users --pass-pol</span>
+<span class="o">SMB  10.10.10.10  445  DC01  [+] corp.local\bob:Spring2025! </span>
+<span class="o">SMB  10.10.10.10  445  DC01  -Username-      -Last PW Set-     -Description-</span>
+<span class="o">SMB  10.10.10.10  445  DC01  Administrator   2025-09-01        Built-in admin</span>
+<span class="o">SMB  10.10.10.10  445  DC01  bob             2026-03-12</span>
+<span class="o">SMB  10.10.10.10  445  DC01  svc-sql         2025-11-20        SQL service account</span>
+<span class="o">SMB  10.10.10.10  445  DC01  [+] Minimum password length: 7</span>
+<span class="h">SMB  10.10.10.10  445  DC01  [+] Account Lockout Threshold: 5</span></pre>
+<p>Lockout is 5 — note it. No spraying more than 4 attempts per account. You also spot <code>svc-sql</code>, a service account (likely SPN-bearing).</p>
+
+<p><strong>2 · Pull the whole graph with BloodHound.</strong></p>
+<pre><span class="p">$</span> <span class="o">bloodhound-python -c all -u bob -p 'Spring2025!' -d corp.local -ns 10.10.10.10</span>
+<span class="o">INFO: Found 42 users, 13 groups, 5 computers</span>
+<span class="o">INFO: Compressing output into 20260626_bloodhound.zip</span></pre>
+
+<p><strong>3 · Import, mark bob owned, run the path query.</strong> Drag the zip into the BloodHound GUI, right-click <code>BOB@CORP.LOCAL</code> → Mark as Owned, then Analysis → <em>Shortest Paths to Domain Admins</em>. The graph draws it:</p>
+<pre><span class="o">BOB@CORP.LOCAL</span>
+<span class="o">   │ MemberOf</span>
+<span class="o">   ▼</span>
+<span class="o">IT-SUPPORT@CORP.LOCAL</span>
+<span class="o">   │ GenericAll        </span><span class="c"># bob's group can fully control svc-sql</span>
+<span class="o">   ▼</span>
+<span class="h">SVC-SQL@CORP.LOCAL     (Kerberoastable — has SPN)</span>
+<span class="o">   │ MemberOf</span>
+<span class="o">   ▼</span>
+<span class="h">DOMAIN ADMINS@CORP.LOCAL</span></pre>
+<p>There's your path. Bob is in <code>IT-SUPPORT</code>, which has <code>GenericAll</code> over <code>svc-sql</code>; <code>svc-sql</code> is Kerberoastable <em>and</em> a member of Domain Admins. Crack that service ticket (or abuse the ACL) and you've walked from one low-priv credential to DA. You won't execute the crack until Lesson 11 — but you've done the decisive work today: <strong>you can see the route</strong>. Record it in your box notes under "AD path", and reuse it.</p>
+
+<div class="box tip">
+<span class="box-title">Box notes — the AD section</span>
+Add an "Active Directory" block to your notes template: domain name, DC IP, every credential found (and where), the password/lockout policy, and the BloodHound path(s) to DA. In a chained set you'll cycle back to these notes constantly as new identities open new paths.
+</div>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — your AD field manual</span>
+HackTricks' <a href="https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/index.html">Active Directory Methodology</a> is the page to keep open through the entire AD block — it walks the loop end to end, with the exact commands for each step. Pair it with the <a href="https://bloodhound.readthedocs.io/">BloodHound docs</a> for collection/query detail.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 11</span>
+Do TryHackMe's <strong>Attacktive Directory</strong> (or any easy Hack The Box AD box from TJ Null's list). Get one credential, run NetExec enumeration <em>including <code>--pass-pol</code></em>, collect with <code>bloodhound-python</code>, mark your user owned, and identify at least one path toward Domain Admin. You don't need to finish the box — you need to <em>see the route</em>. Write it in your box notes.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Map the domain:</strong> <strong>Forest</strong> &amp; <strong>Sauna</strong> (HTB · AD · Easy) for LDAP / rpcclient → BloodHound. At exam scale: PEN-200 <strong>OSCP A</strong>. <a href="../reference/practice-boxes.html#pb-10">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Paste me your <code>nxc</code> output or a screenshot of a BloodHound path and we'll read the route together. Next: <strong>Lesson 11 — Active Directory: Authentication Attacks</strong> — where the SPNs and AS-REP targets you spotted today become cracked credentials (Kerberoasting, AS-REP roasting, and NTLM relay).
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/index.html">HackTricks — Active Directory Methodology</a> (the end-to-end AD loop with commands). Pair with the <a href="https://bloodhound.readthedocs.io/">BloodHound documentation</a> (collection + built-in queries) and <a href="https://github.com/S1ckB0y1337/Active-Directory-Exploitation-Cheat-Sheet">S1ckB0y1337 — AD Exploitation Cheat Sheet</a> (copy-paste command reference). Local commands: <a href="../reference/active-directory.html">Active Directory cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0009-footholds-beyond-the-web.html">← Lesson 09: Footholds Beyond the Web</a></span>
+<span><a href="./0011-active-directory-authentication-attacks.html">Next → Lesson 11: AD Authentication Attacks</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "You're about to password-spray a domain. What must you check first?",
+    options: ["The DC's exact build number", "The list of network shares", "The account lockout policy", "The forest trust relationships"],
+    answer: 2,
+    explain: "A spray that exceeds the lockout threshold locks real accounts, breaks the path, and burns your time — read --pass-pol before any noisy auth."
+  },
+  {
+    prompt: "What does BloodHound actually give you that the other enumeration tools don't?",
+    options: ["A faster brute-force of passwords", "An attack-path graph to Domain Admin", "A scanner for kernel-level CVEs", "An exploit launcher for each host"],
+    answer: 1,
+    explain: "BloodHound turns the tangle of ACLs, sessions, and memberships into a graph and computes the shortest path from your identity to DA."
+  },
+  {
+    prompt: "An nmap scan shows 88, 389, 445, and 3268 open. What are you almost certainly looking at?",
+    options: ["A standalone web server", "A Linux NFS file server", "A network printer device", "A Domain Controller"],
+    answer: 3,
+    explain: "Kerberos (88), LDAP (389), SMB (445), and Global Catalog (3268) together are the unmistakable fingerprint of a DC."
+  },
+  {
+    prompt: "You just stole a second, more privileged credential mid-chain. What's the right next move?",
+    options: ["Immediately reboot the domain controller", "Re-enumerate the domain as that new identity", "Stop, since you already enumerated once", "Spray that password across every account"],
+    answer: 1,
+    explain: "AD is a loop: every new identity sees a different slice of the graph, so you enumerate again from it to find the next edge."
+  },
+  {
+    prompt: "You've landed exactly one low-privilege domain credential. What's your first move?",
+    options: ["Authenticate to the DC and enumerate the domain", "Try to brute-force the Administrator account", "Run a kernel exploit against the DC", "Reset every user's password at once"],
+    answer: 0,
+    explain: "One valid credential unlocks the directory — point your tools (NetExec, BloodHound) at the DC and read who/what you can reach."
+  },
+  {
+    prompt: "You have NO credentials yet against a DC. Which is a legitimate pre-auth enumeration step?",
+    options: ["Run BloodHound's DCSync query", "Pass an NTLM hash over SMB", "Validate usernames with kerbrute userenum", "Crack a captured Kerberos service ticket"],
+    answer: 2,
+    explain: "kerbrute userenum confirms valid usernames via Kerberos with no password, alongside null SMB sessions and AS-REP roasting — the others all need a credential or hash first."
+  }
+]);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OSCP — Course Contents</title>
+<link rel="stylesheet" href="assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs"><strong>OSCP Course · Contents</strong> · <a href="reference/links.html">Links</a> · <a href="reference/glossary.html">Glossary</a> · <a href="reference/exam-format.html">Exam Format</a></nav>
+
+<span class="kicker">Course contents · The path to OSCP+</span>
+<h1>Course Contents</h1>
+<p class="lead">The whole journey, from working software engineer to exam-ready — grounded in one target: passing the OSCP+. Work the lessons in order; each ends with a hands-on task on a real box. The roadmap below is the full curriculum: all seventeen lessons, end to end, from the attack chain to a timed mock exam.</p>
+
+<div class="box mantra">
+"When in doubt, <strong>enumerate harder</strong>."
+</div>
+
+<div class="box note">
+<span class="box-title">How this maps to the exam</span>
+The exam is <strong>100 points, 70 to pass</strong> (<a href="reference/exam-format.html">full rules</a>). Three standalone machines (<strong>60 pts</strong>) test <em>enumeration → foothold → privesc</em> — Modules 2–3 below. The Active Directory set (<strong>40 pts</strong>) is Module 4. Pivoting (Module 5) appears across the network. And the <strong>graded report</strong> is Module 6. Every module earns specific points — that's why we do them in this order.
+</div>
+
+<p class="cite"><strong>Progress: all 17 lessons complete</strong> — the full path from the attack chain through standalones, Active Directory, pivoting, and exam strategy to a timed mock exam. From here, the work is reps on real boxes.</p>
+
+<h2>Module 1 · Foundations</h2>
+<p class="cite">The operator's mindset — the difference between knowing vulns and owning boxes.</p>
+<ul>
+<li>✓ <strong><a href="lessons/0001-the-oscp-attack-chain.html">L01 · The OSCP Attack Chain</a></strong> — the five-phase map every box flows through.</li>
+<li>✓ <strong><a href="lessons/0002-the-deliberate-practice-loop.html">L02 · How to Practice a Box</a></strong> — the attempt-first loop that builds real skill. Includes your box-notes template.</li>
+</ul>
+
+<h2>Module 2 · Enumeration &amp; footholds</h2>
+<p class="cite">Finding the way in — the first 10 points on every standalone, and most of the work.</p>
+<ul>
+<li>✓ <strong><a href="lessons/0003-service-enumeration.html">L03 · Service Enumeration</a></strong> — turn a port list into a prioritised plan.</li>
+<li>✓ <strong><a href="lessons/0004-attacking-the-web-service.html">L04 · Attacking the Web Service</a></strong> — map any app, shortlist foothold candidates.</li>
+<li>✓ <strong><a href="lessons/0005-exploiting-the-web-foothold.html">L05 · Exploiting the Web Foothold</a></strong> — SQLi, file inclusion, upload-to-shell.</li>
+<li>✓ <strong><a href="lessons/0008-password-attacks-and-credential-reuse.html">L08 · Password Attacks &amp; Credential Reuse</a></strong> — brute force, spraying, hash cracking, and reusing creds everywhere.</li>
+<li>✓ <strong><a href="lessons/0009-footholds-beyond-the-web.html">L09 · Footholds Beyond the Web</a></strong> — SMB, FTP, and turning a known-vulnerable service version into a shell.</li>
+</ul>
+
+<h2>Module 3 · Privilege escalation</h2>
+<p class="cite">From your first shell to full control — the second 10 points on every standalone.</p>
+<ul>
+<li>✓ <strong><a href="lessons/0006-linux-privilege-escalation.html">L06 · Linux Privilege Escalation</a></strong> — from <code>www-data</code> to root: sudo, SUID, cron, capabilities, kernel.</li>
+<li>✓ <strong><a href="lessons/0007-windows-privilege-escalation.html">L07 · Windows Privilege Escalation</a></strong> — tokens, services, registry, and the misconfigurations Windows loves: low-priv shell to SYSTEM.</li>
+</ul>
+
+<h2>Module 4 · Active Directory <span class="cite">(40 exam points)</span></h2>
+<p class="cite">The largest single block of marks — you can't comfortably reach 70 without it.</p>
+<ul>
+<li>✓ <strong><a href="lessons/0010-active-directory-enumeration.html">L10 · AD Fundamentals &amp; Enumeration</a></strong> — domains, users, BloodHound, and the lay of the land.</li>
+<li>✓ <strong><a href="lessons/0011-active-directory-authentication-attacks.html">L11 · AD Authentication Attacks</a></strong> — Kerberoasting, AS-REP roasting, and password spraying.</li>
+<li>✓ <strong><a href="lessons/0012-active-directory-lateral-movement.html">L12 · Lateral Movement → Domain Admin</a></strong> — pass-the-hash, credential chains, DCSync, owning the DC.</li>
+</ul>
+
+<h2>Module 5 · Pivoting &amp; post-exploitation</h2>
+<p class="cite">Reaching networks you can't touch directly — essential for the AD set.</p>
+<ul>
+<li>✓ <strong><a href="lessons/0013-pivoting-and-tunneling.html">L13 · Pivoting &amp; Tunneling</a></strong> — chisel, ligolo-ng, SSH tunnels, and proxychains to reach hidden subnets.</li>
+<li>✓ <strong><a href="lessons/0014-post-exploitation-looting.html">L14 · Looting &amp; Credential Harvesting</a></strong> — what to grab after access, and why it unlocks the next box.</li>
+</ul>
+
+<h2>Module 6 · Exam readiness</h2>
+<p class="cite">Turning skill into a pass — the part most people underinvest in.</p>
+<ul>
+<li>✓ <strong><a href="lessons/0015-writing-the-report.html">L15 · Writing the Report</a></strong> — the graded deliverable; reproducible steps and proof that earn marks.</li>
+<li>✓ <strong><a href="lessons/0016-exam-strategy.html">L16 · Exam Strategy &amp; Time Management</a></strong> — points-per-hour, when to move on, the one-tool rule, and sleep.</li>
+<li>✓ <strong><a href="lessons/0017-mock-exam.html">L17 · The Mock Exam</a></strong> — assemble and run the real thing end to end, then score yourself honestly.</li>
+</ul>
+
+<h2>Reference shelf</h2>
+<p>The compressed essentials — revisit these constantly; they outlive the lessons.</p>
+<ul>
+<li><strong><a href="reference/practice-boxes.html">Practice Box Map</a></strong> — recommended boxes per lesson (HTB / PG / PEN-200), OS-split with summaries.</li>
+<li><strong><a href="reference/exam-format.html">Exam Format</a></strong> — the verified 2026 OSCP+ rules.</li>
+<li><strong><a href="reference/glossary.html">Glossary</a></strong> — the canonical vocabulary every lesson uses.</li>
+<li><strong><a href="reference/enumeration-cheatsheet.html">Enumeration Cheatsheet</a></strong> — nmap and the common services.</li>
+<li><strong><a href="reference/web-exploitation.html">Web Exploitation Cheatsheet</a></strong> — SQLi, file inclusion, upload-to-shell, reverse shells.</li>
+<li><strong><a href="reference/linux-privesc.html">Linux Privesc Cheatsheet</a></strong> — sudo, SUID, cron, capabilities, kernel.</li>
+<li><strong><a href="reference/windows-privesc.html">Windows Privesc Cheatsheet</a></strong> — tokens, services, registry, stored creds.</li>
+<li><strong><a href="reference/password-attacks.html">Password Attacks Cheatsheet</a></strong> — hashcat modes, john, hydra, spraying, reuse.</li>
+<li><strong><a href="reference/active-directory.html">Active Directory Cheatsheet</a></strong> — enumeration, Kerberos attacks, lateral movement, DCSync.</li>
+<li><strong><a href="reference/pivoting.html">Pivoting Cheatsheet</a></strong> — SSH tunnels, chisel, ligolo-ng, proxychains.</li>
+<li><strong><a href="reference/report-writing.html">Report Writing Cheatsheet</a></strong> — structure, proof, templates, failure modes.</li>
+<li><strong><a href="reference/links.html">Useful Links</a></strong> — TJ Null's list, HackTricks, IppSec, 0xdf, and more.</li>
+</ul>
+
+<div class="box tip">
+<span class="box-title">How to use this course</span>
+Read a lesson, then immediately do its practice task on a real box — each lesson now names specific picks, all collected in the <a href="reference/practice-boxes.html">Practice Box Map</a> (cross-checked against <a href="reference/links.html">TJ Null's list</a>). The reading is fast; the <em>doing</em> is where the skill forms. Bring your box notes back and ask your teacher to review them.
+</div>
+
+<div class="teacher">
+<span class="box-title">This course has a teacher</span>
+The roadmap is a guide, not a cage — if you want to jump to Active Directory, slow down on privesc, or detour into a box you're stuck on, just say so. Ask for the next lesson, a walkthrough, a deeper dive, or a notes review. The workspace remembers where you are between sessions.
+</div>
+
+<footer>
+<span>OSCP Course · Contents</span>
+<span><a href="reference/links.html">Links</a> · <a href="reference/glossary.html">Glossary</a></span>
+</footer>
+
+</body>
+</html>

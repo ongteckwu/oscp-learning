@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 03 · Service Enumeration</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> ·<a href="./0002-the-deliberate-practice-loop.html">Lesson 02</a> · <strong>Lesson 03</strong> · <a href="../reference/enumeration-cheatsheet.html">Enum cheatsheet</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 03 · Enumeration</span>
+<h1>Service Enumeration</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: turn a raw nmap port list into a <em>prioritised plan of attack</em> — for any box.</p>
+
+<p class="lead">This is the phase that wins exams. A port list is just trivia; enumeration is the discipline of interrogating every service until the box tells you how to beat it. You already know <em>what</em> FTP, SMB, and HTTP are — that's the engineer's head start. The new skill is the systematic method that turns "ports are open" into "here's exactly what I'll try, and in what order."</p>
+
+<h2>Scan in two passes</h2>
+<p>One scan can't be both fast and deep, so don't make it try. Discover everything quickly, then go deep only on what's open.</p>
+<pre><span class="c"># Pass 1 — find every open TCP port, fast</span>
+<span class="p">$</span> <span class="o">nmap -p- --min-rate 2000 -T4 10.10.10.5 -oN ports.txt</span>
+
+<span class="c"># Pass 2 — deep scan (default scripts + versions) on just those ports</span>
+<span class="p">$</span> <span class="o">nmap -sC -sV -p 21,22,80,445 10.10.10.5 -oN deep.txt</span>
+
+<span class="c"># Don't forget UDP — SNMP, DNS, TFTP hide here and people skip it</span>
+<span class="p">$</span> <span class="o">sudo nmap -sU --top-ports 20 10.10.10.5 -oN udp.txt</span></pre>
+<p>The <code>-oN</code> output files matter: enumeration produces evidence you'll cite in the report. Save everything from the first command you run.</p>
+
+<h2>Tune your scans like an attacker</h2>
+<p>The two-pass template is the skeleton; knowing <em>why</em> each flag is there is what stops you missing the foothold. A handful of choices separate a scan that finds the box's weak spot from one that quietly skips it.</p>
+
+<h3>The flags that actually change your results</h3>
+<table>
+<thead><tr><th>Flag</th><th>What it does</th><th>Why it matters</th></tr></thead>
+<tbody>
+<tr><td><code>-p-</code></td><td>Scans all 65,535 ports, not the default top 1,000</td><td>The way in is frequently a high port — 8080, 8443, 8009, 50000. Default scans miss it entirely.</td></tr>
+<tr><td><code>--min-rate</code></td><td>Sets a floor on packets/second (raw throughput)</td><td>Forces speed regardless of timing template. <code>--min-rate 2000</code> turns a 20-minute <code>-p-</code> into a couple of minutes on a lab network.</td></tr>
+<tr><td><code>-T0…-T5</code></td><td>A <em>bundle</em> of timing, parallelism, and retry settings</td><td><code>-T4</code> is a sane default; <code>-T5</code> drops packets (and ports) on flaky targets. Tune <em>throughput</em> with <code>--min-rate</code>, not by cranking <code>-T</code>.</td></tr>
+<tr><td><code>-sU</code></td><td>UDP scan (no handshake, so slow)</td><td>Whole protocols live only on UDP. Cap it (<code>--top-ports</code>) and run it <em>in parallel</em> with your TCP deep scan so it's never the bottleneck.</td></tr>
+<tr><td><code>--script</code></td><td>Runs targeted NSE scripts against a service</td><td>After you know a port is SMB or HTTP, point category scripts at it for a quick, focused vuln check.</td></tr>
+</tbody>
+</table>
+<pre><span class="c"># Push raw throughput with --min-rate; keep -T4 for timing/retries</span>
+<span class="p">$</span> <span class="o">nmap -p- --min-rate 5000 -T4 10.10.10.5 -oN ports.txt</span>
+
+<span class="c"># Targeted NSE: run vuln scripts for the service you actually found</span>
+<span class="p">$</span> <span class="o">nmap -p 445 --script "smb-vuln-*" 10.10.10.5</span>
+<span class="p">$</span> <span class="o">nmap -p 80  --script http-enum,http-title,http-headers 10.10.10.5</span>
+
+<span class="c"># UDP in parallel — slow, so cap it; SNMP/DNS/TFTP/NTP/IKE live here</span>
+<span class="p">$</span> <span class="o">sudo nmap -sU --top-ports 50 10.10.10.5 -oN udp.txt</span></pre>
+<p>The broad <code>--script vuln</code> exists, but it's slow and noisy — prefer the <em>category for the service in front of you</em> (<code>smb-vuln-*</code>, <code>http-enum</code>) over a blanket sweep. NSE is a triage hint, not a substitute for manual enumeration.</p>
+
+<h3>Re-scan after you learn a hostname</h3>
+<p>The moment a service hands you a name — an HTTP redirect to <code>dc01.corp.local</code>, a TLS cert with a CN, an SMB or SNMP hostname — your scan isn't finished. Name-based virtual hosts and certificates expose content that the bare IP never will.</p>
+<pre><span class="c"># Pass 2 leaked a hostname — the web root redirects to dc01.corp.local</span>
+<span class="p">$</span> <span class="o">echo "10.10.10.5 dc01.corp.local corp.local" | sudo tee -a /etc/hosts</span>
+
+<span class="c"># Now re-enumerate BY NAME — new vhosts and apps appear that the IP hid</span>
+<span class="p">$</span> <span class="o">nmap -sV -p 80,443 --script http-title,ssl-cert dc01.corp.local</span>
+<span class="p">$</span> <span class="o">gobuster vhost -u http://dc01.corp.local -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt</span></pre>
+<p>This loop — <em>scan, learn a name, add it to <code>/etc/hosts</code>, scan again</em> — unsticks more "fully enumerated" boxes than any single clever exploit.</p>
+
+<div class="box warn">
+<span class="box-title">The mistake that fails people</span>
+You find one exciting service and tunnel straight into exploiting it — ignoring the other four ports. Enumeration is <strong>breadth-first</strong>: interrogate <em>every</em> service before you attack <em>any</em>. The path in is often the boring port you skipped, not the obvious one.
+</div>
+
+<h2>The five questions — ask them of every service</h2>
+<p>You can't memorise every service on earth, and the exam will show you ones you've never seen. So don't memorise services — memorise this interrogation. It works on anything that answers a port.</p>
+<ol class="steps">
+<li><strong>What exactly is it?</strong> Exact software and version (<code>-sV</code>, banner grab). "Port 80 open" is useless; "Apache 2.4.49" is a lead.</li>
+<li><strong>Is that version known-vulnerable?</strong> <code>searchsploit &lt;product version&gt;</code>, check CVEs. <em>Your engineering instinct for how software fails is the head start here — and if you've done vulnerability or CVE work, this step is already second nature.</em></li>
+<li><strong>Does it allow anonymous / default / guest access?</strong> Null SMB session, anonymous FTP, public SNMP community, default web creds. The cheapest win on the board.</li>
+<li><strong>What does it expose?</strong> Files, shares, directories, usernames, configs, version-control folders, error messages that leak paths.</li>
+<li><strong>Can I authenticate — and with what?</strong> Creds found elsewhere on the box almost always get <em>reused</em>. Note every username and password you see.</li>
+</ol>
+<p>The exact commands for each common service live in your <a href="../reference/enumeration-cheatsheet.html">enumeration cheatsheet</a> — keep it open in a tab while you work. This lesson is the <em>method</em>; that page is the <em>muscle memory</em>.</p>
+
+<h2>Prioritise — what to try first</h2>
+<p>Five questions across six ports gives you a dozen leads and not enough hours. Enumeration's payoff is <em>ranking</em> them. OSCP rewards cheap points over clever ones, so work tiers, not whims:</p>
+<table>
+<thead><tr><th>Tier</th><th>Lead type</th><th>Why it's first</th><th>Examples</th></tr></thead>
+<tbody>
+<tr><td><strong>1</strong></td><td>Cheap / anonymous access</td><td>Free, fast, often <em>is</em> the foothold</td><td>anon FTP, null SMB session, public SNMP, open NFS export</td></tr>
+<tr><td><strong>2</strong></td><td>Known-vulnerable versions</td><td>One <code>searchsploit</code> hit = a near-scripted win</td><td>vsftpd 2.3.4, old Tomcat/Struts, an outdated CMS</td></tr>
+<tr><td><strong>3</strong></td><td>Default / weak / reused creds</td><td>Cheap to test; creds reuse everywhere</td><td><code>admin:admin</code> panels, found creds tried on SSH/SMB</td></tr>
+<tr><td><strong>4</strong></td><td>Custom exploitation</td><td>Slow grind — last, not first</td><td>app logic bugs, manual SQLi, fuzzing a custom service</td></tr>
+</tbody>
+</table>
+<p>When several leads sit at the same tier, rank by <strong>cheapness × likelihood</strong>: do the thirty-second check before the thirty-minute one. The trap is going <em>depth-first</em> on the shiniest service — grinding a web app (tier 4) while an untried null session (tier 1) two ports over is sitting on a password. Sweep the cheap checks across <em>all</em> services first; they're fast, and they routinely hand you the creds you'll reuse on the slow targets.</p>
+<div class="box mantra">
+Cheap wins first.<br>
+The easy point is still a point.
+</div>
+
+<h2>Worked example — output to plan</h2>
+<p>Say your combined TCP deep scan and UDP scan return this:</p>
+<pre><span class="o">PORT     STATE SERVICE      VERSION</span>
+21/tcp   open  ftp          <span class="h">vsftpd 2.3.4</span>
+22/tcp   open  ssh          OpenSSH 7.2p2
+80/tcp   open  http         Apache httpd 2.4.18
+445/tcp  open  microsoft-ds <span class="h">Samba smbd 4.3.11</span>
+8080/tcp open  http         <span class="h">Apache Tomcat 9.0.30</span>
+161/udp  open  snmp         <span class="h">SNMPv2c (community: public)</span></pre>
+<p>Run the five questions across all six and you get a plan — <em>before</em> touching an exploit:</p>
+<table>
+<thead><tr><th>Service</th><th>What the questions surface</th><th>Priority</th></tr></thead>
+<tbody>
+<tr><td>161 · SNMP <code>public</code></td><td>A readable community string. <code>snmpwalk -v2c -c public</code> dumps processes, listening ports, software, sometimes credentials in command lines.</td><td><strong>Tier 1</strong> — anonymous, leaks plenty</td></tr>
+<tr><td>21 · vsftpd 2.3.4</td><td>That exact version is infamous (a backdoor). <code>searchsploit vsftpd</code>; also try anonymous login.</td><td><strong>Tier 1–2</strong> — anon + known-vuln</td></tr>
+<tr><td>445 · Samba</td><td>Check shares with a null session (<code>smbclient -L -N</code>, <code>enum4linux-ng</code>); look for readable files and version CVEs.</td><td><strong>Tier 1</strong> — cheap, often leaks creds</td></tr>
+<tr><td>8080 · Tomcat 9.0.30</td><td>Try <code>/manager/html</code> with default creds (<code>tomcat:tomcat</code>, <code>admin:admin</code>); a manager login lets you deploy a WAR shell.</td><td><strong>Tier 3</strong> — default creds → shell</td></tr>
+<tr><td>80 · Apache</td><td>Biggest surface: <code>whatweb</code>/<code>nikto</code>, content discovery, <code>robots.txt</code>, page source, identify the app.</td><td>Tier 4 — rich but slower</td></tr>
+<tr><td>22 · OpenSSH</td><td>Rarely the way in. Note it for <em>credential reuse</em> once you find a username/password elsewhere.</td><td>Low — revisit with creds</td></tr>
+</tbody>
+</table>
+<p>Notice the SSH port did no work for you yet — and that's fine. It's a <em>holding pen</em> for the username and password the SNMP dump or Samba share is about to hand you. Enumeration is a graph, not a list.</p>
+
+<h3>A port you don't recognise</h3>
+<p>The exam <em>will</em> show you a service you can't name on sight. The five questions don't care — they're a procedure, not a memory test. Suppose pass 1 also found this and <code>-sV</code> couldn't fingerprint it:</p>
+<pre><span class="o">PORT     STATE SERVICE</span>
+9999/tcp open  <span class="h">unknown</span></pre>
+<p>You run the interrogation blind:</p>
+<ol class="steps">
+<li><strong>What is it?</strong> Crank fingerprinting (<code>nmap -sV --version-intensity 9 -p 9999</code>) and just <em>talk to it</em>: <code>nc 10.10.10.5 9999</code> and read the banner; <code>curl -s http://10.10.10.5:9999</code> in case it's HTTP on an odd port. Search the exact banner string verbatim.</li>
+<li><strong>Known-vuln?</strong> Once the banner names a product+version, <code>searchsploit</code> it like any other.</li>
+<li><strong>Anonymous?</strong> Many admin/debug services answer unauthenticated. Connect raw and try <code>help</code>, <code>version</code>, or a bare newline — see what it volunteers.</li>
+<li><strong>Exposes?</strong> Does it echo a version, a hostname, a path, a prompt? Each is a new lead (and a hostname sends you back to the re-scan loop above).</li>
+<li><strong>Auth?</strong> If it asks for credentials, note the prompt format and try every username/password already in your reuse pool.</li>
+</ol>
+<p>You didn't need to know what port 9999 "is." You needed the method. That's the whole point of memorising the questions instead of the services.</p>
+
+<h2>What good enumeration notes look like</h2>
+<p>Enumeration that lives only in your terminal scrollback is enumeration you'll redo at 2am. Write one block <em>per service</em> as you go — checkboxes for what you tried, the evidence file it came from, and a running pool of usernames and passwords to reuse. These notes <em>are</em> the raw material for the graded <a href="./0015-writing-the-report.html">penetration test report</a>; the <code>-oN</code> filenames you jot down become its evidence.</p>
+<pre><span class="c">## 10.10.10.5  —  box: "Lame"  (TJ Null list)</span>
+
+<span class="c">### 161/udp  SNMP public</span>
+- [x] snmpwalk -v2c -c public 10.10.10.5  -&gt; running procs + listening ports
+- usernames seen: makis            <span class="c"># &lt;- REUSE pool</span>
+- evidence: udp.txt, snmp-walk.txt
+
+<span class="c">### 445/tcp  Samba 4.3.11</span>
+- [x] null session: smbclient -L -N -&gt; shares: tmp (rw), IPC$
+- [ ] searchsploit samba 4.3 -&gt; nothing clean (revisit)
+- evidence: deep.txt line 4, smb-shares.txt
+
+<span class="c">### 21/tcp  vsftpd 2.3.4</span>
+- [ ] anon login            [ ] CVE-2011-2523 backdoor (try after SMB)
+
+<span class="c">### reuse pool</span>
+- users: makis, administrator   |   passwords: (none yet)</pre>
+<p>This is the box-notes template from <a href="./0002-the-deliberate-practice-loop.html">Lesson 02</a>, sharpened for enumeration. Open checkboxes are your to-do list; the reuse pool is the single most valuable thing on the page.</p>
+
+<div class="box warn">
+<span class="box-title">Enumeration misses that quietly cost the box</span>
+The failures aren't dramatic — they're omissions. <strong>Skipping UDP</strong> (SNMP/DNS/TFTP never get looked at). <strong>Running content discovery once</strong> with no file extensions — re-run with <code>-x php,txt,html,bak</code> after you learn the stack. <strong>Treating a 403/401 as a dead end</strong> — it <em>confirms</em> the path exists; fuzz inside it and try other methods/headers. <strong>Not recording usernames</strong> you saw — a name from SNMP or a web page is tomorrow's SSH login. And <strong>only scanning the top 1,000 ports</strong>: no <code>-p-</code> means no high-port foothold.
+</div>
+
+<h2>Check yourself</h2>
+<p>Pick the best <em>first</em> move. Retrieve before reasoning — feedback appears below each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — keep it open while you work</span>
+<a href="https://book.hacktricks.wiki/">HackTricks</a> is the field's default "what do I do against service X" reference — every common port has a page of enumeration steps. When the cheatsheet isn't enough, its <a href="https://book.hacktricks.wiki/en/network-services-pentesting/index.html">Pentesting Network Services</a> index is where you go next.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 04</span>
+On your practice box, run the two-pass scan (with <code>-p-</code> and a UDP pass), then write the <strong>five questions</strong> under <em>each</em> open port, answer them, and <strong>tier every lead</strong> — <em>before</em> you try a single exploit. Keep one notes block per service, with a reuse pool. Add it to your box-notes template from <a href="./0002-the-deliberate-practice-loop.html">Lesson 02</a>. The output is a written, prioritised plan, not a flag. Bring it and we'll sharpen your ordering.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Enumeration is the whole challenge:</strong> <strong>Nibbles</strong> &amp; <strong>OpenAdmin</strong> (HTB · Linux · Easy) hide the foothold until you look properly; <strong>Hetemit</strong> (PG) rewards finding the obscure service. <a href="../reference/practice-boxes.html#pb-03">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Hit a service you don't recognise? Unsure whether a version is exploitable, or which of three leads to chase first? Paste me your nmap output and we'll build the plan together. Next: <strong>Lesson 04 — Attacking the web service: content discovery, vhosts, and finding the foothold</strong> — because HTTP is on nearly every box and is the richest way in.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://book.hacktricks.wiki/">HackTricks</a> — per-service pentesting methodology. Scan reference: <a href="https://nmap.org/book/man-port-scanning-options.html">Nmap reference guide</a>. Command reference: local <a href="../reference/enumeration-cheatsheet.html">enumeration cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0002-the-deliberate-practice-loop.html">← Lesson 02: How to Practice a Box</a></span>
+<span><a href="./0004-attacking-the-web-service.html">Next → Lesson 04: Attacking the Web Service</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "Nmap shows 445/tcp open (SMB). Before anything aggressive, what's the cheapest first move?",
+    options: ["Brute-force the administrator login", "Launch a kernel privilege exploit", "List the shares with a null session", "Skip it and grind the website"],
+    answer: 2,
+    explain: "A null session (smbclient -L -N / enum4linux-ng) is free and often leaks files and usernames before you make any noise."
+  },
+  {
+    prompt: "Apache is on port 80. What does enumeration call for before you exploit anything?",
+    options: ["Throw SQL payloads at every input", "Map the site with content discovery", "Run a broad noisy exploit kit", "Assume the web root holds nothing"],
+    answer: 1,
+    explain: "Discover what exists first — content discovery, robots.txt, source, whatweb. You can't exploit a page you never found."
+  },
+  {
+    prompt: "The version field reads 'vsftpd 2.3.4'. What's the right next step?",
+    options: ["Search known exploits for that exact version", "Memorise the version number for later", "File it in the report as a critical", "Move straight along to the SSH port"],
+    answer: 0,
+    explain: "searchsploit / CVE lookup on the exact product and version — pinning the version is what turns a banner into a lead."
+  },
+  {
+    prompt: "You spot one juicy service and want to attack it right now. What does the discipline say?",
+    options: ["Attack that one service immediately", "Pick the other services at random", "Enumerate every open service first", "Exploit before finishing enumeration"],
+    answer: 2,
+    explain: "Breadth-first: interrogate every service before attacking any — the way in is often the boring port you skipped."
+  },
+  {
+    prompt: "Your TCP scan found services but you're stuck for a foothold. What's commonly skipped?",
+    options: ["Rebooting the whole target box", "Scanning the UDP ports", "Guessing the root user's password", "Re-reading the official exam guide"],
+    answer: 1,
+    explain: "SNMP, DNS, and TFTP live on UDP; nmap -sU --top-ports often unsticks a box people had written off."
+  },
+  {
+    prompt: "Six ports are open and the clock is running. How should you order the work?",
+    options: ["Depth-first on the most interesting one", "Strict numeric port order, low to high", "Whichever service you happen to know best", "Cheap, anonymous checks across all of them first"],
+    answer: 3,
+    explain: "Sweep tier-1 leads (anon/null/default) across every service first — they're fast and routinely hand you creds to reuse on the slow targets."
+  }
+]);
+</script>
+
+</body>
+</html>

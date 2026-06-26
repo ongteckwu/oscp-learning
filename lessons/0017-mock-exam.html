@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 17 · The Mock Exam: Putting It All Together</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0016-exam-strategy.html">Lesson 16</a> · <strong>Lesson 17</strong> · <a href="../reference/links.html">Links</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 17 · Exam Readiness</span>
+<h1>The Mock Exam: Putting It All Together</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: run a realistic, self-imposed mock exam that proves you're ready — or shows exactly what to drill.</p>
+
+<p class="lead">You've learned every phase of the chain. Now stop practising boxes one at a time and do the thing the real exam does: drop you into a graded, timed, no-help marathon and see whether the methodology holds under pressure. A mock exam is the single most honest signal you'll get before you pay for the real one. This is the capstone — everything from Lesson 01 onward converges here.</p>
+
+<div class="box mantra">
+The mock exam is where you fail safely,<br>
+so you pass for real.
+</div>
+
+<h2>Why bother with a full mock?</h2>
+<p>Box-by-box practice builds technique, but it quietly lies to you about readiness. When you tackle one machine at a time, with no clock and your notes open, you never feel the two things that actually fail candidates: <strong>time management</strong> and <strong>the report</strong>. You "owned" the box — but did you own it in ninety minutes, or did it take an afternoon? Did you screenshot your proofs as you went, or reconstruct them afterward from memory?</p>
+<p>A mock exam is the only test that surfaces those gaps before they cost you. It forces the full loop end to end: triage four targets, decide where to spend hours, rotate when you stall, collect court-quality evidence, and then sit down and <em>write</em>. You'll discover that "I can root this box" and "I can root three boxes plus an AD set inside the clock and document it to 70 points" are very different claims. The first you've proven many times. The second you have to rehearse.</p>
+<p>There's a psychological dividend too. The real exam is long, and somewhere in hour fourteen you will hit a box that refuses to fall and a voice that says you're going to fail. Candidates who have already lived through that wall in a mock recognise it for what it is — a normal mid-exam slump — and rotate to the next target instead of spiralling. You can't fake that composure; you build it by having been there before. A mock is the cheapest place to meet your own panic and learn it passes.</p>
+
+<h2>Build a realistic mock</h2>
+<p>The exam is <strong>60 points of standalones + 40 points of Active Directory</strong>. Your mock must mirror that weighting, not just throw random boxes at you. Assemble it like this:</p>
+<table>
+<thead><tr><th>Slot</th><th>What to pick</th><th>Best source</th></tr></thead>
+<tbody>
+<tr><td><strong>3 standalones (60 pts)</strong></td><td>Three independent boxes — mix Linux + Windows, "easy" to "medium", each worth 10 foothold + 10 privesc</td><td>OffSec Proving Grounds Practice; or TJ Null's HTB/PG list</td></tr>
+<tr><td><strong>1 AD set (40 pts)</strong></td><td>A multi-host chain: foothold → domain creds → lateral movement → Domain Admin across the whole set</td><td>A Proving Grounds AD chain, HTB AD-style boxes, or HTB Dante / a small AD lab</td></tr>
+<tr><td><strong>The clock</strong></td><td>23h45m hands-on, then a separate 24h report window</td><td>A timer you actually obey</td></tr>
+</tbody>
+</table>
+<p>Why these sources: <strong>Proving Grounds Practice</strong> is the closest thing to the exam in box style and grading — it's OffSec's own lab, so the difficulty curve and "find the one misconfiguration" flavour match.<sup class="ref"><a href="#s1">1</a></sup> TJ Null's list curates HTB and PG machines that play like exam boxes, and the community maintains "exam-like" playlists (TJ Null / 0xdf OffSec lists) you can pull from. For the 40-point set you need genuine <em>multi-host</em> AD — a single box won't rehearse the pivot, the credential reuse, and the DCSync that the real set demands.</p>
+
+<h3>Don't shortcut the AD set</h3>
+<p>The 40-point Active Directory set is where mocks most often fall apart, because it's the hardest part to assemble honestly. A single domain-joined box does <em>not</em> rehearse it. A real exam AD set is a <strong>chain</strong>: you get an initial foothold on one host, loot credentials there, use them to move to the next host, escalate within the domain, and finally take a Domain Controller — typically via DCSync. Your mock's AD environment must force that whole sequence. If your "AD set" is one machine you can root in isolation, you've quietly converted a 40-point chain into another standalone and learned nothing about the part of the exam that fails the most candidates. A Proving Grounds AD chain, a set of HTB AD-style boxes, or a small purpose-built AD lab all work — what matters is that the hops are real.</p>
+
+<div class="box note">
+<span class="box-title">Pick boxes you haven't seen</span>
+A mock only measures readiness if the boxes are new to you. Re-running a machine you've already rooted tests your memory, not your methodology. Save familiar boxes for targeted drilling <em>after</em> the mock, never for the mock itself.
+</div>
+
+<h3>Set the stage before the clock starts</h3>
+<p>Exam day is not the time to discover your screenshot tool is broken or your notes are a mess. Stand up the whole environment first, then start the timer — this is part of what you're rehearsing:</p>
+<ol class="steps">
+<li><strong>Fresh attack box.</strong> A clean Kali snapshot you can roll back to. Confirm your toolkit works <em>before</em> the clock: nmap, ffuf/gobuster, BloodHound, Impacket, your pivoting tool of choice.</li>
+<li><strong>Lab access ready.</strong> VPN connected, targets reachable, a quick <code>ping</code> sweep confirming you can see every machine in the mock.</li>
+<li><strong>Note template open.</strong> One file per target, pre-headed with Recon / Foothold / Privesc / Proof — so evidence lands in the right place the moment you find it (the box-notes habit from across the course).</li>
+<li><strong>Screenshot workflow tested.</strong> Take one practice proof shot and confirm it captures cleanly. A missing or unreadable screenshot is a missing point.</li>
+<li><strong>Logistics handled.</strong> Block the time on a real calendar, line up food and water, and plan when you'll sleep. A 24h window is an endurance event — treat it like one.</li>
+</ol>
+
+<h2>The rules — enforce them on yourself</h2>
+<p>A mock is worthless if you cheat it. The whole point is to reproduce exam constraints so the result means something. Hold the line:</p>
+<ol class="steps">
+<li><strong>Two windows, no overlap.</strong> 23h45m hands-on, then 24h for the report. Don't touch the boxes after the hands-on window closes, exactly like the real thing.</li>
+<li><strong>Live by your Lesson 16 plan.</strong> Run the same triage order, the same time-boxes per target, the same "rotate when stuck" rule you drilled in <a href="./0016-exam-strategy.html">exam strategy</a>. The mock is where that plan gets stress-tested.</li>
+<li><strong>No walkthroughs. No AI. No write-ups.</strong> The exam is closed-book on solutions. If you reach for a hint, you've learned nothing about whether <em>you</em> can do it.</li>
+<li><strong>Manual tools only — one box gets the exception.</strong> Mirror the real rule: automated exploitation (Metasploit-style) is allowed on exactly one machine. Everywhere else, do it by hand.</li>
+<li><strong>Screenshot proofs as you go.</strong> Every foothold and root: capture <code>ip a</code> / <code>ipconfig</code> and <code>whoami</code> / <code>id</code> alongside the <code>local.txt</code> / <code>proof.txt</code> in one frame. Missing evidence = missing points, even on a box you owned.</li>
+<li><strong>Then actually write the report.</strong> Use the <a href="./0015-writing-the-report.html">Lesson 15</a> structure and score yourself honestly against 70. A mock with no report is half a mock.</li>
+</ol>
+
+<div class="box warn">
+<span class="box-title">The report is part of the test, not paperwork after it</span>
+Most self-imposed mocks die here: people root the boxes, feel great, and skip the write-up. But on the real exam an unreported root is worth <strong>zero</strong>. If you never rehearse documenting under fatigue, the first time you do it will be for real money. Write the report every single mock.
+</div>
+
+<h3>Collect proofs the exam-grader way</h3>
+<p>Your evidence has to let a grader reproduce the result. The habit is one screenshot per proof that ties identity, network, and flag together:</p>
+<pre><span class="p">#</span> <span class="o">id</span>
+<span class="h">uid=0(root) gid=0(root) groups=0(root)</span>
+<span class="p">#</span> <span class="o">ip a | grep inet</span>
+<span class="o">    inet 192.168.1.50/24 brd 192.168.1.255 scope global eth0</span>
+<span class="p">#</span> <span class="o">cat /root/proof.txt</span>
+<span class="h">b1946ac92492d2347c6235b4d2611184</span>
+<span class="c"># one frame: who am I, where am I, the flag — that's a scorable proof</span></pre>
+
+<h2>Use the report window like it's graded</h2>
+<p>The second 24 hours are not a victory lap — they're the half of the mock that most candidates under-rehearse. The exam is graded on the report, not on what you remember doing. So treat the report window with the same discipline as the hands-on one, and rehearse the specific conditions that make it hard:</p>
+<ul>
+<li><strong>Write from your evidence, not your memory.</strong> If a step exists only in your head, it doesn't exist. Reconstruct each box purely from your notes and screenshots — the gaps you hit now are the gaps you'll fix in your note-taking <em>before</em> the real exam.</li>
+<li><strong>Time each section.</strong> Aim for a clean, reproducible write-up of one box in about thirty minutes. If a section takes two hours, your notes were too thin — that's a finding, not a failure.</li>
+<li><strong>Write tired.</strong> Don't sleep eight hours and write fresh. Start the report fatigued, the way you'll be after the hands-on window, so you rehearse the real condition.</li>
+<li><strong>Follow the <a href="./0015-writing-the-report.html">Lesson 15</a> structure exactly.</strong> Walkthrough per target, reproducible steps, proofs inline. Then re-read it as if you were the grader: could a stranger replay every compromise from this document alone?</li>
+</ul>
+
+<h2>The capstone checklist — can I do each of these cold?</h2>
+<p>This is the whole course in one table. For every phase, ask the brutal question: <em>could I do this right now, from memory, on a box I've never seen?</em> Any "no" is a drill target before you book the exam.</p>
+<table>
+<thead><tr><th>Phase</th><th>Can I do this cold?</th><th>Lesson</th></tr></thead>
+<tbody>
+<tr><td><strong>Recon &amp; service enumeration</strong></td><td>Full port sweep, service versions, prioritise the attack surface</td><td><a href="./0003-service-enumeration.html">L03</a></td></tr>
+<tr><td><strong>Web attacks</strong></td><td>Enumerate the app, find the bug, turn it into a shell</td><td><a href="./0004-attacking-the-web-service.html">L04</a> / <a href="./0005-exploiting-the-web-foothold.html">L05</a></td></tr>
+<tr><td><strong>Linux privesc</strong></td><td>sudo / SUID / cron / caps → root by hand</td><td><a href="./0006-linux-privilege-escalation.html">L06</a></td></tr>
+<tr><td><strong>Windows privesc</strong></td><td>Services, tokens, unquoted paths → SYSTEM</td><td><a href="./0007-windows-privilege-escalation.html">L07</a></td></tr>
+<tr><td><strong>Password attacks &amp; reuse</strong></td><td>Crack a hash, spray, reuse creds across hosts</td><td><a href="./0008-password-attacks-and-credential-reuse.html">L08</a></td></tr>
+<tr><td><strong>Non-web footholds</strong></td><td>Exploit a non-HTTP service into a shell</td><td><a href="./0009-footholds-beyond-the-web.html">L09</a></td></tr>
+<tr><td><strong>AD enumeration</strong></td><td>Map users, groups, sessions, ACLs with BloodHound</td><td><a href="./0010-active-directory-enumeration.html">L10</a></td></tr>
+<tr><td><strong>AD authentication attacks</strong></td><td>Kerberoast, AS-REP roast, crack, abuse the result</td><td><a href="./0011-active-directory-authentication-attacks.html">L11</a></td></tr>
+<tr><td><strong>AD lateral → Domain Admin</strong></td><td>Pass-the-hash, lateral movement, DCSync</td><td><a href="./0012-active-directory-lateral-movement.html">L12</a></td></tr>
+<tr><td><strong>Pivoting &amp; tunneling</strong></td><td>Stand up a SOCKS proxy, reach an internal host</td><td><a href="./0013-pivoting-and-tunneling.html">L13</a></td></tr>
+<tr><td><strong>Post-exploitation looting</strong></td><td>Harvest creds and secrets, feed them back into the chain</td><td><a href="./0014-post-exploitation-looting.html">L14</a></td></tr>
+<tr><td><strong>Writing the report</strong></td><td>A clean, reproducible write-up under time pressure</td><td><a href="./0015-writing-the-report.html">L15</a></td></tr>
+<tr><td><strong>Exam strategy</strong></td><td>Triage, time-box, rotate, manage the clock</td><td><a href="./0016-exam-strategy.html">L16</a></td></tr>
+</tbody>
+</table>
+
+<h2>Readiness signals — what "ready" feels like</h2>
+<p>Numbers on a mock tell you the score; these behaviours tell you it'll repeat. You're genuinely exam-ready when you can:</p>
+<ul>
+<li>Own an OSCP-like standalone in <strong>under ~2 hours</strong> with no hints.</li>
+<li>Run a full <strong>Kerberoast → crack → lateral → DCSync</strong> chain from memory, without opening a cheatsheet.</li>
+<li>Stand up a <strong>SOCKS pivot</strong> to an internal host without looking up the syntax.</li>
+<li>Write a clean, reproducible report section in <strong>about 30 minutes</strong>.</li>
+<li>Consistently grab the <strong>foothold</strong> even on boxes where full root eludes you — partial points add up, and 70 doesn't require perfection.</li>
+</ul>
+<p>That last one matters more than it looks. The exam rewards breadth: a foothold here, a privesc there, the AD set's first hops. Candidates who reliably take the cheap 10s and 20s across every target clear 70 far more often than those chasing one perfect root.</p>
+
+<div class="box note">
+<span class="box-title">The ways people fake a mock</span>
+Watch yourself for the quiet cheats that make a mock lie: peeking at a write-up "just to confirm", skipping the report because the boxes are done, re-running a familiar machine, leaving the timer off, or letting the hands-on window bleed into the next day. Each one inflates your score and hides a real gap. If you wouldn't get away with it on exam day, don't do it in the mock.
+</div>
+
+<h2>After-action review — turn the score into a plan</h2>
+<p>The mock isn't done when the clock stops; it's done when you've learned from it. Treat the wrap-up like an incident review:</p>
+<ol class="steps">
+<li><strong>Score honestly against 70.</strong> Tally points per target the way a grader would — foothold and privesc separately, AD set as a whole. No "I almost had it" credit.</li>
+<li><strong>Name your 2–3 weakest phases.</strong> Where did you stall, panic, or burn an hour? Map each failure back to its lesson in the checklist above.</li>
+<li><strong>Drill those phases specifically.</strong> Don't re-run the whole mock — go deep on the weak spots. Interleave several boxes that hit the same skill, and re-attempt the exact box that beat you.</li>
+<li><strong>Iterate.</strong> Schedule the next mock. Repeat until you clear 70 <em>with margin</em> — not squeaking past, but comfortably above, because exam-day nerves cost points.</li>
+</ol>
+<p>A worked scorecard makes the gap obvious:</p>
+<pre><span class="c"># Mock #1 tally</span>
+<span class="o">Box A (Linux standalone)   foothold 10  +  root 10  = 20</span>
+<span class="o">Box B (Windows standalone) foothold 10  +  root  0  = 10   &lt;- privesc stalled</span>
+<span class="o">Box C (Linux standalone)   foothold  0  +  root  0  =  0   &lt;- never got in</span>
+<span class="o">AD set (3 hosts)           initial + lateral, no DA = 20   &lt;- missed DCSync</span>
+<span class="p">$</span> <span class="o">echo $((20 + 10 + 0 + 20))</span>
+<span class="h">50   # below 70 — weakest phases: Box C enumeration, Windows privesc, AD final hop</span></pre>
+<p>Fifty isn't a failure — it's a map. Three named weaknesses, three drill targets, one clear path to the next mock.</p>
+
+<h3>How many mocks, and what does "margin" mean?</h3>
+<p>There's no fixed number — you're done when the result is <em>repeatable</em>, not when you've hit a quota. One pass at 72 could be luck; two or three clean clears in the high 70s or 80s, on boxes you'd never seen, is a signal. "With margin" matters because exam day taxes you in ways a mock can't fully reproduce — proctoring, real stakes, sleep loss. Build a cushion so that even a bad-luck box or a stalled privesc still leaves you above 70. If your last mock cleared comfortably and no single phase is a known weakness, stop drilling and book the exam; more mocks past that point are just procrastination wearing a productive disguise.</p>
+
+<h2>Recommended practice sets</h2>
+<p>Keep your pipeline of boxes fresh and exam-flavoured:</p>
+<ul>
+<li><a href="https://www.offsec.com/labs/">OffSec Proving Grounds Practice</a> — the most exam-realistic reps and grading.<sup class="ref"><a href="#s1">1</a></sup></li>
+<li><a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's OSCP prep list</a> — the canonical curated HTB/PG machine list.<sup class="ref"><a href="#s2">2</a></sup></li>
+<li><a href="https://www.reddit.com/r/oscp/">r/oscp</a> — current "exam-like box" recommendations and recent candidate experiences.<sup class="ref"><a href="#s3">3</a></sup></li>
+<li>Your local <a href="../reference/links.html">Links</a> page — every cheatsheet and tool referenced across the course.</li>
+</ul>
+<p>Rotate the list so you're always facing fresh boxes. Pull a mix of operating systems and difficulty each time, and keep a running log of which machines you've used for mocks versus drills — once a box is "spent" as a surprise, it can only ever serve as a drill again.</p>
+
+<div class="box tip">
+<span class="box-title">Record your mock runs</span>
+Screen-record each mock (or at least keep a timestamped command log). Reviewing the recording afterward is where the real lessons hide: the forty minutes you sank into a dead-end port, the privesc you walked past twice, the moment you should have rotated. You can't fix time-management mistakes you can't see.
+</div>
+
+<h2>The road from here</h2>
+<p>Look back at the path. <a href="./0001-the-oscp-attack-chain.html">Lesson 01</a> laid out the attack chain — recon, foothold, privesc, pivot, loot, report. Every lesson since put one link of that chain in your hands, with a real box to prove it on. And now you've reached the capstone: a full mock that fuses all of it under exam conditions.</p>
+<p>The roadmap is complete. There's no secret twelfth technique you're missing — from here it is <strong>reps and scheduling</strong>. Run mocks. Drill your weak phases. Watch the score climb past 70 with room to spare. When it does, book the exam, walk in with a rehearsed plan, and earn the <strong>OSCP+</strong>. You already have the methodology. The only thing left is to do it on the day that counts.</p>
+
+<div class="box mantra">
+You don't rise to the level of the exam.<br>
+You fall to the level of your reps.
+</div>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — practise on the real thing</span>
+<a href="https://www.offsec.com/labs/">OffSec Proving Grounds</a> is the closest you'll get to exam boxes outside the exam — same vendor, same "one misconfiguration" feel, real grading. Pull your mock's standalones and an AD chain from here, and use <a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's list</a> to choose exam-like machines.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this — your final task</span>
+Schedule and run a full <strong>48-hour mock</strong>: 24h hands-on (3 standalones + an AD set, mirroring 60/40) under exam rules — no walkthroughs, no AI, manual tools except one box — then 24h to write the report. Score it against 70 and drill your weakest two phases. Then do it again until you clear 70 with margin.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Full timed simulation:</strong> PEN-200 <strong>OSCP A/B/C</strong> (3 standalone + 1 AD set) is the closest dry-run; or build a set from <strong>PG</strong> "exam-like" boxes and the HTB OSCP-like tier. <a href="../reference/practice-boxes.html#pb-17">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — the course is complete</span>
+That's the whole curriculum: from the attack chain to a full mock exam, every phase is in your hands. There's no next lesson — from here it's reps. Keep practising boxes, and bring me your notes and blockers anytime: a stuck foothold, a privesc you can't crack, an AD hop that won't land, or a report section you want a second pair of eyes on. When your mocks clear 70 with margin, <strong>book the exam</strong>. Go earn the OSCP+.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://www.offsec.com/labs/">OffSec — Proving Grounds</a> (exam-realistic practice labs and grading; the closest analogue to the OSCP+ boxes). Local: <a href="../reference/exam-format.html">Exam format</a>.</li>
+<li id="s2"><a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null — OSCP prep list</a> (curated HTB/PG machines that play like exam boxes).</li>
+<li id="s3"><a href="https://www.reddit.com/r/oscp/">r/oscp</a> (community exam experiences and current "exam-like box" recommendations). Local: <a href="../reference/links.html">Links</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0016-exam-strategy.html">← Lesson 16: Exam Strategy &amp; Time Management</a></span>
+<span><a href="../index.html">↑ Course Contents</a> · <a href="../reference/glossary.html">Glossary</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "Why run a full, timed mock instead of just practising boxes one at a time?",
+    options: ["It surfaces time-management and report gaps that box-by-box practice hides", "It guarantees you'll see the exact exam machines in advance", "It removes the need to write any report on exam day", "It lets you skip the weaker phases of the methodology"],
+    answer: 0,
+    explain: "Single-box practice never tests the clock or the write-up; only a full timed mock exposes those failure modes before they cost you points."
+  },
+  {
+    prompt: "Which source most closely mirrors actual exam boxes for your mock?",
+    options: ["A random assortment of CTF web challenges", "Boxes you have already rooted before", "OffSec Proving Grounds Practice", "Only kernel-exploit-focused machines"],
+    answer: 2,
+    explain: "Proving Grounds is OffSec's own lab — its difficulty curve, box style, and grading match the OSCP+ most closely."
+  },
+  {
+    prompt: "How should the boxes in your mock be weighted?",
+    options: ["One giant Active Directory forest for all 100", "3 standalones for 60 and one AD set for 40", "Five standalones and no Active Directory at all", "Whatever boxes happen to be free that week"],
+    answer: 1,
+    explain: "Mirror the real exam: 60 points of standalones plus a 40-point AD set, so the mock measures the right balance of skills."
+  },
+  {
+    prompt: "Which rule must you enforce to make a mock meaningful?",
+    options: ["Keep all walkthroughs open for quick reference", "Let the hands-on and report windows overlap freely", "Use automated exploitation on every machine", "No AI, manual tools, automation on only one box"],
+    answer: 3,
+    explain: "The exam bans AI and limits automated exploitation to a single machine; rehearse those exact constraints or the result is meaningless."
+  },
+  {
+    prompt: "Which best describes a genuine readiness signal?",
+    options: ["Recognising a box because you solved it last week", "Needing the cheatsheet open for every privesc step", "Owning a standalone cold and running a full AD chain from memory", "Rooting one box slowly over an entire afternoon"],
+    answer: 2,
+    explain: "Readiness is doing it unaided and from memory under time pressure — not recall of a specific box or dependence on notes."
+  },
+  {
+    prompt: "After scoring a mock at 50, what's the right next move?",
+    options: ["Book the real exam immediately to save money", "Identify the 2-3 weakest phases and drill those specifically", "Re-run only the boxes you already solved easily", "Abandon Active Directory and focus on standalones"],
+    answer: 1,
+    explain: "An after-action review turns the score into a plan: name the weakest phases, drill and re-attempt them, then iterate mocks until you clear 70 with margin."
+  }
+]);
+</script>
+
+</body>
+</html>

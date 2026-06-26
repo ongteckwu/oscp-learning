@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 01 · The OSCP Attack Chain</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <strong>Lesson 01</strong> · <a href="../reference/exam-format.html">Exam Format</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 01 · Methodology</span>
+<h1>The OSCP Attack Chain</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: look at any target and name the phase you're in — and what to do next.</p>
+
+<p class="lead">As a software engineer you already understand how software breaks: you read code, debug systems, and reason about protocols and trust boundaries. (If you've done vulnerability or CVE work, this builds directly on it.) What the exam tests is a different muscle — a repeatable <strong>process</strong> for finding and reaching a vulnerability on a live host you've never seen. That process is the same five phases, every box, every time. Today you install the map. Every later lesson plugs into one of these phases.</p>
+
+<h2>First, what you're actually being tested on</h2>
+<p>The exam is 6 machines, 100 points, <strong>70 to pass</strong>, ~24h hands-on + 24h to report. The shape that matters:</p>
+<table>
+<thead><tr><th>Target</th><th>Points</th><th>Split</th></tr></thead>
+<tbody>
+<tr><td>3 standalone machines</td><td>60</td><td>each: 10 foothold + 10 privesc</td></tr>
+<tr><td>1 Active Directory set (3 hosts)</td><td>40</td><td>chained: 10 / 10 / 20</td></tr>
+</tbody>
+</table>
+<p>Notice the scoring <em>is</em> the methodology: every standalone pays you once for getting <strong>in</strong> (foothold) and again for getting <strong>root</strong> (privesc). The AD set pays for moving <strong>across</strong> hosts. Full detail — and what's <em>not</em> on the exam (no buffer overflow, no bonus points, no AI tools, no Metasploit beyond one machine) — lives in <a href="../reference/exam-format.html">the exam format reference</a>.<sup class="ref"><a href="#s1">1</a></sup></p>
+
+<h2>The attack chain — five phases</h2>
+<p>Every target you ever touch flows through these. Memorise the order; it's your fallback whenever you feel lost.</p>
+
+<ol class="steps">
+<li><strong>Recon</strong> — <em>What's here?</em> Find live hosts and open ports. On a single box this is one thorough port scan.
+<pre><span class="p">$</span> <span class="o">nmap -p- --min-rate 2000 10.10.10.5</span>   <span class="c"># all 65535 TCP ports, fast</span>
+<span class="p">$</span> <span class="o">nmap -sC -sV -p 22,80,445 10.10.10.5</span>   <span class="c"># deep-scan the open ones</span></pre>
+</li>
+<li><strong>Enumeration</strong> — <em>What's wrong with what's here?</em> Interrogate every service for versions, hidden paths, users, default creds, misconfigurations. This is where you spend most of your time — and where exams are won or lost.</li>
+<li><strong>Foothold</strong> — <em>How do I get in?</em> Turn one finding into code execution: a web exploit, default credentials, a vulnerable service version. You catch the shell on a <a href="../reference/glossary.html">listener</a>. <span class="cite">(10 pts on a standalone.)</span></li>
+<li><strong>Privilege escalation</strong> — <em>How do I become root?</em> From your low-priv shell, enumerate <em>again</em> (now from the inside) and abuse a SUID binary, sudo rule, weak service, or kernel flaw to reach root/SYSTEM. <span class="cite">(The other 10 pts.)</span></li>
+<li><strong>Lateral movement &amp; looting</strong> — <em>What does this unlock?</em> Harvest credentials and hashes, then reuse them to reach the next host. This phase <em>is</em> the Active Directory set, and it loops back to enumeration on each new target.</li>
+</ol>
+
+<div class="box note">
+<span class="box-title">The pattern hiding in the chain</span>
+Enumeration isn't one phase — it's a <em>loop</em>. You enumerate the host, get a foothold, then enumerate again from inside to escalate, then enumerate the network to move laterally. Same verb, new vantage point. Internalising "I just got access → now I enumerate from here" is the single biggest behavioural shift from engineer to operator.
+</div>
+
+<h2>Recon vs enumeration — the line that matters</h2>
+<p>Beginners blur these two, and it's the most expensive blur in the whole methodology. They are different questions:</p>
+<table>
+<thead><tr><th></th><th>Recon</th><th>Enumeration</th></tr></thead>
+<tbody>
+<tr><td>Question</td><td><em>What exists? What answers?</em></td><td><em>What's wrong with what exists?</em></td></tr>
+<tr><td>Output</td><td>A list of hosts, ports, and service names</td><td>Versions, hidden paths, users, shares, default creds, misconfigs</td></tr>
+<tr><td>Tells you</td><td>A door is there</td><td>The door's lock is broken</td></tr>
+<tr><td>Typical tool</td><td><code>nmap</code></td><td><code>feroxbuster</code>, <code>nxc</code>, <code>enum4linux</code>, a browser, Burp</td></tr>
+</tbody>
+</table>
+<p>Recon is cheap and finite — you finish it in minutes. Enumeration is open-ended and is where the points hide. An open port is <strong>not</strong> a finding; it's an invitation to enumerate. "I ran nmap, nothing's here" almost always means "I stopped at recon" — go interrogate the services it found.</p>
+
+<h2>Worked angle — from scan to plan</h2>
+<p>Recon hands you a few open ports. The skill is reading them into a <strong>plan</strong> — which service to attack first, and what to look for. Say the scan returns:</p>
+<pre><span class="p">$</span> <span class="o">nmap -p- --min-rate 2000 10.10.10.5</span>            <span class="c"># find every open port</span>
+<span class="p">$</span> <span class="o">nmap -sC -sV -p22,80,445 10.10.10.5</span>            <span class="c"># fingerprint the open ones</span>
+
+<span class="o">22/tcp  open  ssh          OpenSSH 8.2p1 Ubuntu</span>
+<span class="o">80/tcp  open  http         Apache 2.4.41 — "Acme Uploads"</span>
+<span class="o">445/tcp open  microsoft-ds Samba smbd 4.6.2</span></pre>
+<p>Now turn each open port into one sentence of intent — that's the plan you'll work top to bottom:</p>
+<table>
+<thead><tr><th>Port</th><th>What it tells you</th><th>Where it goes</th></tr></thead>
+<tbody>
+<tr><td>22 / ssh</td><td>A login surface, but rarely the way in — park it for credential reuse later.</td><td>hold any creds you find</td></tr>
+<tr><td>80 / http</td><td>A custom web app ("Acme Uploads") — biggest surface; enumerate dirs, params, versions.</td><td>Lessons 04–05</td></tr>
+<tr><td>445 / smb</td><td>File shares on a versioned Samba — list shares, try anonymous access, check that version.</td><td>Lesson 09</td></tr>
+</tbody>
+</table>
+<p>Prioritise the widest, most custom surface first: here that's <strong>port 80</strong>. OSCP rewards low-hanging fruit — a bespoke upload app beats a patched SSH daemon every time. You'd start enumerating the web service, keep SMB as the parallel lead, and leave SSH as a credential sink.</p>
+
+<div class="box mantra">
+"When in doubt, <strong>enumerate harder</strong>."<br>
+<span style="font-size:0.8rem; color:var(--ink-faint);">The OSCP cliché — because it's true. Most stuck moments are missing enumeration, not a missing exploit.</span>
+</div>
+
+<h2>The phases map to the tools you'll meet</h2>
+<p>You don't need any of these yet — this is a teaser so the names are familiar when they arrive. Each phase has a small, reusable toolkit; the rest of the course is learning to drive them with judgement.</p>
+<table>
+<thead><tr><th>Phase</th><th>Tools you'll meet later</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>Recon</td><td><code>nmap</code></td><td>Lesson 03</td></tr>
+<tr><td>Enumeration</td><td><code>feroxbuster</code>, <code>nxc</code> (NetExec), <code>enum4linux</code></td><td>Lessons 03, 09–10</td></tr>
+<tr><td>Foothold</td><td><code>searchsploit</code>, Burp Suite</td><td>Lessons 04–05</td></tr>
+<tr><td>Privilege escalation</td><td><code>linpeas</code>, <code>winpeas</code>, GTFOBins</td><td>Lessons 06–07</td></tr>
+<tr><td>Lateral movement</td><td>Impacket, BloodHound</td><td>Lessons 10–12</td></tr>
+</tbody>
+</table>
+
+<h2>Why this reframes your engineering background</h2>
+<p>As an engineer you mostly work the <em>constructive</em> direction — you build a system whose internals you know and reason forward from design to behaviour. (If you've triaged CVEs, you've asked the analyst's version: "<em>given</em> this vulnerability, how bad is it?") The attack chain runs the other way: you face a host you've never seen and must <strong>discover</strong> that a vulnerability is present and reachable, then prove it by executing. Same knowledge of systems, protocols, and code — opposite workflow. Each phase is really a question you keep asking until the box falls:</p>
+<table>
+<thead><tr><th>Phase</th><th>The question you're answering</th></tr></thead>
+<tbody>
+<tr><td>Recon</td><td>What can I talk to?</td></tr>
+<tr><td>Enumeration</td><td>What's misconfigured, outdated, or exposed?</td></tr>
+<tr><td>Foothold</td><td>Which finding gives me code execution?</td></tr>
+<tr><td>Privesc</td><td>What can my new user abuse to become root?</td></tr>
+<tr><td>Lateral</td><td>What credentials did I just find, and where do they work?</td></tr>
+</tbody>
+</table>
+
+<div class="box warn">
+<span class="box-title">The beginner traps</span>
+Four failure modes cost more boxes than any missing exploit:
+<ul>
+<li><strong>Tunnel vision on one port.</strong> You sink an hour into HTTP and never look at SMB. Scan everything; keep a list of leads, not one obsession.</li>
+<li><strong>Skipping enumeration.</strong> Seeing an open port and reaching for an exploit, instead of fingerprinting versions, dirs, and users first. The port is the start of the work, not the end.</li>
+<li><strong>Jumping straight to exploits.</strong> Firing public PoCs before you've confirmed the version is even vulnerable — you waste time and learn nothing about why.</li>
+<li><strong>Not taking notes.</strong> You find a cred, forget where, and can't retrace the path when your shell dies. Notes are not optional (see below).</li>
+</ul>
+</div>
+
+<div class="box note">
+<span class="box-title">Notes are part of the method</span>
+Every command you run and every credential, version, and path you find goes into your notes <em>as you go</em> — not at the end. Two reasons: the deliverable on a real engagement (and on the OSCP) is a graded <a href="./0015-writing-the-report.html">report</a> — points come from what you can document, not just what you popped; and good notes are how you re-find the path when a shell dies mid-box. The note-taking habit gets its own treatment in <a href="./0002-the-deliberate-practice-loop.html">Lesson 02</a> — start it today, on your very first box.
+</div>
+
+<h2>Check yourself</h2>
+<p>Retrieval practice — answer before you reason it out. Immediate feedback below each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — read this once, today</span>
+The <a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">official OSCP+ Exam Guide</a> is the single most authoritative document for this whole journey. Read it end-to-end now so the rules are in your head from day one — you'll re-read it before exam day.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before the next lesson</span>
+Pick one <strong>easy</strong> box from <a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's list</a> on Hack The Box or TryHackMe. Don't try to root it. Just follow a walkthrough (e.g. an <a href="https://www.youtube.com/@ippsec">IppSec</a> video) and, out loud, <em>name the phase</em> at each step: "that's recon… that's enumeration… that's the foothold." You're training the map, not the exploit. That's the entire goal for today.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Own one easy box end-to-end</strong> to feel the whole chain: <strong>Lame</strong> (HTB · Linux) — Samba CVE-2007-2447 straight to root — or <strong>Blue</strong> (HTB · Windows) — EternalBlue → SYSTEM. <a href="../reference/practice-boxes.html#pb-01">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Stuck on a term? Want me to walk a specific box with you, explain why a phase matters, or go deeper on the recon-vs-enumeration line? Just ask in our chat. The next lesson is <strong>Lesson 02 — How to Practice a Box</strong>, where you turn this map into a repeatable practice loop and start the box-notes habit that carries you to the exam.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">OffSec — OSCP+ Exam Guide</a> (exam structure, points, rules). See also the local <a href="../reference/exam-format.html">exam format reference</a>.</li>
+<li id="s2"><a href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null — OSCP-like machines list</a> (the practice boxes this course drills) · <a href="https://www.youtube.com/@ippsec">IppSec</a> (watch the methodology in motion).</li>
+</ol>
+
+<footer>
+<span><a href="../reference/glossary.html">Glossary</a> · <a href="../reference/exam-format.html">Exam Format</a></span>
+<span><a href="./0002-the-deliberate-practice-loop.html">Next → Lesson 02: How to Practice a Box</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "You have a low-privilege shell and are hunting a way to become root on this same box. Which phase?",
+    options: ["Enumerating the target services", "Gaining your initial foothold", "Escalating your local privileges", "Pivoting toward other hosts"],
+    answer: 2,
+    explain: "Same host, low-priv → root is privilege escalation — the second 10 points on a standalone."
+  },
+  {
+    prompt: "Your port scan is done; now you probe each service for versions, hidden paths, and misconfigurations. Which phase?",
+    options: ["Moving across the AD domain", "Enumerating the target thoroughly", "Escalating to administrator access", "Writing up the final report"],
+    answer: 1,
+    explain: "Interrogating discovered services is enumeration — where most OSCP time is spent and most boxes are won."
+  },
+  {
+    prompt: "You feel completely stuck on a box and have run out of ideas. What's the OSCP reflex?",
+    options: ["Enumerate more, dig deeper", "Fire off every public exploit", "Reboot and return tomorrow", "Jump ahead to escalation"],
+    answer: 0,
+    explain: "Stuck almost always means missed enumeration, not a missing exploit. Re-enumerate before anything drastic."
+  },
+  {
+    prompt: "On a standalone exam machine, getting your initial shell (before root) is worth how much?",
+    options: ["Full twenty points at once", "Five of the twenty points", "Nothing until you get root", "Ten of the twenty points"],
+    answer: 3,
+    explain: "Each standalone splits 20 as 10 for foothold + 10 for privesc — partial credit for getting in."
+  },
+  {
+    prompt: "You crack creds on one AD host and reuse them to log into a second host. Which phase?",
+    options: ["Enumerating the first target", "Moving laterally between hosts", "Escalating privileges right here", "Reporting the finished engagement"],
+    answer: 1,
+    explain: "Reusing access to reach a new host is lateral movement — the core of the 40-point AD set."
+  },
+  {
+    prompt: "An nmap scan shows 445/tcp open running Samba 4.6.2. Finding the open port is recon; what counts as enumeration?",
+    options: ["Re-run the same all-ports sweep", "Write the host's IP in your notes", "List its shares; probe the version", "Catch a reverse shell on that port"],
+    answer: 2,
+    explain: "Recon finds what exists (an open port); enumeration interrogates it for what's wrong — shares, versions, misconfigs."
+  }
+]);
+</script>
+
+</body>
+</html>

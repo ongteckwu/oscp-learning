@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 04 · Attacking the Web Service</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0003-service-enumeration.html">Lesson 03</a> · <strong>Lesson 04</strong> · <a href="../reference/enumeration-cheatsheet.html">Enum cheatsheet</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 04 · Web</span>
+<h1>Attacking the Web Service</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: turn "there's a website" into a shortlist of concrete foothold candidates.</p>
+
+<p class="lead">HTTP is on nearly every box and is the single richest way in — because behind it sits <em>custom code</em>, and custom code has custom bugs. But "port 80 is open" is not a foothold. This lesson is the web-specific enumeration that <strong>finds the door</strong>. Kicking it down — SQL injection, file inclusion, upload-to-shell — is Lesson 05. First you have to find which door, and you need to map the <em>whole</em> attack surface before you do.</p>
+
+<div class="box note">
+<span class="box-title">Your edge: you've built web apps</span>
+You already know how web apps are built — routing, sessions, auth, file uploads, an ORM behind a search box, a JSON API behind a single-page frontend. That is exactly the lens that finds their bugs: every feature you've ever shipped is an attack surface someone else shipped carelessly. You're not learning what a login form <em>is</em> — you're learning to ask it hostile questions, watch the answer, and notice when it tells you too much. (If you've done vulnerability or CVE work, this builds straight on it.)
+</div>
+
+<h2>The web-recon workflow</h2>
+<ol class="steps">
+<li><strong>Fingerprint the stack.</strong> What is this? <code>whatweb</code>, response headers, cookies, and the page itself tell you server, language, framework, and CMS. A known CMS unlocks a targeted tool — WordPress → <code>wpscan</code>, and a version → <code>searchsploit</code>.</li>
+<li><strong>Read what's free.</strong> Before any brute force: browse it like a real user, then <strong>view source</strong> (HTML comments leak creds and paths constantly), <code>robots.txt</code>, <code>/sitemap.xml</code>, error pages, and exposed <code>/.git</code> or backup files. The box often hands you the answer here.</li>
+<li><strong>Content discovery.</strong> Brute-force hidden paths and files with the right extensions, and recurse into what you find.
+<pre><span class="p">$</span> <span class="o">feroxbuster -u http://10.10.10.5 \
+      -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt \
+      -x php,txt,html</span></pre>
+Read the <em>status codes</em>: <code>200</code> exists, <code>301</code> redirect, <code>401/403</code> there-but-protected (a hint worth chasing).</li>
+<li><strong>Virtual hosts.</strong> If the box answers to a hostname (a redirect to <code>http://blog.box.htb</code>), the real app may be on a <em>different</em> vhost. Add the host to <code>/etc/hosts</code>, then fuzz:
+<pre><span class="p">$</span> <span class="o">ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt \
+      -u http://10.10.10.5 -H "Host: FUZZ.box.htb" -fs 0</span></pre></li>
+<li><strong>Shortlist the foothold candidates.</strong> Now name the ways in (next lesson exploits them):
+  <table>
+  <thead><tr><th>What you found</th><th>Foothold it suggests</th></tr></thead>
+  <tbody>
+  <tr><td>Login form</td><td>Default/weak creds, or SQL injection in the auth</td></tr>
+  <tr><td>Upload feature</td><td>Upload a web shell → code execution</td></tr>
+  <tr><td>URL param like <code>?file=</code>, <code>?page=</code></td><td>Local/Remote File Inclusion (LFI/RFI)</td></tr>
+  <tr><td>Search / input field</td><td>SQL injection, command injection</td></tr>
+  <tr><td>Exposed admin panel (<code>/admin</code>, <code>/manager</code>)</td><td>Default creds → admin features → RCE</td></tr>
+  <tr><td>Object reference like <code>/invoice?id=42</code></td><td>IDOR / broken access control</td></tr>
+  <tr><td><code>/api</code> endpoint returning JSON</td><td>IDOR, mass assignment, missing authorization</td></tr>
+  <tr><td>Known CMS + version</td><td><code>searchsploit</code> the CMS / its plugins</td></tr>
+  </tbody>
+  </table>
+</li>
+</ol>
+
+<div class="box warn">
+<span class="box-title">The /etc/hosts trap that wastes hours</span>
+When a site redirects to a name like <code>box.htb</code> and the page won't load or looks broken, it's almost always because your machine can't resolve that name. Add <code>10.10.10.5 box.htb blog.box.htb</code> to <code>/etc/hosts</code> and it springs to life. Every beginner loses an afternoon to this once — don't.
+</div>
+
+<div class="box mantra">
+Every input is a question you can ask the server.<br>
+<span style="font-size:0.8rem; color:var(--ink-faint);">Enumeration finds the inputs. Exploitation abuses the answers.</span>
+</div>
+
+<h2>Live in a proxy</h2>
+<p>Run <em>everything</em> through an intercepting proxy — <strong>Burp Suite</strong> (Community is free and OSCP-legal) or <strong>OWASP ZAP</strong>. Point your browser at <code>127.0.0.1:8080</code> (FoxyProxy makes this one click), install Burp's CA cert so HTTPS doesn't break, and now every request the app makes flows through a tool you control.</p>
+<p>The browser is a terrible attack instrument: it rewrites your requests, follows redirects, and hides the wire. A proxy gives you the three moves that <em>are</em> manual web testing:</p>
+<ul>
+<li><strong>Intercept</strong> — pause a request mid-flight and edit any header, parameter, or cookie before it leaves. The client-side <code>maxlength</code>, the hidden <code>role=user</code> field, the disabled button — all just text you can change here.</li>
+<li><strong>Repeat</strong> — send a request to <strong>Repeater</strong>, then tweak-and-resend it as many times as you like. This is the core loop: change one thing, read the response, change the next. A login bypass or an injection is found here, not in the browser.</li>
+<li><strong>Inspect</strong> — <strong>Proxy &gt; HTTP history</strong> records every request the site fired, including the XHR/fetch calls and redirects the browser swallowed. The <strong>Target &gt; Site map</strong> tree builds your attack surface automatically as you click around.</li>
+</ul>
+<p>Why manual beats clicking: clicking tests the app the way it <em>wants</em> to be tested. Repeater tests it the way it doesn't. That difference is where footholds live — and it's all hands-on, exactly the skill the exam grades.</p>
+
+<div class="box tip">
+<span class="box-title">Browse first, with the proxy on</span>
+Before any brute force, walk the whole app by hand with Burp recording. Log in, submit forms, hit every link. When you're done, the Site map and HTTP history <em>are</em> a free first pass of content discovery — real routes, real parameters, real cookies — found without firing a single wordlist.
+</div>
+
+<h2>Fingerprint deeper — make the app name itself</h2>
+<p><code>whatweb</code> is the first pass; these go further and routinely decide your whole approach.</p>
+<pre><span class="p">$</span> <span class="o">curl -sI http://10.10.10.5</span>            <span class="c"># response headers only</span>
+<span class="o">Server: Apache/2.4.41 (Ubuntu)</span>
+<span class="o">X-Powered-By: PHP/7.4.3</span>
+<span class="o">Set-Cookie: PHPSESSID=...; path=/</span></pre>
+<p><strong>Headers and cookies fingerprint the stack.</strong> <code>X-Powered-By</code>, <code>X-AspNet-Version</code>, and the session cookie name are giveaways: <code>PHPSESSID</code> = PHP, <code>JSESSIONID</code> = Java/Tomcat, <code>ASP.NET_SessionId</code> = IIS/.NET, <code>laravel_session</code> = Laravel, <code>connect.sid</code> = Express/Node. A <code>X-Generator</code> or <code>Set-Cookie: wordpress_*</code> names the CMS outright.</p>
+<p><strong>The favicon is a fingerprint too.</strong> Many frameworks ship a default <code>favicon.ico</code>; its hash maps to a known product. The browser extension <strong>Wappalyzer</strong> reads headers, cookies, and JS to label the stack in one glance — run it on every target.</p>
+<p><strong>Force an error and read it.</strong> Send a broken request (bad type, missing param, a stray <code>'</code>) and watch what comes back. A framework stack trace — Werkzeug for Flask, the Symfony profiler, an ASP.NET yellow screen, a Rails error page — leaks the framework, exact version, file paths, and sometimes config or SQL. Verbose errors are a finding by themselves.</p>
+<p><strong>TLS certificates leak hostnames.</strong> The cert's Subject Alternative Names are vhosts handed to you for free:</p>
+<pre><span class="p">$</span> <span class="o">openssl s_client -connect 10.10.10.5:443 2&gt;/dev/null \
+    | openssl x509 -noout -text | grep -A1 "Subject Alternative Name"</span>
+<span class="h">    DNS:box.htb, DNS:dev.box.htb, DNS:internal.box.htb</span></pre>
+<p>Those <code>DNS:</code> names are vhosts to add to <code>/etc/hosts</code> (see the trap above) and probe. <code>nmap --script ssl-cert -p443 10.10.10.5</code> pulls the same data, and public boxes may have entries on <code>crt.sh</code>.</p>
+
+<h2>Content discovery, done properly</h2>
+<p>A directory brute is only as good as how you read it. Most beginners run one wordlist, click the first <code>200</code>, and stop. Don't.</p>
+<p><strong>Read every status code as a signal:</strong></p>
+<table>
+<thead><tr><th>Code</th><th>Meaning</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td><code>200</code></td><td>Exists and served</td><td>Visit it; recurse into directories</td></tr>
+<tr><td><code>301 / 302</code></td><td>Redirect</td><td>Follow it — often points at a vhost or login</td></tr>
+<tr><td><code>401</code></td><td>Auth required</td><td>Try default creds / known bypasses</td></tr>
+<tr><td><code>403</code></td><td>There but forbidden</td><td>Probe it — trailing slash, different verb, path tricks</td></tr>
+<tr><td><code>405</code></td><td>Wrong method</td><td>It exists — re-send with POST/PUT and watch</td></tr>
+</tbody>
+</table>
+<p>A <code>403</code> on <code>/admin</code> or <code>/backup</code> is not a dead end — it's confirmation the thing exists. A <code>301</code> to <code>/app/</code> tells you where the real app lives.</p>
+<p><strong>Pick extensions by stack.</strong> The fingerprint tells you what to fuzz for: <code>-x php</code> on PHP/Apache, <code>-x aspx,asmx,ashx</code> on IIS/.NET, <code>-x jsp</code> on Tomcat, and <code>txt,bak,old,zip,config</code> everywhere (backups and configs are pure gold). Fuzzing for <code>.php</code> on a .NET box wastes the run.</p>
+<p><strong>Recurse, and don't stop at the first hit.</strong> <code>feroxbuster</code> recurses by default; with <code>gobuster</code> you re-run against each directory you find. A box's real entry point is frequently three levels deep — <code>/dev/api/v2/</code>, not <code>/</code>.</p>
+<pre><span class="p">$</span> <span class="o">feroxbuster -u http://10.10.10.5 -x php,txt,bak -d 3</span>
+<span class="h">200</span>      <span class="o">GET  /index.php</span>
+<span class="h">301</span>      <span class="o">GET  /dev => /dev/</span>          <span class="c"># recurse in here</span>
+<span class="h">403</span>      <span class="o">GET  /server-status</span>          <span class="c"># exists, blocked — note it</span>
+<span class="h">200</span>      <span class="o">GET  /dev/config.php.bak</span>      <span class="c"># a backup that serves as text → read it</span></pre>
+<p>That <code>config.php.bak</code> almost certainly contains a database password. One ignored extension would have hidden it.</p>
+
+<h2>APIs and the hidden surface</h2>
+<p>Modern boxes hide their real logic behind a JSON API that a single-page frontend talks to. The browser never shows you these routes — but they're often where access control is thin.</p>
+<p><strong>Hunt the API root.</strong> Fuzz for <code>/api</code>, <code>/api/v1</code>, <code>/rest</code>, <code>/graphql</code>, and the self-documentation that frameworks expose: <code>/swagger</code>, <code>/swagger.json</code>, <code>/openapi.json</code>, <code>/api-docs</code>. A Swagger/OpenAPI doc is a free map of every endpoint and parameter. A live <code>/graphql</code> may answer an introspection query and hand you the entire schema.</p>
+<pre><span class="p">$</span> <span class="o">ffuf -w /usr/share/seclists/Discovery/Web-Content/api/api-endpoints.txt \
+      -u http://10.10.10.5/api/FUZZ</span>
+<span class="p">$</span> <span class="o">curl http://10.10.10.5/api/v1/users/1</span>     <span class="c"># now try /2, /3 → IDOR?</span></pre>
+<p><strong>JavaScript files are a confession.</strong> A SPA ships its client logic to you. The bundles list the exact API routes the app calls, and developers leak <strong>API keys, tokens, internal hostnames, and even credentials</strong> in them constantly. Read them — manually, or with <code>LinkFinder</code> / a quick grep:</p>
+<pre><span class="p">$</span> <span class="o">grep -rohE "(/api/[a-zA-Z0-9_/-]+|[A-Za-z0-9_-]*(key|secret|token)[A-Za-z0-9_-]*)" ./js/</span>
+<span class="h">/api/v1/admin/users</span>
+<span class="h">api_key: "AIzaSy...redacted..."</span></pre>
+<p><strong>Discover hidden parameters.</strong> An endpoint may accept parameters it never advertises — a <code>?debug=1</code>, an <code>?admin=true</code>, an unlinked <code>?file=</code>. Param fuzzers find them by brute-forcing names and watching for a changed response:</p>
+<pre><span class="p">$</span> <span class="o">arjun -u "http://10.10.10.5/index.php"</span>      <span class="c"># find hidden GET/POST params</span>
+<span class="p">$</span> <span class="o">ffuf -w params.txt -u "http://10.10.10.5/index.php?FUZZ=test" -fs 0</span></pre>
+<p>Each hidden parameter is a fresh input — a fresh question to ask the server.</p>
+
+<h2>Foothold classes worth a closer look</h2>
+<p>Beyond the obvious forms, these classes appear on OSCP web boxes again and again. Each is 10 points if it lands the first shell — or the credential that gets you there.</p>
+<ul>
+<li><strong>Default and weak credentials.</strong> The fastest win on the board. Admin panels, Tomcat <code>/manager/html</code> (<code>tomcat:tomcat</code>), Jenkins, phpMyAdmin (<code>root</code> / blank), routers, and CMS logins ship with documented defaults. Always try the obvious pair before you crack anything.</li>
+<li><strong>Exposed admin panels.</strong> Content discovery turns these up (<code>/admin</code>, <code>/administrator</code>, <code>/manage</code>). Many admin features — a template editor, a plugin uploader, a "run query" box — are RCE by design once you're in.</li>
+<li><strong>IDOR / broken access control.</strong> Change the number. <code>/invoice?id=42</code> → <code>43</code>, <code>/api/users/1</code> → <code>2</code>. If you see another user's data, the app trusts the ID instead of checking who's asking. Reading an admin's record can hand you a session or a password reset.</li>
+<li><strong>Authentication bypass.</strong> Browse straight to an authenticated page (forced browsing); tamper a <code>role</code> cookie or a JWT (a server accepting <code>alg:none</code> is a classic); abuse a sloppy password-reset flow. The login is a wall — check whether it has a side door.</li>
+<li><strong>Known CMS or app + version → <code>searchsploit</code>.</strong> The instant you have a product and version, search the local Exploit-DB mirror. A public exploit that matches is the shortest path from "there's a website" to a shell.</li>
+</ul>
+<pre><span class="p">$</span> <span class="o">searchsploit "Apache Tomcat 9"</span>           <span class="c"># match product + version → known exploits</span></pre>
+
+<h2>Worked mini-example</h2>
+<p><code>whatweb</code> says <strong>WordPress 5.7</strong>. Your workflow turns that into a chain in minutes:</p>
+<pre><span class="p">$</span> <span class="o">whatweb http://10.10.10.5</span>            <span class="c"># → WordPress 5.7</span>
+<span class="p">$</span> <span class="o">wpscan --url http://10.10.10.5 --enumerate vp,u</span>  <span class="c"># vulnerable plugins + users</span>
+<span class="p">$</span> <span class="o">searchsploit wordpress &lt;plugin&gt;</span>     <span class="c"># turn a finding into an exploit</span></pre>
+<p>A vulnerable plugin or a leaked username is your foothold candidate — and you found it by enumerating the app, not by guessing. Same loop as Lesson 03, aimed at the web: fingerprint → specialised tool → version → exploit.</p>
+
+<div class="box tip">
+<span class="box-title">Prioritise the same way</span>
+Attack candidates by payoff: <strong>known-vuln CMS/plugin → default or weak creds → exposed admin panel → upload-to-shell → injectable parameters / IDOR</strong>. <code>searchsploit</code> the version <em>before</em> you hand-craft anything — a public exploit that matches is the fastest 10 points on the board.
+</div>
+
+<h2>Check yourself</h2>
+<p>Pick the best move. Retrieve before reasoning — feedback below each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — read this once</span>
+HackTricks' <a href="https://book.hacktricks.wiki/en/network-services-pentesting/pentesting-web/index.html">Pentesting Web methodology</a> is the canonical checklist for web recon and attack surface — it mirrors and extends this workflow, with a page for every framework and CMS you'll meet.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 05</span>
+On a box with a web port, produce a one-page <strong>web map</strong> with Burp running the whole time: fingerprint (headers/cookies/favicon), the free findings (source/robots/comments/JS), discovered paths with status codes, any vhosts (from fuzzing or TLS SANs), any API endpoints, and a ranked shortlist of foothold candidates. Add it to your box notes. You're not exploiting yet — you're proving you can find the door every time.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>Web recon → vuln:</strong> <strong>Bashed</strong> (HTB · Linux · Easy) — dir-bust to a web shell; <strong>Sense</strong> (HTB · BSD) — creds in a hidden file → CVE; then <strong>Cronos</strong> (HTB · Med) for a SQLi bypass. <a href="../reference/practice-boxes.html#pb-04">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Paste me a <code>whatweb</code>, <code>feroxbuster</code>, or Burp HTTP-history dump and we'll build the candidate shortlist together. Next: <strong>Lesson 05 — Exploiting the web foothold</strong>: the big three — SQL injection, file inclusion (LFI/RFI), and upload-to-shell — the techniques that actually get you the first shell.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://book.hacktricks.wiki/en/network-services-pentesting/pentesting-web/index.html">HackTricks — Pentesting Web</a>. See also <a href="https://portswigger.net/burp/documentation/desktop/getting-started">PortSwigger — Getting started with Burp</a> and <a href="https://owasp.org/www-project-web-security-testing-guide/">OWASP WSTG</a>. Web commands: local <a href="../reference/enumeration-cheatsheet.html">enumeration cheatsheet</a> (HTTP section).</li>
+</ol>
+
+<footer>
+<span><a href="./0003-service-enumeration.html">← Lesson 03: Service Enumeration</a></span>
+<span><a href="./0005-exploiting-the-web-foothold.html">Next → Lesson 05: Exploiting the Web Foothold</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "The site redirects to http://dev.box.htb and won't load properly. What's the fix?",
+    options: ["Reinstall your web browser", "Switch straight to an exploit", "Add the name to /etc/hosts", "Drop the web service entirely"],
+    answer: 2,
+    explain: "Your box can't resolve the name. Map it in /etc/hosts (e.g. '10.10.10.5 dev.box.htb') and the app loads."
+  },
+  {
+    prompt: "You want to tweak one request's parameters and resend it many times to study the response. Best tool?",
+    options: ["Burp Repeater's resend loop", "A second full Nmap scan", "The browser's refresh button", "A blind directory brute"],
+    answer: 0,
+    explain: "Repeater lets you edit and replay a single request precisely — the core loop of manual web testing through a proxy."
+  },
+  {
+    prompt: "Content discovery returns 403 on /server-status. What does that status tell you?",
+    options: ["The path is gone for good", "It exists but is forbidden", "The whole server has crashed", "Your wordlist is too small"],
+    answer: 1,
+    explain: "403 means the resource is there but access is blocked — a present-but-protected hint worth probing further."
+  },
+  {
+    prompt: "whatweb reveals the site runs WordPress. What's the targeted next step?",
+    options: ["Brute force every path blind", "Fire off a kernel exploit", "Ignore the CMS and move on", "Run wpscan against it"],
+    answer: 3,
+    explain: "A known CMS unlocks a specialised tool — wpscan enumerates vulnerable plugins, themes, and users."
+  },
+  {
+    prompt: "The app is a single-page frontend. Where do its backend routes and keys most often leak?",
+    options: ["In the bundled JavaScript files", "Only inside a 500 error page", "Hidden in the favicon image", "Nowhere a client can reach"],
+    answer: 0,
+    explain: "A SPA ships its client logic to you — grep the JS for /api paths, tokens, and hardcoded secrets."
+  },
+  {
+    prompt: "You've mapped the candidates. In what order do you attack them?",
+    options: ["Hardest custom exploits first", "Random parameters first", "Known-vuln versions first", "Never test the login forms"],
+    answer: 2,
+    explain: "Low-hanging fruit first: searchsploit the CMS/version and try default creds before hand-crafting an injection."
+  }
+]);
+</script>
+
+</body>
+</html>

