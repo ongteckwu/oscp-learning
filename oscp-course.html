@@ -307,6 +307,134 @@ sup.ref a { font-size: 0.7em; border: none; color: var(--accent); font-weight: 7
 }
 .quiz .score.show { display: block; }
 
+/* ---- Practice boxes (paired with assets/practice-boxes.js) -------------- */
+details.pbx {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+  margin: 1.4rem 0;
+  scroll-margin-top: 3.6rem;   /* clear the sticky nav on #pb-NN deep links */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+summary.pbx-sum {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+summary.pbx-sum::-webkit-details-marker { display: none; }
+summary.pbx-sum::before {
+  content: "\25B8";                 /* ▸ */
+  color: var(--accent);
+  margin-right: 0.55rem;
+  font-size: 0.8em;
+  transition: transform 0.15s ease;
+  display: inline-block;
+}
+details.pbx[open] > summary.pbx-sum::before { transform: rotate(90deg); }
+summary.pbx-sum:hover { background: var(--paper-2); border-radius: 10px 10px 0 0; }
+.pbx-title { font-weight: 700; font-size: 0.96rem; }
+.pbx-title b { color: var(--accent); font-weight: 700; }
+.pbx-meter {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  font-weight: 700;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pbx-body { padding: 0.2rem 1rem 0.9rem; border-top: 1px solid var(--rule); }
+.pbx-blurb { font-size: 0.9rem; color: var(--ink-soft); margin: 0.7rem 0 0.4rem; }
+.pbx-list { list-style: none; padding: 0; margin: 0; }
+
+.pbx-card { padding: 0.7rem 0; border-bottom: 1px solid var(--rule); }
+.pbx-card:last-child { border-bottom: none; }
+.pbx-card[data-req="core"]  { border-left: 3px solid var(--accent); padding-left: 0.7rem; }
+.pbx-card[data-req="reuse"] { opacity: 0.92; }
+.pbx-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+}
+.pbx-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.pbx-check input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); cursor: pointer; flex: none; }
+.pbx-name { font-weight: 600; font-size: 0.95rem; }
+.pbx-check input:checked + .pbx-name { color: var(--ink-faint); text-decoration: line-through; }
+.pbx-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-left: auto; }
+.pbx-what {
+  margin: 0.35rem 0 0;
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* badges / chips */
+.pbx-badge {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.22em 0.5em;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+a.pbx-badge { text-decoration: none; }
+.pbx-badge.src   { background: var(--paper-2); color: var(--ink-soft); border-color: var(--rule); }
+.pbx-badge.vec   { background: var(--paper-2); color: var(--ink-soft); border-color: var(--rule); font-style: italic; font-weight: 600; text-transform: none; }
+.pbx-badge.link  { background: #fff; color: var(--link); border-color: rgba(28,93,138,0.35); }
+.pbx-badge.link:hover { background: #eaf1f7; }
+
+/* difficulty colours */
+.pbx-badge.diff-easy { background: #e6f4ea; color: #1d5b38; border-color: #b6dcc4; }
+.pbx-badge.diff-med  { background: #fdf3e7; color: #a8631a; border-color: #ecc89a; }
+.pbx-badge.diff-hard { background: #fbeaea; color: #8a1c1c; border-color: #e3b3b3; }
+.pbx-badge.diff-set  { background: #eef0f3; color: #545b66; border-color: #d3d8e0; }
+
+/* OS colours */
+.pbx-badge.os-linux { background: #eaf1f7; color: #1c5d8a; border-color: #c4d8e8; }
+.pbx-badge.os-win   { background: #eceffb; color: #3a4db0; border-color: #cdd5f1; }
+.pbx-badge.os-ad    { background: #f3ebf8; color: #6b2d8a; border-color: #ddc9ea; }
+.pbx-badge.os-bsd   { background: #e7f4f1; color: #0b6b5e; border-color: #bfe0d9; }
+.pbx-badge.os-mixed,
+.pbx-badge.os-set   { background: #eef0f3; color: #545b66; border-color: #d3d8e0; }
+
+/* coverage tags */
+.pbx-badge.req.core { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pbx-badge.req.opt  { background: transparent; color: var(--ink-faint); border-color: var(--rule); font-weight: 600; }
+.pbx-badge.reuse    { background: transparent; color: var(--ink-faint); border: 1px dashed var(--ink-faint); font-style: italic; font-weight: 600; }
+a.pbx-badge.reuse:hover { color: var(--accent); border-color: var(--accent); }
+
+.pbx-note {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  margin: 0.9rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--rule);
+}
+.pbx-reset {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.72rem;
+  color: var(--link);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.pbx-reset:hover { color: var(--accent); }
+
 /* ---- Footer ------------------------------------------------------------- */
 footer {
   margin-top: 3.5rem;
@@ -449,6 +577,506 @@ function escapeHtml(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+
+</script>
+<script>
+/* ============================================================================
+   Practice-box data — the SINGLE source of truth for the box map.
+   Rendered by assets/practice-boxes.js in both the lessons and the reference.
+
+   Two tables:
+     PB_BOXES   — machine-level facts (one entry per machine, keyed by slug):
+                  name, src, os, diff, and (HTB only) the 0xdf walkthrough url.
+     PB_LESSONS — per-lesson teaching context. Each lesson lists ordered items;
+                  every item points at a box slug and adds the LESSON's angle
+                  on it: a vector tag, Core/Optional, and a one-line "what".
+
+   No machine is listed twice as a fresh target. A box has ONE home lesson
+   (a Core/Optional item); where it also teaches a later lesson it appears with
+   reuse:{from:N} — a muted "Reused · LNN" card whose text explains the new
+   angle. Checkmarks are keyed by slug, so one machine = one checkmark however
+   many lessons reference it.
+
+   Sources: HTB = Hack The Box · PG = Proving Grounds Practice ·
+   PEN-200 = OffSec Challenge Labs · curated from TJ Null's list + 0xdf.
+   0xdf links are for AFTER-the-fact review only. All URLs verified.
+   ========================================================================== */
+
+/* eslint-disable */
+var PB_BOXES = {
+  // ---- HTB (linked to its 0xdf walkthrough) ----
+  lame:        { name: "Lame",         src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2020/04/07/htb-lame.html" },
+  blue:        { name: "Blue",         src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2021/05/11/htb-blue.html" },
+  jerry:       { name: "Jerry",        src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2018/11/17/htb-jerry.html" },
+  netmon:      { name: "Netmon",       src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2019/06/29/htb-netmon.html" },
+  knife:       { name: "Knife",        src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2021/08/28/htb-knife.html" },
+  nibbles:     { name: "Nibbles",      src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2018/06/30/htb-nibbles.html" },
+  openadmin:   { name: "OpenAdmin",    src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2020/05/02/htb-openadmin.html" },
+  networked:   { name: "Networked",    src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2019/11/16/htb-networked.html" },
+  bashed:      { name: "Bashed",       src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2018/04/29/htb-bashed.html" },
+  sense:       { name: "Sense",        src: "HTB", os: "BSD",     diff: "Easy", url: "https://0xdf.gitlab.io/2021/03/11/htb-sense.html" },
+  cronos:      { name: "Cronos",       src: "HTB", os: "Linux",   diff: "Med",  url: "https://0xdf.gitlab.io/2020/04/14/htb-cronos.html" },
+  precious:    { name: "Precious",     src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2023/05/20/htb-precious.html" },
+  astronaut:   { name: "Astronaut",    src: "PG",  os: "Linux",   diff: "Easy" },
+  sau:         { name: "Sau",          src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2024/01/06/htb-sau.html" },
+  photobomb:   { name: "Photobomb",    src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2023/02/11/htb-photobomb.html" },
+  shocker:     { name: "Shocker",      src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2021/05/25/htb-shocker.html" },
+  beep:        { name: "Beep",         src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2021/02/23/htb-beep.html" },
+  traverxec:   { name: "Traverxec",    src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2020/04/11/htb-traverxec.html" },
+  optimum:     { name: "Optimum",      src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2021/03/17/htb-optimum.html" },
+  devel:       { name: "Devel",        src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2019/03/05/htb-devel.html" },
+  jeeves:      { name: "Jeeves",       src: "HTB", os: "Windows", diff: "Med",  url: "https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html" },
+  remote:      { name: "Remote",       src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2020/09/05/htb-remote.html" },
+  bastard:     { name: "Bastard",      src: "HTB", os: "Windows", diff: "Med",  url: "https://0xdf.gitlab.io/2019/03/12/htb-bastard.html" },
+  bastion:     { name: "Bastion",      src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2019/09/07/htb-bastion.html" },
+  support:     { name: "Support",      src: "HTB", os: "AD",      diff: "Easy", url: "https://0xdf.gitlab.io/2022/12/17/htb-support.html" },
+  sauna:       { name: "Sauna",        src: "HTB", os: "AD",      diff: "Easy", url: "https://0xdf.gitlab.io/2020/07/18/htb-sauna.html" },
+  active:      { name: "Active",       src: "HTB", os: "AD",      diff: "Easy", url: "https://0xdf.gitlab.io/2018/12/08/htb-active.html" },
+  legacy:      { name: "Legacy",       src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2019/02/21/htb-legacy.html" },
+  granny:      { name: "Granny",       src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2019/03/06/htb-granny.html" },
+  friendzone:  { name: "FriendZone",   src: "HTB", os: "Linux",   diff: "Easy", url: "https://0xdf.gitlab.io/2019/07/13/htb-friendzone.html" },
+  forest:      { name: "Forest",       src: "HTB", os: "AD",      diff: "Easy", url: "https://0xdf.gitlab.io/2020/03/21/htb-forest.html" },
+  intelligence:{ name: "Intelligence", src: "HTB", os: "AD",      diff: "Med",  url: "https://0xdf.gitlab.io/2021/11/27/htb-intelligence.html" },
+  resolute:    { name: "Resolute",     src: "HTB", os: "AD",      diff: "Med",  url: "https://0xdf.gitlab.io/2020/05/30/htb-resolute.html" },
+  scrambled:   { name: "Scrambled",    src: "HTB", os: "AD",      diff: "Med",  url: "https://0xdf.gitlab.io/2022/10/01/htb-scrambled.html" },
+  cascade:     { name: "Cascade",      src: "HTB", os: "AD",      diff: "Med",  url: "https://0xdf.gitlab.io/2020/07/25/htb-cascade.html" },
+  blackfield:  { name: "Blackfield",   src: "HTB", os: "AD",      diff: "Hard", url: "https://0xdf.gitlab.io/2020/10/03/htb-blackfield.html" },
+  monteverde:  { name: "Monteverde",   src: "HTB", os: "AD",      diff: "Med",  url: "https://0xdf.gitlab.io/2020/06/13/htb-monteverde.html" },
+  access:      { name: "Access",       src: "HTB", os: "Windows", diff: "Easy", url: "https://0xdf.gitlab.io/2019/03/02/htb-access.html" },
+  reddish:     { name: "Reddish",      src: "HTB", os: "Linux",   diff: "Hard", url: "https://0xdf.gitlab.io/2019/01/26/htb-reddish.html" },
+
+  // ---- Proving Grounds (no 0xdf walkthrough) ----
+  twiggy:      { name: "Twiggy",       src: "PG",  os: "Linux",   diff: "Easy" },
+  hetemit:     { name: "Hetemit",      src: "PG",  os: "Linux",   diff: "Inter" },
+  clamav:      { name: "ClamAV",       src: "PG",  os: "Linux",   diff: "Easy" },
+  payday:      { name: "PayDay",       src: "PG",  os: "Linux",   diff: "Easy" },
+  clue:        { name: "Clue",         src: "PG",  os: "Linux",   diff: "Inter" },
+  algernon:    { name: "Algernon",     src: "PG",  os: "Windows", diff: "Easy" },
+  heist:       { name: "Heist",        src: "PG",  os: "AD",      diff: "Inter" },
+  nickel:      { name: "Nickel",       src: "PG",  os: "Windows", diff: "Inter" },
+  vault:       { name: "Vault",        src: "PG",  os: "AD",      diff: "Inter" },
+  resourced:   { name: "Resourced",    src: "PG",  os: "AD",      diff: "Inter" },
+
+  // ---- Multi-host sets / labs (no single walkthrough; diff omitted) ----
+  oscp_a:      { name: "OSCP A",                 src: "PEN-200", os: "AD set" },
+  oscp_bc:     { name: "OSCP B / C",             src: "PEN-200", os: "AD set" },
+  relia:       { name: "Relia / Skylark",        src: "PEN-200", os: "Mixed" },
+  dante:       { name: "Dante (Pro Lab)",        src: "HTB",     os: "Mixed" },
+  pg_exam:     { name: "PG “exam-like” set", src: "PG",  os: "Mixed" },
+  htb_oscplike:{ name: "HTB OSCP-like tier",     src: "HTB",     os: "Mixed" }
+};
+
+var PB_LESSONS = {
+  1: {
+    title: "The OSCP Attack Chain",
+    blurb: "The goal here isn't a technique — it's to feel the whole chain once. Own one easy box end-to-end.",
+    items: [
+      { box: "lame",   vector: "Whole chain",  req: "core",     what: "Samba username map script (CVE-2007-2447) drops you straight to root — no privesc phase." },
+      { box: "blue",   vector: "Whole chain",  req: "core",     what: "EternalBlue (MS17-010) → SYSTEM; foothold and privesc as a single motion." },
+      { box: "jerry",  vector: "Whole chain",  req: "optional", what: "Tomcat manager creds → WAR webshell → SYSTEM; the shortest end-to-end on Windows." },
+      { box: "netmon", vector: "Recon → RCE", req: "optional", what: "Readable PRTG config creds → authenticated RCE → SYSTEM; recon-to-root in a straight line." }
+    ]
+  },
+  2: {
+    title: "The Deliberate-Practice Loop",
+    blurb: "Your first attempt-first box. Forgiving targets, so you practise the loop, not just the box.",
+    items: [
+      { box: "twiggy", vector: "Version → CVE",  req: "core",     what: "SaltStack CVE-2020-11651 → root; enumeration points straight at the version — a clean attempt-first rep." },
+      { box: "knife",  vector: "Single chain",   req: "core",     what: "PHP 8.1 dev backdoor → shell → sudo knife GTFOBin → root; forgiving end-to-end." },
+      { box: "blue",   reuse: { from: 1 },        what: "Re-own it attempt-first: a gentle enumerate → exploit → loot run with one clean vector." },
+      { box: "lame",   reuse: { from: 1 },        what: "Hard to break, fast to own — a low-stakes loop rep when you want a confidence win." }
+    ]
+  },
+  3: {
+    title: "Service Enumeration",
+    blurb: "Boxes where the enumeration IS the challenge — the foothold is invisible until you look properly.",
+    items: [
+      { box: "nibbles",   vector: "Hidden web path",  req: "core",     what: "Foothold hides behind a /nibbleblog/ path only thorough web enum reveals." },
+      { box: "openadmin", vector: "Full port + web",  req: "core",     what: "Internal OpenNetAdmin + a tunnelled port — rewards enumerating everything." },
+      { box: "networked", vector: "App enumeration",  req: "optional", what: "An upload filter you only spot by reading the app carefully." },
+      { box: "hetemit",   vector: "Obscure service",  req: "optional", what: "An obscure service you must enumerate to even find the vulnerable endpoint." },
+      { box: "clamav",    vector: "Non-standard ports", req: "optional", what: "Non-standard ports — here the port scan basically is the box." }
+    ]
+  },
+  4: {
+    title: "Attacking the Web Service",
+    blurb: "Web recon, directory busting, version → CVE, and the classic web vulnerability classes.",
+    items: [
+      { box: "bashed",   vector: "Dir-bust → shell", req: "core",     what: "gobuster finds a phpbash web shell in /dev/ — the payoff of directory busting." },
+      { box: "sense",    vector: "Recon → CVE",      req: "core",     what: "pfSense creds in a hidden .txt, then a version-matched CVE — recon → exploit." },
+      { box: "cronos",   vector: "SQLi auth bypass",  req: "optional", what: "vhost/DNS enum (AXFR) → a Laravel login SQLi auth bypass." },
+      { box: "precious", vector: "Version → CVE",    req: "optional", what: "Ruby pdfkit version → a known command-injection CVE → shell." },
+      { box: "payday",   vector: "CMS admin → RCE",  req: "optional", what: "CS-Cart CMS admin → web RCE; a textbook web foothold." }
+    ]
+  },
+  5: {
+    title: "Exploiting the Web Foothold",
+    blurb: "Turning a web vuln into a shell: upload bypass, RCE, command injection, SQLi → exec.",
+    items: [
+      { box: "astronaut", vector: "Template injection", req: "core",     what: "Grav CMS PHP-template injection → RCE → shell." },
+      { box: "sau",       vector: "SSRF → RCE",       req: "core",     what: "Request-Baskets SSRF → internal Maltrail → command injection → shell." },
+      { box: "photobomb", vector: "Command injection", req: "optional", what: "Authenticated command injection in the download endpoint → reverse shell." },
+      { box: "nibbles",   reuse: { from: 3 }, what: "Now weaponise it: Nibbleblog image-upload → RCE → reverse shell." },
+      { box: "networked", reuse: { from: 3 }, what: "Double-extension upload bypass → PHP execution." },
+      { box: "cronos",    reuse: { from: 4 }, what: "SQLi bypass → command-injection panel → shell." }
+    ]
+  },
+  6: {
+    title: "Linux Privilege Escalation",
+    blurb: "Low-priv shell → root: sudo, SUID, cron, capabilities, writable files.",
+    items: [
+      { box: "shocker",   vector: "sudo GTFOBin",   req: "core",     what: "Shellshock CGI foothold → sudo perl GTFOBin → root." },
+      { box: "beep",      vector: "Many paths",     req: "core",     what: "A dozen privesc paths in one box — ideal for interleaving vectors." },
+      { box: "traverxec", vector: "Cron / SSH key", req: "optional", what: "nostromo RCE → readable backup → journalctl/SSH-key path to root." },
+      { box: "clue",      vector: "SUID / cron / caps", req: "optional", what: "SUID / cron / capability chains; a PEAS-driven enumeration rep." },
+      { box: "bashed",    reuse: { from: 4 }, what: "The privesc half: sudo -l NOPASSWD → a writable root cron script → root." },
+      { box: "lame",      reuse: { from: 1 }, what: "Baseline easy box — a warm-up before the misconfiguration vectors." }
+    ]
+  },
+  7: {
+    title: "Windows Privilege Escalation",
+    blurb: "Service abuse, token privileges (SeImpersonate), and kernel exploits as a last resort.",
+    items: [
+      { box: "optimum",  vector: "Kernel exploit",   req: "core",     what: "HFS 2.3 RCE (CVE-2014-6287) → MS16-032 kernel privesc to SYSTEM." },
+      { box: "jeeves",   vector: "SeImpersonate",    req: "core",     what: "Jenkins RCE → SeImpersonate token abuse → admin." },
+      { box: "devel",    vector: "Kernel exploit",   req: "optional", what: "FTP → webroot .aspx shell → kernel exploit to SYSTEM." },
+      { box: "remote",   vector: "Service abuse",    req: "optional", what: "Umbraco RCE → writable UsoSvc service → SYSTEM (TeamViewer-creds path also works)." },
+      { box: "bastard",  vector: "Token abuse",      req: "optional", what: "Drupalgeddon → Churrasco / token abuse → SYSTEM." },
+      { box: "algernon", vector: "PrintSpoofer",     req: "optional", what: "Service-binary RCE + SeImpersonate (PrintSpoofer) — the modern reflex." }
+    ]
+  },
+  8: {
+    title: "Password Attacks & Credential Reuse",
+    blurb: "Hash cracking, spraying, and reusing every credential you find everywhere you can.",
+    items: [
+      { box: "sauna",   vector: "AS-REP → reuse",   req: "core",     what: "AS-REP roast → hashcat → reuse autologon creds from the registry." },
+      { box: "active",  vector: "GPP → Kerberoast", req: "core",     what: "GPP cpassword decrypt → Kerberoast → crack the admin SPN." },
+      { box: "bastion", vector: "Cred reuse",        req: "optional", what: "Mount a VHD → dump SAM; recover mRemoteNG creds and reuse them." },
+      { box: "support", vector: "Info-disclosure",   req: "optional", what: "LDAP description-field creds → reuse to enumerate the DC." },
+      { box: "heist",   vector: "Spray + reuse",     req: "optional", what: "Config/description-field creds → spray and reuse across the host." },
+      { box: "jeeves",  reuse: { from: 7 }, what: "KeePass .kdbx → keepass2john → crack → reuse the hash via psexec." }
+    ]
+  },
+  9: {
+    title: "Footholds Beyond the Web",
+    blurb: "SMB, FTP, and other non-HTTP services — version-matched exploits and share abuse.",
+    items: [
+      { box: "legacy",     vector: "SMB CVE",     req: "core",     what: "MS08-067 / MS17-010 on ancient SMB — the version-match reflex." },
+      { box: "granny",     vector: "WebDAV upload", req: "core",   what: "IIS 6.0 WebDAV → upload an .aspx webshell → foothold." },
+      { box: "friendzone", vector: "SMB / DNS",   req: "optional", what: "SMB share + DNS zone transfer → LFI → foothold." },
+      { box: "nickel",     vector: "Non-HTTP exploit", req: "optional", what: "Non-HTTP service exploitation chained to a foothold." },
+      { box: "blue",       reuse: { from: 1 }, what: "MS17-010 EternalBlue over SMB — the classic non-web foothold (foothold + privesc in one shot)." },
+      { box: "lame",       reuse: { from: 1 }, what: "vsftpd 2.3.4 backdoor + Samba — a non-web service foothold." }
+    ]
+  },
+  10: {
+    title: "Active Directory Enumeration",
+    blurb: "ldapsearch, rpcclient, BloodHound — mapping the domain before you touch it.",
+    items: [
+      { box: "forest",       vector: "LDAP → BloodHound", req: "core",     what: "Anonymous LDAP / rpcclient enum → BloodHound path discovery." },
+      { box: "intelligence", vector: "Doc + DNS enum",      req: "core",     what: "Enumerate web docs + DNS for users → spray → a service-account path." },
+      { box: "vault",        vector: "LDAP + SMB enum",     req: "optional", what: "LDAP + SMB share enumeration to seed the attack." },
+      { box: "oscp_a",       vector: "Exam-scale enum",     req: "optional", what: "Official multi-host AD enumeration at exam scale." },
+      { box: "sauna",        reuse: { from: 8 }, what: "Web → user list → GetNPUsers; the ldapsearch + SharpHound flow." }
+    ]
+  },
+  11: {
+    title: "AD Authentication Attacks",
+    blurb: "AS-REP roasting, Kerberoasting, and password spraying against the domain.",
+    items: [
+      { box: "resolute",  vector: "Spray from enum",     req: "core",     what: "rpcclient description-field password → spray → foothold." },
+      { box: "scrambled", vector: "Kerberoast (no creds)", req: "core",   what: "Kerberoast without credentials (via MSSQL) → crack the SPN." },
+      { box: "resourced", vector: "Roast + spray",       req: "optional", what: "Pre-auth roasting + spraying reps." },
+      { box: "sauna",     reuse: { from: 8 },  what: "AS-REP roasting end-to-end (GetNPUsers → crack)." },
+      { box: "active",    reuse: { from: 8 },  what: "Kerberoasting (GetUserSPNs) + GPP cpassword." },
+      { box: "forest",    reuse: { from: 10 }, what: "AS-REP roast a no-preauth account → crack → foothold." }
+    ]
+  },
+  12: {
+    title: "AD Lateral Movement → Domain Admin",
+    blurb: "Pass-the-hash, ACL abuse, DCSync, and dangerous group memberships.",
+    items: [
+      { box: "cascade",    vector: "Cred recovery → move", req: "core",     what: "Reversible / AD-recycle-bin credentials → move laterally to admin." },
+      { box: "blackfield", vector: "ACL → SeBackup → NTDS", req: "core", what: "ForceChangePassword ACL → SeBackupPrivilege → dump NTDS.dit." },
+      { box: "monteverde", vector: "Azure Admins → DA", req: "optional", what: "Azure AD Connect DB leaks the on-prem admin password → DCSync." },
+      { box: "forest",     reuse: { from: 10 }, what: "BloodHound WriteDacl → grant DCSync → secretsdump." },
+      { box: "resolute",   reuse: { from: 11 }, what: "DnsAdmins DLL load → SYSTEM on the DC." }
+    ]
+  },
+  13: {
+    title: "Pivoting & Tunneling",
+    blurb: "Multi-host networks: ligolo-ng, chisel, proxychains, and reaching an internal DC.",
+    items: [
+      { box: "dante",   vector: "Multi-host pivot", req: "core",     what: "A multi-host network — the canonical pivoting playground." },
+      { box: "oscp_bc", vector: "Tunnel to DC",     req: "core",     what: "Exam-shaped chains where you must tunnel to reach the internal DC." },
+      { box: "relia",   vector: "Double pivot",     req: "optional", what: "Larger scenario labs — deep double-pivot reps." },
+      { box: "reddish", vector: "Docker-net pivot", req: "optional", what: "Classic Docker-network pivot (rated Insane — a stretch goal once tunnelling clicks)." }
+    ]
+  },
+  14: {
+    title: "Post-Exploitation Looting",
+    blurb: "Harvesting creds, hashes, and config secrets to fuel the next hop. Reuse the AD boxes here.",
+    items: [
+      { box: "access",  vector: "Stored creds", req: "core", what: "A zip of creds + runas /savecred stored credentials — pure looting practice." },
+      { box: "sauna",   reuse: { from: 8 },  what: "secretsdump, registry autologon, SAM/NTDS looting." },
+      { box: "active",  reuse: { from: 8 },  what: "GPP + Kerberoast loot; clean secretsdump practice." },
+      { box: "jeeves",  reuse: { from: 7 },  what: "KeePass database + credential files as loot." },
+      { box: "cascade", reuse: { from: 12 }, what: "LDAP / registry / recycle-bin credential harvesting." }
+    ]
+  },
+  17: {
+    title: "Mock Exam",
+    blurb: "A full, timed, no-walkthrough simulation: roughly three standalone targets plus a small AD set.",
+    items: [
+      { box: "pg_exam",      vector: "Exam rhythm",      req: "core",     what: "3–4 “exam-like” standalones — build your 24-hour rhythm on OffSec's own grading philosophy." },
+      { box: "htb_oscplike", vector: "Timed standalones", req: "optional", what: "TJ Null “OSCP-like” tier under exam rules (one-machine automation only)." },
+      { box: "oscp_a",       reuse: { from: 10 }, what: "Under exam conditions now — no walkthrough, on the clock." },
+      { box: "oscp_bc",      reuse: { from: 13 }, what: "Chain the standalones + AD set blind, timed end-to-end." }
+    ]
+  }
+};
+
+</script>
+<script>
+/* ============================================================================
+   Shared "Practice Boxes" component for OSCP lessons + the reference map.
+   ONE renderer, used in two places:
+
+     - inside a lesson  →  <div data-practice-boxes data-lesson="6"></div>
+                           (expanded by default)
+     - the reference    →  <div data-practice-boxes data-lesson="6"
+                                 data-anchor="pb-06" data-open="false"></div>
+                           (collapsed; deep-linkable via #pb-06)
+
+   Pair with practice-boxes-data.js (defines PB_BOXES + PB_LESSONS), then:
+     <script src="../assets/practice-boxes-data.js"><\/script>
+     <script src="../assets/practice-boxes.js"><\/script>
+
+   Each box renders as a checkbox card with coloured difficulty / OS / vector
+   badges and a Core / Optional / Reused tag. Checkmarks persist in
+   localStorage (THIS browser only), keyed by box slug, and stay in sync across
+   every instance on the page — so a machine that appears as "Reused" in a later
+   lesson reflects the same checkmark as its home lesson.
+
+   Design notes:
+   - No duplicate machines: each box has ONE home lesson (a Core/Optional card);
+     where it teaches a later lesson it appears as a muted "Reused" card whose
+     text explains the different angle, not as a fresh target.
+   - Difficulty colours: Easy=green, Inter/Med=amber, Hard=red, sets/labs=slate.
+   - Print opens every dropdown so nothing is lost on paper.
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'oscp:pb-done';
+  var inputs = [];   // {slug, el}  — every checkbox, for cross-instance sync
+  var meters = [];   // {el, coreSlugs, total} — every summary counter
+  var uid = 0;       // unique checkbox ids (a slug can render many times)
+
+  // ---- localStorage (degrades silently in private mode / on quota) --------
+  function load() {
+    try {
+      var m = JSON.parse(localStorage.getItem(STORE_KEY));
+      return (m && typeof m === 'object') ? m : {};
+    } catch (e) { return {}; }
+  }
+  function save(map) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(map)); }
+    catch (e) { /* checkmarks just won't persist this session */ }
+  }
+
+  // ---- classification (drives the badge colours) --------------------------
+  function diffClass(diff) {
+    var d = String(diff || '').toLowerCase();
+    if (d === 'easy') return 'easy';
+    if (d === 'hard') return 'hard';
+    if (d === 'inter' || d === 'med' || d === 'medium') return 'med';
+    return 'set';   // "—" : exam sets, pro labs, challenge labs
+  }
+  function osClass(os) {
+    var o = String(os || '').toLowerCase();
+    if (o.indexOf('linux') > -1) return 'linux';
+    if (o.indexOf('bsd') > -1) return 'bsd';
+    if (o.indexOf('ad') > -1) return 'ad';        // "AD", "AD set"
+    if (o.indexOf('mixed') > -1) return 'mixed';
+    if (o.indexOf('windows') > -1) return 'win';
+    return 'set';
+  }
+  function pad2(n) { return String(n).length < 2 ? '0' + n : String(n); }
+
+  // ---- tiny DOM helpers ---------------------------------------------------
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function badge(cls, text) { return el('span', 'pbx-badge ' + cls, text); }
+
+  // ---- live sync: re-read storage, update every checkbox + every counter --
+  function refresh() {
+    var map = load();
+    inputs.forEach(function (it) { it.el.checked = !!map[it.slug]; });
+    meters.forEach(function (m) {
+      var done = 0;
+      m.coreSlugs.forEach(function (s) { if (map[s]) done++; });
+      var core = m.coreSlugs.length;
+      m.el.textContent =
+        m.total + (m.total === 1 ? ' box' : ' boxes') +
+        (core ? ' · core ' + done + '/' + core + (done === core ? ' ✓' : '') : '');
+    });
+  }
+
+  function setDone(slug, on) {
+    var map = load();
+    if (on) map[slug] = 1; else delete map[slug];
+    save(map);
+    refresh();   // reflect across all instances of this slug + their counters
+  }
+
+  // ---- one box card -------------------------------------------------------
+  function renderCard(item, mode) {
+    var box = PB_BOXES[item.box];
+    if (!box) return null;   // unknown slug: skip, never crash the page
+    var reuse = item.reuse;
+
+    var li = el('li', 'pbx-card');
+    li.setAttribute('data-req', reuse ? 'reuse' : (item.req === 'core' ? 'core' : 'opt'));
+
+    var row = el('div', 'pbx-row');
+
+    var label = el('label', 'pbx-check');
+    var cb = el('input');
+    cb.type = 'checkbox';
+    cb.id = 'pbx-cb-' + (++uid);
+    cb.setAttribute('data-box', item.box);
+    cb.addEventListener('change', function () { setDone(item.box, cb.checked); });
+    inputs.push({ slug: item.box, el: cb });
+    label.appendChild(cb);
+    label.appendChild(el('span', 'pbx-name', box.name));
+    row.appendChild(label);
+
+    var tags = el('span', 'pbx-tags');
+    tags.appendChild(badge('src', box.src));
+    tags.appendChild(badge('os os-' + osClass(box.os), box.os));
+    if (box.diff) tags.appendChild(badge('diff diff-' + diffClass(box.diff), box.diff));
+    if (item.vector) tags.appendChild(badge('vec', item.vector));
+
+    if (reuse) {
+      var label2 = '↻ Reused · L' + pad2(reuse.from);
+      if (mode === 'ref') {
+        var ra = el('a', 'pbx-badge reuse', label2);   // jump to its home lesson
+        ra.href = '#pb-' + pad2(reuse.from);
+        tags.appendChild(ra);
+      } else {
+        tags.appendChild(badge('reuse', label2));
+      }
+    } else {
+      tags.appendChild(item.req === 'core'
+        ? badge('req core', 'Core')
+        : badge('req opt', 'Optional'));
+    }
+
+    if (box.url) {
+      var a = el('a', 'pbx-badge link', '0xdf ↗');
+      a.href = box.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.title = '0xdf walkthrough — review only, after you finish or exhaust the box';
+      tags.appendChild(a);
+    }
+    row.appendChild(tags);
+    li.appendChild(row);
+
+    if (item.what) li.appendChild(el('p', 'pbx-what', item.what));
+    return li;
+  }
+
+  // ---- one lesson dropdown ------------------------------------------------
+  function renderHost(host) {
+    var n = parseInt(host.getAttribute('data-lesson'), 10);
+    var data = (typeof PB_LESSONS !== 'undefined') && PB_LESSONS[n];
+    if (!data) return;
+
+    var anchor = host.getAttribute('data-anchor');
+    var mode = anchor ? 'ref' : 'lesson';
+    var openAttr = host.getAttribute('data-open');
+    var open = openAttr ? (openAttr !== 'false') : (mode === 'lesson');
+
+    var details = el('details', 'pbx');
+    if (anchor) details.id = anchor;            // deep-link target on the ref page
+    if (open) details.setAttribute('open', '');
+
+    var sum = el('summary', 'pbx-sum');
+    var title = el('span', 'pbx-title');
+    title.appendChild(el('b', null, pad2(n) + ' · '));
+    title.appendChild(document.createTextNode(data.title));
+    sum.appendChild(title);
+    var meter = el('span', 'pbx-meter');
+    sum.appendChild(meter);
+    details.appendChild(sum);
+
+    var body = el('div', 'pbx-body');
+    if (data.blurb) body.appendChild(el('p', 'pbx-blurb', data.blurb));
+
+    var ul = el('ul', 'pbx-list');
+    var coreSlugs = [];
+    data.items.forEach(function (item) {
+      var card = renderCard(item, mode);
+      if (card) ul.appendChild(card);
+      if (!item.reuse && item.req === 'core' && coreSlugs.indexOf(item.box) < 0) {
+        coreSlugs.push(item.box);
+      }
+    });
+    body.appendChild(ul);
+
+    var note = el('p', 'pbx-note');
+    note.appendChild(document.createTextNode(
+      'Checkmarks are saved only in this browser (localStorage) — they won’t ' +
+      'follow you to another device or browser. '));
+    var reset = el('button', 'pbx-reset');
+    reset.type = 'button';
+    reset.textContent = 'Reset this lesson';
+    reset.addEventListener('click', function () {
+      // Only clear boxes this lesson OWNS — a reused box's state belongs to its
+      // home lesson, so resetting here must not untick it elsewhere.
+      var map = load();
+      data.items.forEach(function (it) { if (!it.reuse) delete map[it.box]; });
+      save(map);
+      refresh();
+    });
+    note.appendChild(reset);
+    body.appendChild(note);
+
+    details.appendChild(body);
+    host.parentNode.replaceChild(details, host);
+    meters.push({ el: meter, coreSlugs: coreSlugs, total: data.items.length });
+  }
+
+  // ---- init ---------------------------------------------------------------
+  function init() {
+    var hosts = document.querySelectorAll('[data-practice-boxes]');
+    Array.prototype.forEach.call(hosts, renderHost);
+    refresh();
+
+    // On print, open every dropdown so the full map lands on paper; restore after.
+    window.addEventListener('beforeprint', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('details.pbx'), function (d) {
+        d.dataset.printPrev = d.open ? '1' : '0';
+        d.open = true;
+      });
+    });
+    window.addEventListener('afterprint', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('details.pbx'), function (d) {
+        if (d.dataset.printPrev === '0') d.open = false;
+        delete d.dataset.printPrev;
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
 
 </script>
 <nav class="toc"><a class="home" href="#home">Contents</a><a class="" href="#lesson-1">01 · Attack Chain</a><a class="" href="#lesson-2">02 · Practice Loop</a><a class="" href="#lesson-3">03 · Enumeration</a><a class="" href="#lesson-4">04 · Web Service</a><a class="" href="#lesson-5">05 · Web Exploitation</a><a class="" href="#lesson-6">06 · Linux Privesc</a><a class="" href="#lesson-7">07 · Windows Privesc</a><a class="" href="#lesson-8">08 · Password Attacks</a><a class="" href="#lesson-9">09 · Footholds</a><a class="" href="#lesson-10">10 · AD Enumeration</a><a class="" href="#lesson-11">11 · AD Auth Attacks</a><a class="" href="#lesson-12">12 · AD → Domain Admin</a><a class="" href="#lesson-13">13 · Pivoting</a><a class="" href="#lesson-14">14 · Looting</a><a class="" href="#lesson-15">15 · The Report</a><a class="" href="#lesson-16">16 · Exam Strategy</a><a class="" href="#lesson-17">17 · Mock Exam</a><a class="" href="#glossary">Glossary</a><a class="" href="#exam-format">Exam Format</a><a class="" href="#practice-boxes">Practice Boxes</a><a class="" href="#enum-cheatsheet">Enum Cheatsheet</a><a class="" href="#web-exploitation">Web Exploitation</a><a class="" href="#linux-privesc">Linux Privesc</a><a class="" href="#windows-privesc">Windows Privesc</a><a class="" href="#password-attacks">Password Attacks</a><a class="" href="#active-directory">Active Directory</a><a class="" href="#pivoting">Pivoting</a><a class="" href="#report-writing">Report Writing</a><a class="" href="#links">Useful Links</a></nav>
@@ -686,10 +1314,8 @@ The <a target="_blank" rel="noopener" href="https://help.offsec.com/hc/en-us/art
 Pick one <strong>easy</strong> box from <a target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's list</a> on Hack The Box or TryHackMe. Don't try to root it. Just follow a walkthrough (e.g. an <a target="_blank" rel="noopener" href="https://www.youtube.com/@ippsec">IppSec</a> video) and, out loud, <em>name the phase</em> at each step: "that's recon… that's enumeration… that's the foothold." You're training the map, not the exploit. That's the entire goal for today.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Own one easy box end-to-end</strong> to feel the whole chain: <strong>Lame</strong> (HTB · Linux) — Samba CVE-2007-2447 straight to root — or <strong>Blue</strong> (HTB · Windows) — EternalBlue → SYSTEM. <a href="#pb-01">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="1"></div>
+<p class="cite"><a href="#pb-01">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -745,6 +1371,8 @@ renderQuiz('quiz-lesson-1', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -928,10 +1556,8 @@ Doing five Linux web boxes in a row builds false fluency: you stop reading the b
 Run the loop <strong>once, end to end,</strong> on a single easy box from TJ Null's list. You don't have to root it. The deliverable isn't a flag — it's a <em>filled-in notes template</em> with at least one honest line under "What I missed," and one line promoted into your fresh methodology doc.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Your first attempt-first box:</strong> <strong>Blue</strong> (HTB · Windows · Easy) or <strong>Twiggy</strong> (PG · Linux · Easy). Forgiving targets — practise the <em>loop</em>, not just the box. <a href="#pb-02">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="2"></div>
+<p class="cite"><a href="#pb-02">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -987,6 +1613,8 @@ renderQuiz('quiz-lesson-2', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -1160,10 +1788,8 @@ The failures aren't dramatic — they're omissions. <strong>Skipping UDP</strong
 On your practice box, run the two-pass scan (with <code>-p-</code> and a UDP pass), then write the <strong>five questions</strong> under <em>each</em> open port, answer them, and <strong>tier every lead</strong> — <em>before</em> you try a single exploit. Keep one notes block per service, with a reuse pool. Add it to your box-notes template from <a href="#lesson-2">Lesson 02</a>. The output is a written, prioritised plan, not a flag. Bring it and we'll sharpen your ordering.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Enumeration is the whole challenge:</strong> <strong>Nibbles</strong> &amp; <strong>OpenAdmin</strong> (HTB · Linux · Easy) hide the foothold until you look properly; <strong>Hetemit</strong> (PG) rewards finding the obscure service. <a href="#pb-03">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="3"></div>
+<p class="cite"><a href="#pb-03">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -1218,6 +1844,8 @@ renderQuiz('quiz-lesson-3', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -1383,10 +2011,8 @@ HackTricks' <a target="_blank" rel="noopener" href="https://book.hacktricks.wiki
 On a box with a web port, produce a one-page <strong>web map</strong> with Burp running the whole time: fingerprint (headers/cookies/favicon), the free findings (source/robots/comments/JS), discovered paths with status codes, any vhosts (from fuzzing or TLS SANs), any API endpoints, and a ranked shortlist of foothold candidates. Add it to your box notes. You're not exploiting yet — you're proving you can find the door every time.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Web recon → vuln:</strong> <strong>Bashed</strong> (HTB · Linux · Easy) — dir-bust to a web shell; <strong>Sense</strong> (HTB · BSD) — creds in a hidden file → CVE; then <strong>Cronos</strong> (HTB · Med) for a SQLi bypass. <a href="#pb-04">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="4"></div>
+<p class="cite"><a href="#pb-04">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -1441,6 +2067,8 @@ renderQuiz('quiz-lesson-4', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -1577,10 +2205,8 @@ Try by reliability and speed to RCE: <strong>known-vuln CMS exploit (searchsploi
 On a box with a web foothold candidate, drive <strong>one</strong> vector to a real shell (or, for LFI, to readable credentials) — <em>by hand, no sqlmap</em>. Record the exact payloads, the sub-type you identified, and every credential you pulled in your box notes. Getting your first manual web shell is a genuine milestone; bring it and we'll celebrate, then sharpen it.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Web vuln → shell:</strong> <strong>Nibbles</strong> (upload RCE) &amp; <strong>Networked</strong> (HTB · Linux · Easy) for upload bypass; <strong>Cronos</strong> (HTB · Med) for SQLi → command injection. <a href="#pb-05">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="5"></div>
+<p class="cite"><a href="#pb-05">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -1636,6 +2262,8 @@ renderQuiz('quiz-lesson-5', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -1825,10 +2453,8 @@ Work cheap-and-safe before risky: <strong>sudo -l and stray creds → SUID / SGI
 On a box where you already have a low-priv shell (from Lesson 05, or any easy box), run <code>sudo -l</code> and LinPEAS, then escalate to root <em>by hand</em> via one vector — and on a second box, try a different one (cron, SUID, or a group). Record the exact path in your notes under "Privilege escalation". Owning a box end to end — foothold <em>and</em> root — is the whole exam in miniature.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Start:</strong> <strong>Bashed</strong> (sudo → writable root cron) &amp; <strong>Shocker</strong> (Shellshock → <code>sudo perl</code>) — HTB · Linux · Easy. <strong>Then:</strong> Beep (many paths), PG Clue. <a href="#pb-06">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="6"></div>
+<p class="cite"><a href="#pb-06">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -1883,6 +2509,8 @@ renderQuiz('quiz-lesson-6', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -2019,10 +2647,8 @@ PrintSpoofer is the modern default. On older boxes (Server 2016 / Windows 10 180
 On a Windows box where you hold a low-priv shell (any TJ Null Windows target on Hack The Box / Proving Grounds), run <code>whoami /priv</code> and WinPEAS, then escalate to SYSTEM <em>by hand</em> via ONE vector. Record the exact path — vector, tool, command — in your notes under "Privilege escalation". Foothold <em>and</em> SYSTEM on one box is the whole exam in miniature.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Start:</strong> <strong>Optimum</strong> (HFS RCE → MS16-032) &amp; <strong>Devel</strong> (webroot shell → kernel) — HTB · Windows · Easy. <strong>Then:</strong> Jeeves / Bastard for token abuse; PG Algernon for <code>SeImpersonate</code>. <a href="#pb-07">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="7"></div>
+<p class="cite"><a href="#pb-07">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -2077,6 +2703,8 @@ renderQuiz('quiz-lesson-7', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -2263,10 +2891,8 @@ A clean <code>rockyou</code> run failing doesn't mean the password is unbreakabl
 On any lab box (Hack The Box / Proving Grounds from TJ Null's list) or a sample hash, run the full loop: <strong>identify</strong> the hash with <code>hashid</code>, <strong>crack</strong> it with <code>rockyou</code> (right <code>-m</code> mode), then <strong>reuse</strong> the recovered credential on a second service (SSH, SMB, or the web login). Record the hash type, the mode, and where the credential worked in your box notes under "Credentials".
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Crack, spray, reuse:</strong> <strong>Sauna</strong> (AS-REP → reuse autologon creds) &amp; <strong>Active</strong> (GPP → Kerberoast) — HTB · AD · Easy; <strong>Jeeves</strong> (HTB · Windows) for KeePass. <a href="#pb-08">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="8"></div>
+<p class="cite"><a href="#pb-08">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -2321,6 +2947,8 @@ renderQuiz('quiz-lesson-8', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -2488,10 +3116,8 @@ A leaked password beats a clever payload.
 Own a <em>non-web</em> box end to end. Pick one from <a target="_blank" rel="noopener" href="https://www.netsecfocus.com/oscp/2021/05/06/The_Journey_to_Try_Harder-TJnull-s-Preparation_Guide_for_PEN-200_PWK_OSCP_2.0.html">TJ Null's list</a> whose way in is SMB, FTP, or a vulnerable service — by hand, no framework. Record the exact foothold path in your notes: which port, which command opened the door, which file or version was the win.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Non-web footholds:</strong> <strong>Blue</strong> &amp; <strong>Legacy</strong> (HTB · Windows · Easy) for SMB CVEs; <strong>Lame</strong> (HTB · Linux) for vsftpd / Samba. <a href="#pb-09">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="9"></div>
+<p class="cite"><a href="#pb-09">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -2546,6 +3172,8 @@ renderQuiz('quiz-lesson-9', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -2778,10 +3406,8 @@ HackTricks' <a target="_blank" rel="noopener" href="https://book.hacktricks.wiki
 Do TryHackMe's <strong>Attacktive Directory</strong> (or any easy Hack The Box AD box from TJ Null's list). Get one credential, run NetExec enumeration <em>including <code>--pass-pol</code></em>, collect with <code>bloodhound-python</code>, mark your user owned, and identify at least one path toward Domain Admin. You don't need to finish the box — you need to <em>see the route</em>. Write it in your box notes.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Map the domain:</strong> <strong>Forest</strong> &amp; <strong>Sauna</strong> (HTB · AD · Easy) for LDAP / rpcclient → BloodHound. At exam scale: PEN-200 <strong>OSCP A</strong>. <a href="#pb-10">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="10"></div>
+<p class="cite"><a href="#pb-10">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -2836,6 +3462,8 @@ renderQuiz('quiz-lesson-10', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -3001,10 +3629,8 @@ The <a target="_blank" rel="noopener" href="https://book.hacktricks.wiki/en/wind
 In a lab domain (TJ Null's list on Hack The Box / Proving Grounds), Kerberoast <em>and/or</em> AS-REP roast at least one account, then crack the ticket with hashcat. Record the cracked credential under "Credentials" in your box notes — you'll feed it straight into lateral movement next lesson.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Kerberos attacks:</strong> <strong>Sauna</strong> (AS-REP roast) &amp; <strong>Active</strong> (Kerberoast) — HTB · AD · Easy; <strong>Resolute</strong> (HTB · Med) for password spraying. <a href="#pb-11">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="11"></div>
+<p class="cite"><a href="#pb-11">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -3059,6 +3685,8 @@ renderQuiz('quiz-lesson-11', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -3268,10 +3896,8 @@ The <a target="_blank" rel="noopener" href="https://book.hacktricks.wiki/en/wind
 Complete one full AD chain in a lab — an HTB AD-style box (TJ Null's list) or a small home AD lab — from initial foothold all the way to Domain Admin and the DC. Document <em>every</em> hop: credential, host, command, proof. Owning a domain end to end, with a path you could hand to a colleague, is the 40-point exam set in miniature.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Move to Domain Admin:</strong> <strong>Forest</strong> (WriteDacl → DCSync) — HTB · AD · Easy; <strong>Resolute</strong> (DnsAdmins) &amp; <strong>Cascade</strong> (HTB · Med); <strong>Blackfield</strong> (Hard) for SeBackup → NTDS. <a href="#pb-12">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="12"></div>
+<p class="cite"><a href="#pb-12">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -3326,6 +3952,8 @@ renderQuiz('quiz-lesson-12', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -3478,10 +4106,8 @@ HackTricks' <a target="_blank" rel="noopener" href="https://book.hacktricks.wiki
 On a two-network lab — HTB <strong>Dante</strong> is purpose-built for multi-network pivoting, or use any box with a second NIC — get a shell on the dual-homed host, set up a SOCKS pivot (SSH <code>-D</code>, chisel, or ligolo), and reach a host you couldn't touch before. Confirm it with one <code>proxychains nmap -sT -Pn</code> that returns an open port on the internal subnet, and record the exact tunnel command in your box notes.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Pivot a real network:</strong> HTB <strong>Dante</strong> Pro Lab is the canonical playground; PEN-200 <strong>OSCP B/C</strong> and <strong>Relia / Skylark</strong> force tunnelling to an internal DC. <a href="#pb-13">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="13"></div>
+<p class="cite"><a href="#pb-13">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -3536,6 +4162,8 @@ renderQuiz('quiz-lesson-13', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -3761,10 +4389,8 @@ The most expensive habit on the exam: grab <code>proof.txt</code>, feel done, an
 On any box you've already owned (TJ Null's list — Hack The Box / Proving Grounds), do a full loot pass and produce a structured <strong>credential ledger</strong> in your box notes. Then turn <em>one</em> looted item into access elsewhere — an <code>id_rsa</code>, a config password, a GPP cpassword — and add the new "Works on" entry. That single chained reuse is the rep that pays off on exam day.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Loot for the next hop:</strong> reuse <strong>Sauna</strong> &amp; <strong>Active</strong> (HTB · AD · Easy) for <code>secretsdump</code> / registry; <strong>Jeeves</strong> for KeePass, <strong>Cascade</strong> for LDAP / registry secrets. <a href="#pb-14">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="14"></div>
+<p class="cite"><a href="#pb-14">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -3819,6 +4445,8 @@ renderQuiz('quiz-lesson-14', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -4569,10 +5197,8 @@ You fall to the level of your reps.
 Schedule and run a full <strong>48-hour mock</strong>: 24h hands-on (3 standalones + an AD set, mirroring 60/40) under exam rules — no walkthroughs, no AI, manual tools except one box — then 24h to write the report. Score it against 70 and drill your weakest two phases. Then do it again until you clear 70 with margin.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Full timed simulation:</strong> PEN-200 <strong>OSCP A/B/C</strong> (3 standalone + 1 AD set) is the closest dry-run; or build a set from <strong>PG</strong> "exam-like" boxes and the HTB OSCP-like tier. <a href="#pb-17">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="17"></div>
+<p class="cite"><a href="#pb-17">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — the course is complete</span>
@@ -4629,6 +5255,8 @@ renderQuiz('quiz-lesson-17', [
   }
 ]);
 </script>
+
+
 
 
 
@@ -4892,7 +5520,7 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 
 <span class="kicker">Reference · What to practise on, per lesson</span>
 <h1>Practice Box Map</h1>
-<p class="lead">Every skill lesson, tied to concrete machines. Each block lists 2–4 boxes from <a target="_blank" rel="noopener" href="https://www.hackthebox.com/">HTB</a>, <a target="_blank" rel="noopener" href="https://www.offsec.com/labs/">Proving Grounds</a>, <a target="_blank" rel="noopener" href="https://www.offsec.com/courses/pen-200/">PEN-200</a> and others — OS-split, with a one-line tell of the technique it drills. Work them <strong>attempt-first</strong> (<a href="#lesson-2">Lesson 02</a>): enumerate yourself, spend a struggle budget, take <em>one</em> nudge, then review.</p>
+<p class="lead">Every skill lesson, tied to concrete machines from <a target="_blank" rel="noopener" href="https://www.hackthebox.com/">HTB</a>, <a target="_blank" rel="noopener" href="https://www.offsec.com/labs/">Proving Grounds</a> and <a target="_blank" rel="noopener" href="https://www.offsec.com/courses/pen-200/">PEN-200</a>. Expand a lesson to see its boxes — each tagged by vector and difficulty and marked <strong>Core</strong> (do these for full coverage) or <strong>Optional</strong>, with a checkbox to track what you've owned. Work them <strong>attempt-first</strong> (<a href="#lesson-2">Lesson 02</a>): enumerate yourself, spend a struggle budget, take <em>one</em> nudge, then review.</p>
 
 <div class="box warn">
 <span class="box-title">Read before you queue a box</span>
@@ -4900,178 +5528,28 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <li><strong><a target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's list is the source of truth.</a></strong> This map is curated from it (+ <a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/cheatsheets/offsec">0xdf's OffSec mapping</a>) for teaching; the live sheet is authoritative on what's currently in-scope. Ask me to verify any box.</li>
 <li><strong>Most HTB boxes here are <em>retired</em></strong> → they need an HTB <strong>VIP</strong> subscription (the retired-machines list). For OSCP prep that's the standard move.</li>
 <li><strong>"PEN-200" boxes aren't individually public anymore.</strong> OffSec replaced the named lab with six <strong>Challenge Labs</strong> — scenario (<em>Medtech, Relia, Skylark</em>) and exam-like (<em>OSCP A, B, C</em>). <strong>Proving Grounds Practice</strong> is the closest public stand-in to exam style.</li>
-<li><strong>Don't spoil the chain.</strong> Pick boxes you haven't seen a write-up for; only watch <a target="_blank" rel="noopener" href="https://www.youtube.com/@ippsec">IppSec</a>/<a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/">0xdf</a> in review mode <em>after</em> you finish or exhaust yourself. Each <strong>HTB</strong> box name below links straight to its <strong>0xdf</strong> walkthrough — strictly for that after-the-fact review.</li>
+<li><strong>Don't spoil the chain.</strong> Pick boxes you haven't seen a write-up for; only watch <a target="_blank" rel="noopener" href="https://www.youtube.com/@ippsec">IppSec</a>/<a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/">0xdf</a> in review mode <em>after</em> you finish or exhaust yourself. Each <strong>HTB</strong> box's <strong>0xdf ↗</strong> badge links straight to its walkthrough — strictly for that after-the-fact review.</li>
 </ul>
 </div>
 
-<p class="cite"><strong>Legend.</strong> Source: <strong>HTB</strong> Hack The Box · <strong>PG</strong> Proving Grounds Practice · <strong>PEN-200</strong> OffSec Challenge Labs · <strong>THM</strong> TryHackMe · <strong>VH</strong> VulnHub. OS: <strong>AD</strong> = Windows + Active Directory · <strong>Mixed</strong> = multi-host network.</p>
+<p class="cite"><strong>Legend.</strong> Source: <strong>HTB</strong> Hack The Box · <strong>PG</strong> Proving Grounds Practice · <strong>PEN-200</strong> OffSec Challenge Labs. OS: <strong>AD</strong> = Windows + Active Directory · <strong>Mixed</strong> = multi-host network. Difficulty is colour-coded — <strong>green</strong> Easy · <strong>amber</strong> Intermediate/Medium · <strong>red</strong> Hard · <strong>slate</strong> exam sets &amp; labs. <strong>Core</strong> = the minimum set that covers every vector a lesson teaches; <strong>Optional</strong> = extra reps; <strong>↻ Reused · LNN</strong> = a machine you already met in lesson NN, back here for a different angle (one machine, one checkmark).</p>
 
-<h2 id="pb-01"><a href="#lesson-1">01 · The OSCP Attack Chain</a></h2>
-<p>Goal here isn't a technique — it's to feel the whole chain once. Own <em>one</em> easy box end-to-end.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>The whole chain in one box: Samba <code>username map script</code> (CVE-2007-2447) drops you straight to root — no privesc step.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>EternalBlue (MS17-010) → SYSTEM; foothold and privesc as a single motion.</td></tr>
-</tbody>
-</table>
+<p class="cite">Tick a box once you've owned it — progress is saved <strong>only in this browser</strong> (localStorage), so it won't follow you to another device or browser. A machine you tick here also shows ticked in its lesson.</p>
 
-<h2 id="pb-02"><a href="#lesson-2">02 · The Deliberate-Practice Loop</a></h2>
-<p>Your <em>first</em> attempt-first box. Forgiving targets so you practise the loop, not just the box.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>A gentle first run of enumerate → exploit → loot, with a clean single vector.</td></tr>
-<tr><td>Twiggy</td><td>PG</td><td>Linux</td><td>Easy</td><td>SaltStack CVE-2020-11651 → root; a clean attempt-first rep where enumeration points straight at the version.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-03"><a href="#lesson-3">03 · Service Enumeration</a></h2>
-<p>Boxes where the <em>enumeration is the challenge</em> — the foothold is invisible until you look properly.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/06/30/htb-nibbles.html">Nibbles</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Foothold hides behind a <code>/nibbleblog/</code> path only thorough web enum reveals.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/05/02/htb-openadmin.html">OpenAdmin</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Internal OpenNetAdmin + a tunnelled port — rewards full port and web enumeration.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/11/16/htb-networked.html">Networked</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>An upload filter you only spot by enumerating the app carefully.</td></tr>
-<tr><td>Hetemit</td><td>PG</td><td>Linux</td><td>Inter</td><td>Obscure service you must enumerate to even find the vulnerable endpoint.</td></tr>
-<tr><td>ClamAV</td><td>PG</td><td>Linux</td><td>Easy</td><td>Non-standard ports — here the port scan basically <em>is</em> the box.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-04"><a href="#lesson-4">04 · Attacking the Web Service</a></h2>
-<p>Web recon, directory busting, version → CVE, and the classic web vulnerability classes.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/04/29/htb-bashed.html">Bashed</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>gobuster</code> finds a <code>phpbash</code> web shell in <code>/dev/</code> — the payoff of dir-busting.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/03/11/htb-sense.html">Sense</a></td><td>HTB</td><td>BSD</td><td>Easy</td><td>pfSense creds in a hidden <code>.txt</code>, then a version-matched CVE — recon → exploit.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/14/htb-cronos.html">Cronos</a></td><td>HTB</td><td>Linux</td><td>Med</td><td>vhost/DNS enum (AXFR) → a Laravel login <strong>SQLi auth bypass</strong>.</td></tr>
-<tr><td>PayDay</td><td>PG</td><td>Linux</td><td>Easy</td><td>CS-Cart CMS admin → web RCE; a textbook web foothold.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-05"><a href="#lesson-5">05 · Exploiting the Web Foothold</a></h2>
-<p>Turning a web vuln into a shell: upload bypass, RCE, command injection, SQLi → exec.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/06/30/htb-nibbles.html">Nibbles</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Nibbleblog <strong>image-upload RCE</strong> → reverse shell.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/11/16/htb-networked.html">Networked</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Double-extension upload bypass → PHP execution.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/14/htb-cronos.html">Cronos</a></td><td>HTB</td><td>Linux</td><td>Med</td><td>SQLi bypass → command-injection panel → shell.</td></tr>
-<tr><td>Astronaut</td><td>PG</td><td>Linux</td><td>Easy</td><td>Grav CMS PHP-template injection → RCE → shell.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-06"><a href="#lesson-6">06 · Linux Privilege Escalation</a></h2>
-<p>Low-priv shell → root: <code>sudo</code>, SUID, cron, capabilities, writable files.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/04/29/htb-bashed.html">Bashed</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td><code>sudo -l</code> NOPASSWD → a writable root <strong>cron</strong> script → root.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/05/25/htb-shocker.html">Shocker</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Shellshock CGI foothold → <code>sudo perl</code> GTFOBin → root.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Baseline easy box; good warm-up before the misconfiguration vectors.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/02/23/htb-beep.html">Beep</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>Many privesc paths in one box — great for <em>interleaving</em> vectors.</td></tr>
-<tr><td>Clue</td><td>PG</td><td>Linux</td><td>Inter</td><td>SUID / cron / capability chains; a PEAS-driven enumeration rep.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-07"><a href="#lesson-7">07 · Windows Privilege Escalation</a></h2>
-<p>Service abuse, token privileges (<code>SeImpersonate</code>), and kernel exploits as a last resort.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/03/17/htb-optimum.html">Optimum</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>HFS 2.3 RCE (CVE-2014-6287) → <strong>MS16-032</strong> kernel privesc.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/03/05/htb-devel.html">Devel</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>FTP → webroot <code>.aspx</code> shell → kernel exploit to SYSTEM.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>Jenkins RCE → token / <code>SeImpersonate</code> to admin.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/03/12/htb-bastard.html">Bastard</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>Drupalgeddon → Churrasco / token abuse → SYSTEM.</td></tr>
-<tr><td>Algernon</td><td>PG</td><td>Windows</td><td>Easy</td><td>Service-binary RCE + <code>SeImpersonate</code> (PrintSpoofer) — the modern reflex.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-08"><a href="#lesson-8">08 · Password Attacks &amp; Credential Reuse</a></h2>
-<p>Hash cracking, spraying, and reusing every credential you find everywhere you can.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>AS-REP roast → hashcat → <strong>reuse</strong> autologon creds from the registry.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP <code>cpassword</code> decrypt → Kerberoast → crack the admin SPN.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass <code>.kdbx</code> → <code>keepass2john</code> → reuse the hash via psexec.</td></tr>
-<tr><td>Heist</td><td>PG</td><td>AD</td><td>Inter</td><td>Config/description-field creds → spray and reuse across the host.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-09"><a href="#lesson-9">09 · Footholds Beyond the Web</a></h2>
-<p>SMB, FTP, and other non-HTTP services — version-matched exploits and share abuse.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2021/05/11/htb-blue.html">Blue</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td><strong>MS17-010</strong> EternalBlue → SYSTEM (foothold + privesc in one shot).</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/02/21/htb-legacy.html">Legacy</a></td><td>HTB</td><td>Windows</td><td>Easy</td><td>MS08-067 / MS17-010 on ancient SMB — the version-match reflex.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/04/07/htb-lame.html">Lame</a></td><td>HTB</td><td>Linux</td><td>Easy</td><td>vsftpd 2.3.4 backdoor + Samba — a non-web service foothold.</td></tr>
-<tr><td>Nickel</td><td>PG</td><td>Windows</td><td>Inter</td><td>Non-HTTP service exploitation chained to a foothold.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-10"><a href="#lesson-10">10 · Active Directory Enumeration</a></h2>
-<p>ldapsearch, rpcclient, BloodHound — mapping the domain before you touch it.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/03/21/htb-forest.html">Forest</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>Anonymous LDAP / rpcclient enum → <strong>BloodHound</strong> path discovery.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>Web → user list → <code>GetNPUsers</code>; ldapsearch + SharpHound flow.</td></tr>
-<tr><td>OSCP A</td><td>PEN-200</td><td>AD set</td><td>&mdash;</td><td>Official multi-host AD enumeration at exam scale.</td></tr>
-<tr><td>Vault</td><td>PG</td><td>AD</td><td>Inter</td><td>LDAP + SMB share enumeration to seed the attack.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-11"><a href="#lesson-11">11 · AD Authentication Attacks</a></h2>
-<p>AS-REP roasting, Kerberoasting, and password spraying against the domain.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>AS-REP roasting</strong> end-to-end (<code>GetNPUsers</code> → crack).</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><strong>Kerberoasting</strong> (<code>GetUserSPNs</code>) + GPP <code>cpassword</code>.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/05/30/htb-resolute.html">Resolute</a></td><td>HTB</td><td>AD</td><td>Med</td><td>rpcclient description-field password → <strong>spray</strong> → foothold.</td></tr>
-<tr><td>Resourced</td><td>PG</td><td>AD</td><td>Inter</td><td>Pre-auth roasting + spraying reps.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-12"><a href="#lesson-12">12 · AD Lateral Movement → Domain Admin</a></h2>
-<p>Pass-the-hash, ACL abuse, DCSync, and dangerous group memberships.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/03/21/htb-forest.html">Forest</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>BloodHound <strong>WriteDacl</strong> → grant DCSync → <code>secretsdump</code>.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/05/30/htb-resolute.html">Resolute</a></td><td>HTB</td><td>AD</td><td>Med</td><td><strong>DnsAdmins</strong> DLL load → SYSTEM on the DC.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/25/htb-cascade.html">Cascade</a></td><td>HTB</td><td>AD</td><td>Med</td><td>Reversible / AD-recycle-bin credentials → move to admin.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/10/03/htb-blackfield.html">Blackfield</a></td><td>HTB</td><td>AD</td><td>Hard</td><td>ForceChangePassword ACL → <code>SeBackupPrivilege</code> → dump NTDS.dit.</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-13"><a href="#lesson-13">13 · Pivoting &amp; Tunneling</a></h2>
-<p>Multi-host networks: <code>ligolo-ng</code>, <code>chisel</code>, proxychains, and reaching an internal DC.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td>Dante (Pro Lab)</td><td>HTB</td><td>Mixed</td><td>&mdash;</td><td>A multi-host network — the canonical pivoting playground.</td></tr>
-<tr><td>OSCP B / C</td><td>PEN-200</td><td>AD set</td><td>&mdash;</td><td>Exam-shaped chains where you must tunnel to reach the internal DC.</td></tr>
-<tr><td>Relia / Skylark</td><td>PEN-200</td><td>Mixed</td><td>&mdash;</td><td>Larger scenario labs — deep double-pivot reps.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2019/01/26/htb-reddish.html">Reddish</a></td><td>HTB</td><td>Linux</td><td>Hard</td><td>Classic Docker-network pivot (a stretch goal once tunnelling clicks).</td></tr>
-</tbody>
-</table>
-
-<h2 id="pb-14"><a href="#lesson-14">14 · Post-Exploitation Looting</a></h2>
-<p>Harvesting creds, hashes, and config secrets to fuel the next hop. Reuse the AD boxes here.</p>
-<table>
-<thead><tr><th>Box</th><th>Source</th><th>OS</th><th>Diff</th><th>What it drills</th></tr></thead>
-<tbody>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/18/htb-sauna.html">Sauna</a></td><td>HTB</td><td>AD</td><td>Easy</td><td><code>secretsdump</code>, registry autologon, SAM/NTDS looting.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2018/12/08/htb-active.html">Active</a></td><td>HTB</td><td>AD</td><td>Easy</td><td>GPP + Kerberoast loot; clean <code>secretsdump</code> practice.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html">Jeeves</a></td><td>HTB</td><td>Windows</td><td>Med</td><td>KeePass database + credential files as loot.</td></tr>
-<tr><td><a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/2020/07/25/htb-cascade.html">Cascade</a></td><td>HTB</td><td>AD</td><td>Med</td><td>LDAP / registry / recycle-bin credential harvesting.</td></tr>
-</tbody>
-</table>
+<div data-practice-boxes data-lesson="1" data-anchor="pb-01" data-open="false"></div>
+<div data-practice-boxes data-lesson="2" data-anchor="pb-02" data-open="false"></div>
+<div data-practice-boxes data-lesson="3" data-anchor="pb-03" data-open="false"></div>
+<div data-practice-boxes data-lesson="4" data-anchor="pb-04" data-open="false"></div>
+<div data-practice-boxes data-lesson="5" data-anchor="pb-05" data-open="false"></div>
+<div data-practice-boxes data-lesson="6" data-anchor="pb-06" data-open="false"></div>
+<div data-practice-boxes data-lesson="7" data-anchor="pb-07" data-open="false"></div>
+<div data-practice-boxes data-lesson="8" data-anchor="pb-08" data-open="false"></div>
+<div data-practice-boxes data-lesson="9" data-anchor="pb-09" data-open="false"></div>
+<div data-practice-boxes data-lesson="10" data-anchor="pb-10" data-open="false"></div>
+<div data-practice-boxes data-lesson="11" data-anchor="pb-11" data-open="false"></div>
+<div data-practice-boxes data-lesson="12" data-anchor="pb-12" data-open="false"></div>
+<div data-practice-boxes data-lesson="13" data-anchor="pb-13" data-open="false"></div>
+<div data-practice-boxes data-lesson="14" data-anchor="pb-14" data-open="false"></div>
 
 <h2 id="pb-15"><a href="#lesson-15">15 · Writing the Report</a></h2>
 <p>No new box — pick one you've already rooted and write it up to exam standard (every command, every screenshot, proof files). Run it through the <code>/box-notes</code> skill.</p>
@@ -5079,20 +5557,11 @@ The 40-point AD set is the largest single block — you cannot reach 70 comforta
 <h2 id="pb-16"><a href="#lesson-16">16 · Exam Strategy</a></h2>
 <p>No new box — this is decision-making, not a new technique. Rehearse the time-boxing and "when to move on" rules on the <a href="#pb-17">Lesson 17 mock-exam sets</a>.</p>
 
-<h2 id="pb-17"><a href="#lesson-17">17 · Mock Exam</a></h2>
-<p>A full, timed, no-walkthrough simulation: roughly three standalone targets plus a small AD set.</p>
-<table>
-<thead><tr><th>Set</th><th>Source</th><th>Shape</th><th>Why</th></tr></thead>
-<tbody>
-<tr><td>OSCP A / B / C</td><td>PEN-200</td><td>3 standalone + 1 AD set</td><td>Purpose-built exam dry-run — closest to the real thing.</td></tr>
-<tr><td>PG "exam-like" picks</td><td>PG</td><td>3–4 standalone</td><td>OffSec's own grading philosophy; build your 24-hour rhythm.</td></tr>
-<tr><td>TJ Null "OSCP-like" tier</td><td>HTB</td><td>mix</td><td>Time-boxed standalones under exam rules (one-machine automation only).</td></tr>
-</tbody>
-</table>
+<div data-practice-boxes data-lesson="17" data-anchor="pb-17" data-open="false"></div>
 
 <div class="box tip">
 <span class="box-title">How to drive this map</span>
-Interleave OS and box type — don't binge five Linux privesc boxes in a row (that builds false fluency; see <a href="#lesson-2">Lesson 02</a>). After each box, run it through <code>/box-notes</code> so the transferable technique lands in your growing box-techniques cheat sheet. When you can pick the right box for a weakness <em>without</em> this table, you've internalised the map.
+Interleave OS and box type — don't binge five Linux privesc boxes in a row (that builds false fluency; see <a href="#lesson-2">Lesson 02</a>). After each box, run it through <code>/box-notes</code> so the transferable technique lands in your growing box-techniques cheat sheet. When you can pick the right box for a weakness <em>without</em> this map, you've internalised it.
 </div>
 
 <div class="teacher">
@@ -5104,6 +5573,8 @@ Tell me which lesson you're on and I'll pick a box at the right difficulty, or c
 <ol class="sources">
 <li><a target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/edit">TJ Null's OSCP prep list (NetSecFocus Trophy Room)</a> · <a target="_blank" rel="noopener" href="https://0xdf.gitlab.io/cheatsheets/offsec">0xdf — OffSec exam HTB lists</a> · <a target="_blank" rel="noopener" href="https://www.offsec.com/labs/">OffSec Proving Grounds</a> · <a target="_blank" rel="noopener" href="https://www.offsec.com/courses/pen-200/">PEN-200 (Challenge Labs)</a>. Curated for teaching; cross-check live availability against the sheet. See also the full <a href="#links">links board</a>.</li>
 </ol>
+
+
 
 
 

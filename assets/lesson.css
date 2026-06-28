@@ -300,6 +300,134 @@ sup.ref a { font-size: 0.7em; border: none; color: var(--accent); font-weight: 7
 }
 .quiz .score.show { display: block; }
 
+/* ---- Practice boxes (paired with assets/practice-boxes.js) -------------- */
+details.pbx {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+  margin: 1.4rem 0;
+  scroll-margin-top: 3.6rem;   /* clear the sticky nav on #pb-NN deep links */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+summary.pbx-sum {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+summary.pbx-sum::-webkit-details-marker { display: none; }
+summary.pbx-sum::before {
+  content: "\25B8";                 /* ▸ */
+  color: var(--accent);
+  margin-right: 0.55rem;
+  font-size: 0.8em;
+  transition: transform 0.15s ease;
+  display: inline-block;
+}
+details.pbx[open] > summary.pbx-sum::before { transform: rotate(90deg); }
+summary.pbx-sum:hover { background: var(--paper-2); border-radius: 10px 10px 0 0; }
+.pbx-title { font-weight: 700; font-size: 0.96rem; }
+.pbx-title b { color: var(--accent); font-weight: 700; }
+.pbx-meter {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  font-weight: 700;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pbx-body { padding: 0.2rem 1rem 0.9rem; border-top: 1px solid var(--rule); }
+.pbx-blurb { font-size: 0.9rem; color: var(--ink-soft); margin: 0.7rem 0 0.4rem; }
+.pbx-list { list-style: none; padding: 0; margin: 0; }
+
+.pbx-card { padding: 0.7rem 0; border-bottom: 1px solid var(--rule); }
+.pbx-card:last-child { border-bottom: none; }
+.pbx-card[data-req="core"]  { border-left: 3px solid var(--accent); padding-left: 0.7rem; }
+.pbx-card[data-req="reuse"] { opacity: 0.92; }
+.pbx-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+}
+.pbx-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.pbx-check input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); cursor: pointer; flex: none; }
+.pbx-name { font-weight: 600; font-size: 0.95rem; }
+.pbx-check input:checked + .pbx-name { color: var(--ink-faint); text-decoration: line-through; }
+.pbx-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-left: auto; }
+.pbx-what {
+  margin: 0.35rem 0 0;
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* badges / chips */
+.pbx-badge {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.22em 0.5em;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+a.pbx-badge { text-decoration: none; }
+.pbx-badge.src   { background: var(--paper-2); color: var(--ink-soft); border-color: var(--rule); }
+.pbx-badge.vec   { background: var(--paper-2); color: var(--ink-soft); border-color: var(--rule); font-style: italic; font-weight: 600; text-transform: none; }
+.pbx-badge.link  { background: #fff; color: var(--link); border-color: rgba(28,93,138,0.35); }
+.pbx-badge.link:hover { background: #eaf1f7; }
+
+/* difficulty colours */
+.pbx-badge.diff-easy { background: #e6f4ea; color: #1d5b38; border-color: #b6dcc4; }
+.pbx-badge.diff-med  { background: #fdf3e7; color: #a8631a; border-color: #ecc89a; }
+.pbx-badge.diff-hard { background: #fbeaea; color: #8a1c1c; border-color: #e3b3b3; }
+.pbx-badge.diff-set  { background: #eef0f3; color: #545b66; border-color: #d3d8e0; }
+
+/* OS colours */
+.pbx-badge.os-linux { background: #eaf1f7; color: #1c5d8a; border-color: #c4d8e8; }
+.pbx-badge.os-win   { background: #eceffb; color: #3a4db0; border-color: #cdd5f1; }
+.pbx-badge.os-ad    { background: #f3ebf8; color: #6b2d8a; border-color: #ddc9ea; }
+.pbx-badge.os-bsd   { background: #e7f4f1; color: #0b6b5e; border-color: #bfe0d9; }
+.pbx-badge.os-mixed,
+.pbx-badge.os-set   { background: #eef0f3; color: #545b66; border-color: #d3d8e0; }
+
+/* coverage tags */
+.pbx-badge.req.core { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pbx-badge.req.opt  { background: transparent; color: var(--ink-faint); border-color: var(--rule); font-weight: 600; }
+.pbx-badge.reuse    { background: transparent; color: var(--ink-faint); border: 1px dashed var(--ink-faint); font-style: italic; font-weight: 600; }
+a.pbx-badge.reuse:hover { color: var(--accent); border-color: var(--accent); }
+
+.pbx-note {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  margin: 0.9rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--rule);
+}
+.pbx-reset {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.72rem;
+  color: var(--link);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.pbx-reset:hover { color: var(--accent); }
+
 /* ---- Footer ------------------------------------------------------------- */
 footer {
   margin-top: 3.5rem;

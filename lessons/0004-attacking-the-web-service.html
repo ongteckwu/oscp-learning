@@ -165,10 +165,8 @@ HackTricks' <a href="https://book.hacktricks.wiki/en/network-services-pentesting
 On a box with a web port, produce a one-page <strong>web map</strong> with Burp running the whole time: fingerprint (headers/cookies/favicon), the free findings (source/robots/comments/JS), discovered paths with status codes, any vhosts (from fuzzing or TLS SANs), any API endpoints, and a ranked shortlist of foothold candidates. Add it to your box notes. You're not exploiting yet — you're proving you can find the door every time.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Web recon → vuln:</strong> <strong>Bashed</strong> (HTB · Linux · Easy) — dir-bust to a web shell; <strong>Sense</strong> (HTB · BSD) — creds in a hidden file → CVE; then <strong>Cronos</strong> (HTB · Med) for a SQLi bypass. <a href="../reference/practice-boxes.html#pb-04">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="4"></div>
+<p class="cite"><a href="../reference/practice-boxes.html#pb-04">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -227,6 +225,8 @@ renderQuiz('quiz', [
 ]);
 </script>
 
+<script src="../assets/practice-boxes-data.js"></script>
+<script src="../assets/practice-boxes.js"></script>
 <script src="../assets/site-nav.js"></script>
 </body>
 </html>

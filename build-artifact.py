@@ -117,6 +117,9 @@ def process(path, sec):
     b = re.sub(r'<script src="\.\./assets/quiz\.js"></script>', "", b)
     # the live sticky nav is injected by site-nav.js; the bundle has its own
     b = re.sub(r'<script src="[^"]*assets/site-nav\.js"></script>', "", b)
+    # the practice-boxes data + renderer are inlined once for the whole bundle
+    b = re.sub(r'<script src="[^"]*assets/practice-boxes-data\.js"></script>', "", b)
+    b = re.sub(r'<script src="[^"]*assets/practice-boxes\.js"></script>', "", b)
     # make quiz container ids + render calls unique per section
     b = b.replace('id="quiz"', f'id="quiz-{sec}"')
     b = b.replace("renderQuiz('quiz'", f"renderQuiz('quiz-{sec}'")
@@ -142,6 +145,10 @@ css = (ROOT / "assets/lesson.css").read_text(encoding="utf-8")
 # one in its usage docs) would close the block early and dump the rest as page
 # text. Escaping the slash neutralizes the match without changing the JS.
 quizjs = (ROOT / "assets/quiz.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
+# Same treatment for the practice-boxes data + renderer, inlined once below so
+# every lesson section and the reference map share one copy.
+pbdata = (ROOT / "assets/practice-boxes-data.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
+pbjs = (ROOT / "assets/practice-boxes.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
 
 # .toc styling lives in assets/lesson.css (shared with index.html). Only the
 # bundle-only section framing lives here.
@@ -177,6 +184,12 @@ OUT.write_text(
 <body>
 <script>
 {quizjs}
+</script>
+<script>
+{pbdata}
+</script>
+<script>
+{pbjs}
 </script>
 {toc}
 {sections}

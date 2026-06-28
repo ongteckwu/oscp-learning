@@ -152,10 +152,8 @@ HackTricks' <a href="https://book.hacktricks.wiki/en/generic-methodologies-and-r
 On a two-network lab — HTB <strong>Dante</strong> is purpose-built for multi-network pivoting, or use any box with a second NIC — get a shell on the dual-homed host, set up a SOCKS pivot (SSH <code>-D</code>, chisel, or ligolo), and reach a host you couldn't touch before. Confirm it with one <code>proxychains nmap -sT -Pn</code> that returns an open port on the internal subnet, and record the exact tunnel command in your box notes.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Pivot a real network:</strong> HTB <strong>Dante</strong> Pro Lab is the canonical playground; PEN-200 <strong>OSCP B/C</strong> and <strong>Relia / Skylark</strong> force tunnelling to an internal DC. <a href="../reference/practice-boxes.html#pb-13">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="13"></div>
+<p class="cite"><a href="../reference/practice-boxes.html#pb-13">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -214,6 +212,8 @@ renderQuiz('quiz', [
 ]);
 </script>
 
+<script src="../assets/practice-boxes-data.js"></script>
+<script src="../assets/practice-boxes.js"></script>
 <script src="../assets/site-nav.js"></script>
 </body>
 </html>

@@ -189,10 +189,8 @@ Work cheap-and-safe before risky: <strong>sudo -l and stray creds → SUID / SGI
 On a box where you already have a low-priv shell (from Lesson 05, or any easy box), run <code>sudo -l</code> and LinPEAS, then escalate to root <em>by hand</em> via one vector — and on a second box, try a different one (cron, SUID, or a group). Record the exact path in your notes under "Privilege escalation". Owning a box end to end — foothold <em>and</em> root — is the whole exam in miniature.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Start:</strong> <strong>Bashed</strong> (sudo → writable root cron) &amp; <strong>Shocker</strong> (Shellshock → <code>sudo perl</code>) — HTB · Linux · Easy. <strong>Then:</strong> Beep (many paths), PG Clue. <a href="../reference/practice-boxes.html#pb-06">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="6"></div>
+<p class="cite"><a href="../reference/practice-boxes.html#pb-06">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -251,6 +249,8 @@ renderQuiz('quiz', [
 ]);
 </script>
 
+<script src="../assets/practice-boxes-data.js"></script>
+<script src="../assets/practice-boxes.js"></script>
 <script src="../assets/site-nav.js"></script>
 </body>
 </html>

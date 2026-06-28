@@ -1,0 +1,9 @@
+# Keep personal/local files out of the public deployment
+.claude/
+.ruff_cache/
+.git/
+MISSION.md
+NOTES.md
+RESOURCES.md
+learning-records/
+build-artifact.py

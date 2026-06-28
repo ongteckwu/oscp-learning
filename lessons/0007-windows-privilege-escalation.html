@@ -136,10 +136,8 @@ PrintSpoofer is the modern default. On older boxes (Server 2016 / Windows 10 180
 On a Windows box where you hold a low-priv shell (any TJ Null Windows target on Hack The Box / Proving Grounds), run <code>whoami /priv</code> and WinPEAS, then escalate to SYSTEM <em>by hand</em> via ONE vector. Record the exact path — vector, tool, command — in your notes under "Privilege escalation". Foothold <em>and</em> SYSTEM on one box is the whole exam in miniature.
 </div>
 
-<div class="box note">
-<span class="box-title">Practice these boxes</span>
-<strong>Start:</strong> <strong>Optimum</strong> (HFS RCE → MS16-032) &amp; <strong>Devel</strong> (webroot shell → kernel) — HTB · Windows · Easy. <strong>Then:</strong> Jeeves / Bastard for token abuse; PG Algernon for <code>SeImpersonate</code>. <a href="../reference/practice-boxes.html#pb-07">→ Full box map for this lesson</a>.
-</div>
+<div data-practice-boxes data-lesson="7"></div>
+<p class="cite"><a href="../reference/practice-boxes.html#pb-07">→ All lessons' boxes (full map)</a></p>
 
 <div class="teacher">
 <span class="box-title">I'm your teacher — ask me anything</span>
@@ -198,6 +196,8 @@ renderQuiz('quiz', [
 ]);
 </script>
 
+<script src="../assets/practice-boxes-data.js"></script>
+<script src="../assets/practice-boxes.js"></script>
 <script src="../assets/site-nav.js"></script>
 </body>
 </html>
