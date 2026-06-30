@@ -117,6 +117,21 @@ nav.toc a:hover { color: var(--accent); }
 nav.toc a.home,
 nav.toc a[aria-current="page"] { font-weight: 700; color: var(--accent); }
 
+/* Collapse toggle. The open/closed state lives on <html class="toc-collapsed">
+   and persists globally in localStorage (this browser), so the bar stays the
+   way you left it across every page + the single-file bundle. */
+nav.toc .toc-toggle {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; font-weight: 700; color: var(--ink-soft);
+  display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;
+}
+nav.toc .toc-toggle:hover { color: var(--accent); }
+nav.toc .toc-toggle .chev {
+  display: inline-block; font-size: 0.7em; transition: transform 0.15s ease;
+}
+html.toc-collapsed nav.toc .toc-toggle .chev { transform: rotate(-90deg); }
+html.toc-collapsed nav.toc a { display: none; }
+
 /* ---- Code & terminal ---------------------------------------------------- */
 code {
   background: var(--paper-2);

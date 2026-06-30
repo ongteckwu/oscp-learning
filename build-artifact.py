@@ -159,13 +159,40 @@ section.page + section.page{border-top:1px solid var(--rule);margin-top:2.8rem;p
 """
 
 toc = (
-    '<nav class="toc">'
+    '<nav class="toc" id="toc" aria-label="Course sections">'
+    '<button type="button" class="toc-toggle" aria-controls="toc" aria-expanded="true">'
+    '<span class="chev" aria-hidden="true">▾</span>Sections</button>'
     + "".join(
         f'<a class="{"home" if sec == "home" else ""}" href="#{sec}">{label}</a>'
         for _, sec, label in PAGES
     )
     + "</nav>"
 )
+
+# Collapse toggle for the bundle's TOC. Mirrors assets/site-nav.js (the multi-file
+# site builds its TOC separately) — keep the two in sync. State persists globally
+# in localStorage; applying the class before the nav paints avoids a flash.
+toc_js = """
+(function () {
+  var KEY = 'oscp:toc-collapsed', root = document.documentElement;
+  var isCollapsed = false;
+  try { isCollapsed = localStorage.getItem(KEY) === '1'; } catch (e) {}
+  root.classList.toggle('toc-collapsed', isCollapsed);   // before the nav paints — no flash
+  function wire() {
+    var btn = document.querySelector('.toc-toggle');
+    if (!btn) return;
+    btn.setAttribute('aria-expanded', String(!isCollapsed));
+    btn.addEventListener('click', function () {
+      var on = !root.classList.contains('toc-collapsed');
+      root.classList.toggle('toc-collapsed', on);
+      try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {}
+      btn.setAttribute('aria-expanded', String(!on));
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+  else wire();
+})();
+"""
 
 sections = "\n\n".join(process(p, sec) for p, sec, _ in PAGES)
 
@@ -190,6 +217,9 @@ OUT.write_text(
 </script>
 <script>
 {pbjs}
+</script>
+<script>
+{toc_js}
 </script>
 {toc}
 {sections}

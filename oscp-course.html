@@ -124,6 +124,21 @@ nav.toc a:hover { color: var(--accent); }
 nav.toc a.home,
 nav.toc a[aria-current="page"] { font-weight: 700; color: var(--accent); }
 
+/* Collapse toggle. The open/closed state lives on <html class="toc-collapsed">
+   and persists globally in localStorage (this browser), so the bar stays the
+   way you left it across every page + the single-file bundle. */
+nav.toc .toc-toggle {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; font-weight: 700; color: var(--ink-soft);
+  display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;
+}
+nav.toc .toc-toggle:hover { color: var(--accent); }
+nav.toc .toc-toggle .chev {
+  display: inline-block; font-size: 0.7em; transition: transform 0.15s ease;
+}
+html.toc-collapsed nav.toc .toc-toggle .chev { transform: rotate(-90deg); }
+html.toc-collapsed nav.toc a { display: none; }
+
 /* ---- Code & terminal ---------------------------------------------------- */
 code {
   background: var(--paper-2);
@@ -1079,7 +1094,30 @@ var PB_LESSONS = {
 })();
 
 </script>
-<nav class="toc"><a class="home" href="#home">Contents</a><a class="" href="#lesson-1">01 · Attack Chain</a><a class="" href="#lesson-2">02 · Practice Loop</a><a class="" href="#lesson-3">03 · Enumeration</a><a class="" href="#lesson-4">04 · Web Service</a><a class="" href="#lesson-5">05 · Web Exploitation</a><a class="" href="#lesson-6">06 · Linux Privesc</a><a class="" href="#lesson-7">07 · Windows Privesc</a><a class="" href="#lesson-8">08 · Password Attacks</a><a class="" href="#lesson-9">09 · Footholds</a><a class="" href="#lesson-10">10 · AD Enumeration</a><a class="" href="#lesson-11">11 · AD Auth Attacks</a><a class="" href="#lesson-12">12 · AD → Domain Admin</a><a class="" href="#lesson-13">13 · Pivoting</a><a class="" href="#lesson-14">14 · Looting</a><a class="" href="#lesson-15">15 · The Report</a><a class="" href="#lesson-16">16 · Exam Strategy</a><a class="" href="#lesson-17">17 · Mock Exam</a><a class="" href="#glossary">Glossary</a><a class="" href="#exam-format">Exam Format</a><a class="" href="#practice-boxes">Practice Boxes</a><a class="" href="#enum-cheatsheet">Enum Cheatsheet</a><a class="" href="#web-exploitation">Web Exploitation</a><a class="" href="#linux-privesc">Linux Privesc</a><a class="" href="#windows-privesc">Windows Privesc</a><a class="" href="#password-attacks">Password Attacks</a><a class="" href="#active-directory">Active Directory</a><a class="" href="#pivoting">Pivoting</a><a class="" href="#report-writing">Report Writing</a><a class="" href="#links">Useful Links</a></nav>
+<script>
+
+(function () {
+  var KEY = 'oscp:toc-collapsed', root = document.documentElement;
+  var isCollapsed = false;
+  try { isCollapsed = localStorage.getItem(KEY) === '1'; } catch (e) {}
+  root.classList.toggle('toc-collapsed', isCollapsed);   // before the nav paints — no flash
+  function wire() {
+    var btn = document.querySelector('.toc-toggle');
+    if (!btn) return;
+    btn.setAttribute('aria-expanded', String(!isCollapsed));
+    btn.addEventListener('click', function () {
+      var on = !root.classList.contains('toc-collapsed');
+      root.classList.toggle('toc-collapsed', on);
+      try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {}
+      btn.setAttribute('aria-expanded', String(!on));
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+  else wire();
+})();
+
+</script>
+<nav class="toc" id="toc" aria-label="Course sections"><button type="button" class="toc-toggle" aria-controls="toc" aria-expanded="true"><span class="chev" aria-hidden="true">▾</span>Sections</button><a class="home" href="#home">Contents</a><a class="" href="#lesson-1">01 · Attack Chain</a><a class="" href="#lesson-2">02 · Practice Loop</a><a class="" href="#lesson-3">03 · Enumeration</a><a class="" href="#lesson-4">04 · Web Service</a><a class="" href="#lesson-5">05 · Web Exploitation</a><a class="" href="#lesson-6">06 · Linux Privesc</a><a class="" href="#lesson-7">07 · Windows Privesc</a><a class="" href="#lesson-8">08 · Password Attacks</a><a class="" href="#lesson-9">09 · Footholds</a><a class="" href="#lesson-10">10 · AD Enumeration</a><a class="" href="#lesson-11">11 · AD Auth Attacks</a><a class="" href="#lesson-12">12 · AD → Domain Admin</a><a class="" href="#lesson-13">13 · Pivoting</a><a class="" href="#lesson-14">14 · Looting</a><a class="" href="#lesson-15">15 · The Report</a><a class="" href="#lesson-16">16 · Exam Strategy</a><a class="" href="#lesson-17">17 · Mock Exam</a><a class="" href="#glossary">Glossary</a><a class="" href="#exam-format">Exam Format</a><a class="" href="#practice-boxes">Practice Boxes</a><a class="" href="#enum-cheatsheet">Enum Cheatsheet</a><a class="" href="#web-exploitation">Web Exploitation</a><a class="" href="#linux-privesc">Linux Privesc</a><a class="" href="#windows-privesc">Windows Privesc</a><a class="" href="#password-attacks">Password Attacks</a><a class="" href="#active-directory">Active Directory</a><a class="" href="#pivoting">Pivoting</a><a class="" href="#report-writing">Report Writing</a><a class="" href="#links">Useful Links</a></nav>
 <section id="home" class="page">
 
 

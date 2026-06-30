@@ -1,0 +1,307 @@
+- generic [active] [ref=e1]:
+  - navigation "Course sections" [ref=e2]:
+    - button "Sections" [expanded] [ref=e3] [cursor=pointer]:
+      - generic [ref=e4]: ▾
+      - text: Sections
+    - link "Contents" [ref=e5] [cursor=pointer]:
+      - /url: index.html
+    - link "01 · Attack Chain" [ref=e6] [cursor=pointer]:
+      - /url: lessons/0001-the-oscp-attack-chain.html
+    - link "02 · Practice Loop" [ref=e7] [cursor=pointer]:
+      - /url: lessons/0002-the-deliberate-practice-loop.html
+    - link "03 · Enumeration" [ref=e8] [cursor=pointer]:
+      - /url: lessons/0003-service-enumeration.html
+    - link "04 · Web Service" [ref=e9] [cursor=pointer]:
+      - /url: lessons/0004-attacking-the-web-service.html
+    - link "05 · Web Exploitation" [ref=e10] [cursor=pointer]:
+      - /url: lessons/0005-exploiting-the-web-foothold.html
+    - link "06 · Linux Privesc" [ref=e11] [cursor=pointer]:
+      - /url: lessons/0006-linux-privilege-escalation.html
+    - link "07 · Windows Privesc" [ref=e12] [cursor=pointer]:
+      - /url: lessons/0007-windows-privilege-escalation.html
+    - link "08 · Password Attacks" [ref=e13] [cursor=pointer]:
+      - /url: lessons/0008-password-attacks-and-credential-reuse.html
+    - link "09 · Footholds" [ref=e14] [cursor=pointer]:
+      - /url: lessons/0009-footholds-beyond-the-web.html
+    - link "10 · AD Enumeration" [ref=e15] [cursor=pointer]:
+      - /url: lessons/0010-active-directory-enumeration.html
+    - link "11 · AD Auth Attacks" [ref=e16] [cursor=pointer]:
+      - /url: lessons/0011-active-directory-authentication-attacks.html
+    - link "12 · AD → Domain Admin" [ref=e17] [cursor=pointer]:
+      - /url: lessons/0012-active-directory-lateral-movement.html
+    - link "13 · Pivoting" [ref=e18] [cursor=pointer]:
+      - /url: lessons/0013-pivoting-and-tunneling.html
+    - link "14 · Looting" [ref=e19] [cursor=pointer]:
+      - /url: lessons/0014-post-exploitation-looting.html
+    - link "15 · The Report" [ref=e20] [cursor=pointer]:
+      - /url: lessons/0015-writing-the-report.html
+    - link "16 · Exam Strategy" [ref=e21] [cursor=pointer]:
+      - /url: lessons/0016-exam-strategy.html
+    - link "17 · Mock Exam" [ref=e22] [cursor=pointer]:
+      - /url: lessons/0017-mock-exam.html
+    - link "Glossary" [ref=e23] [cursor=pointer]:
+      - /url: reference/glossary.html
+    - link "Exam Format" [ref=e24] [cursor=pointer]:
+      - /url: reference/exam-format.html
+    - link "Practice Boxes" [ref=e25] [cursor=pointer]:
+      - /url: reference/practice-boxes.html
+    - link "Enum Cheatsheet" [ref=e26] [cursor=pointer]:
+      - /url: reference/enumeration-cheatsheet.html
+    - link "Web Exploitation" [ref=e27] [cursor=pointer]:
+      - /url: reference/web-exploitation.html
+    - link "Linux Privesc" [ref=e28] [cursor=pointer]:
+      - /url: reference/linux-privesc.html
+    - link "Windows Privesc" [ref=e29] [cursor=pointer]:
+      - /url: reference/windows-privesc.html
+    - link "Password Attacks" [ref=e30] [cursor=pointer]:
+      - /url: reference/password-attacks.html
+    - link "Active Directory" [ref=e31] [cursor=pointer]:
+      - /url: reference/active-directory.html
+    - link "Pivoting" [ref=e32] [cursor=pointer]:
+      - /url: reference/pivoting.html
+    - link "Report Writing" [ref=e33] [cursor=pointer]:
+      - /url: reference/report-writing.html
+    - link "Useful Links" [ref=e34] [cursor=pointer]:
+      - /url: reference/links.html
+  - navigation [ref=e35]:
+    - strong [ref=e36]: OSCP Course · Contents
+    - text: ·
+    - link "Links" [ref=e37] [cursor=pointer]:
+      - /url: reference/links.html
+    - text: ·
+    - link "Glossary" [ref=e38] [cursor=pointer]:
+      - /url: reference/glossary.html
+    - text: ·
+    - link "Exam Format" [ref=e39] [cursor=pointer]:
+      - /url: reference/exam-format.html
+  - text: Course contents · The path to OSCP+
+  - heading "Course Contents" [level=1] [ref=e40]
+  - paragraph [ref=e41]: "The whole journey, from working software engineer to exam-ready — grounded in one target: passing the OSCP+. Work the lessons in order; each ends with a hands-on task on a real box. The roadmap below is the full curriculum: all seventeen lessons, end to end, from the attack chain to a timed mock exam."
+  - generic [ref=e42]:
+    - text: "\"When in doubt,"
+    - strong [ref=e43]: enumerate harder
+    - text: ."
+  - generic [ref=e44]:
+    - generic [ref=e45]: How this maps to the exam
+    - text: The exam is
+    - strong [ref=e46]: 100 points, 70 to pass
+    - text: (
+    - link "full rules" [ref=e47] [cursor=pointer]:
+      - /url: reference/exam-format.html
+    - text: ). Three standalone machines (
+    - strong [ref=e48]: 60 pts
+    - text: ) test
+    - emphasis [ref=e49]: enumeration → foothold → privesc
+    - text: — Modules 2–3 below. The Active Directory set (
+    - strong [ref=e50]: 40 pts
+    - text: ) is Module 4. Pivoting (Module 5) appears across the network. And the
+    - strong [ref=e51]: graded report
+    - text: is Module 6. Every module earns specific points — that's why we do them in this order.
+  - paragraph [ref=e52]:
+    - strong [ref=e53]: "Progress: all 17 lessons complete"
+    - text: — the full path from the attack chain through standalones, Active Directory, pivoting, and exam strategy to a timed mock exam. From here, the work is reps on real boxes.
+  - heading "Module 1 · Foundations" [level=2] [ref=e54]
+  - paragraph [ref=e55]: The operator's mindset — the difference between knowing vulns and owning boxes.
+  - list [ref=e56]:
+    - listitem [ref=e57]:
+      - text: ✓
+      - strong [ref=e58]:
+        - link "L01 · The OSCP Attack Chain" [ref=e59] [cursor=pointer]:
+          - /url: lessons/0001-the-oscp-attack-chain.html
+      - text: — the five-phase map every box flows through.
+    - listitem [ref=e60]:
+      - text: ✓
+      - strong [ref=e61]:
+        - link "L02 · How to Practice a Box" [ref=e62] [cursor=pointer]:
+          - /url: lessons/0002-the-deliberate-practice-loop.html
+      - text: — the attempt-first loop that builds real skill. Includes your box-notes template.
+  - heading "Module 2 · Enumeration & footholds" [level=2] [ref=e63]
+  - paragraph [ref=e64]: Finding the way in — the first 10 points on every standalone, and most of the work.
+  - list [ref=e65]:
+    - listitem [ref=e66]:
+      - text: ✓
+      - strong [ref=e67]:
+        - link "L03 · Service Enumeration" [ref=e68] [cursor=pointer]:
+          - /url: lessons/0003-service-enumeration.html
+      - text: — turn a port list into a prioritised plan.
+    - listitem [ref=e69]:
+      - text: ✓
+      - strong [ref=e70]:
+        - link "L04 · Attacking the Web Service" [ref=e71] [cursor=pointer]:
+          - /url: lessons/0004-attacking-the-web-service.html
+      - text: — map any app, shortlist foothold candidates.
+    - listitem [ref=e72]:
+      - text: ✓
+      - strong [ref=e73]:
+        - link "L05 · Exploiting the Web Foothold" [ref=e74] [cursor=pointer]:
+          - /url: lessons/0005-exploiting-the-web-foothold.html
+      - text: — SQLi, file inclusion, upload-to-shell.
+    - listitem [ref=e75]:
+      - text: ✓
+      - strong [ref=e76]:
+        - link "L08 · Password Attacks & Credential Reuse" [ref=e77] [cursor=pointer]:
+          - /url: lessons/0008-password-attacks-and-credential-reuse.html
+      - text: — brute force, spraying, hash cracking, and reusing creds everywhere.
+    - listitem [ref=e78]:
+      - text: ✓
+      - strong [ref=e79]:
+        - link "L09 · Footholds Beyond the Web" [ref=e80] [cursor=pointer]:
+          - /url: lessons/0009-footholds-beyond-the-web.html
+      - text: — SMB, FTP, and turning a known-vulnerable service version into a shell.
+  - heading "Module 3 · Privilege escalation" [level=2] [ref=e81]
+  - paragraph [ref=e82]: From your first shell to full control — the second 10 points on every standalone.
+  - list [ref=e83]:
+    - listitem [ref=e84]:
+      - text: ✓
+      - strong [ref=e85]:
+        - link "L06 · Linux Privilege Escalation" [ref=e86] [cursor=pointer]:
+          - /url: lessons/0006-linux-privilege-escalation.html
+      - text: — from
+      - code [ref=e87]: www-data
+      - text: "to root: sudo, SUID, cron, capabilities, kernel."
+    - listitem [ref=e88]:
+      - text: ✓
+      - strong [ref=e89]:
+        - link "L07 · Windows Privilege Escalation" [ref=e90] [cursor=pointer]:
+          - /url: lessons/0007-windows-privilege-escalation.html
+      - text: "— tokens, services, registry, and the misconfigurations Windows loves: low-priv shell to SYSTEM."
+  - heading "Module 4 · Active Directory (40 exam points)" [level=2] [ref=e91]
+  - paragraph [ref=e92]: The largest single block of marks — you can't comfortably reach 70 without it.
+  - list [ref=e93]:
+    - listitem [ref=e94]:
+      - text: ✓
+      - strong [ref=e95]:
+        - link "L10 · AD Fundamentals & Enumeration" [ref=e96] [cursor=pointer]:
+          - /url: lessons/0010-active-directory-enumeration.html
+      - text: — domains, users, BloodHound, and the lay of the land.
+    - listitem [ref=e97]:
+      - text: ✓
+      - strong [ref=e98]:
+        - link "L11 · AD Authentication Attacks" [ref=e99] [cursor=pointer]:
+          - /url: lessons/0011-active-directory-authentication-attacks.html
+      - text: — Kerberoasting, AS-REP roasting, and password spraying.
+    - listitem [ref=e100]:
+      - text: ✓
+      - strong [ref=e101]:
+        - link "L12 · Lateral Movement → Domain Admin" [ref=e102] [cursor=pointer]:
+          - /url: lessons/0012-active-directory-lateral-movement.html
+      - text: — pass-the-hash, credential chains, DCSync, owning the DC.
+  - heading "Module 5 · Pivoting & post-exploitation" [level=2] [ref=e103]
+  - paragraph [ref=e104]: Reaching networks you can't touch directly — essential for the AD set.
+  - list [ref=e105]:
+    - listitem [ref=e106]:
+      - text: ✓
+      - strong [ref=e107]:
+        - link "L13 · Pivoting & Tunneling" [ref=e108] [cursor=pointer]:
+          - /url: lessons/0013-pivoting-and-tunneling.html
+      - text: — chisel, ligolo-ng, SSH tunnels, and proxychains to reach hidden subnets.
+    - listitem [ref=e109]:
+      - text: ✓
+      - strong [ref=e110]:
+        - link "L14 · Looting & Credential Harvesting" [ref=e111] [cursor=pointer]:
+          - /url: lessons/0014-post-exploitation-looting.html
+      - text: — what to grab after access, and why it unlocks the next box.
+  - heading "Module 6 · Exam readiness" [level=2] [ref=e112]
+  - paragraph [ref=e113]: Turning skill into a pass — the part most people underinvest in.
+  - list [ref=e114]:
+    - listitem [ref=e115]:
+      - text: ✓
+      - strong [ref=e116]:
+        - link "L15 · Writing the Report" [ref=e117] [cursor=pointer]:
+          - /url: lessons/0015-writing-the-report.html
+      - text: — the graded deliverable; reproducible steps and proof that earn marks.
+    - listitem [ref=e118]:
+      - text: ✓
+      - strong [ref=e119]:
+        - link "L16 · Exam Strategy & Time Management" [ref=e120] [cursor=pointer]:
+          - /url: lessons/0016-exam-strategy.html
+      - text: — points-per-hour, when to move on, the one-tool rule, and sleep.
+    - listitem [ref=e121]:
+      - text: ✓
+      - strong [ref=e122]:
+        - link "L17 · The Mock Exam" [ref=e123] [cursor=pointer]:
+          - /url: lessons/0017-mock-exam.html
+      - text: — assemble and run the real thing end to end, then score yourself honestly.
+  - heading "Reference shelf" [level=2] [ref=e124]
+  - paragraph [ref=e125]: The compressed essentials — revisit these constantly; they outlive the lessons.
+  - list [ref=e126]:
+    - listitem [ref=e127]:
+      - strong [ref=e128]:
+        - link "Practice Box Map" [ref=e129] [cursor=pointer]:
+          - /url: reference/practice-boxes.html
+      - text: — recommended boxes per lesson (HTB / PG / PEN-200), OS-split with summaries.
+    - listitem [ref=e130]:
+      - strong [ref=e131]:
+        - link "Exam Format" [ref=e132] [cursor=pointer]:
+          - /url: reference/exam-format.html
+      - text: — the verified 2026 OSCP+ rules.
+    - listitem [ref=e133]:
+      - strong [ref=e134]:
+        - link "Glossary" [ref=e135] [cursor=pointer]:
+          - /url: reference/glossary.html
+      - text: — the canonical vocabulary every lesson uses.
+    - listitem [ref=e136]:
+      - strong [ref=e137]:
+        - link "Enumeration Cheatsheet" [ref=e138] [cursor=pointer]:
+          - /url: reference/enumeration-cheatsheet.html
+      - text: — nmap and the common services.
+    - listitem [ref=e139]:
+      - strong [ref=e140]:
+        - link "Web Exploitation Cheatsheet" [ref=e141] [cursor=pointer]:
+          - /url: reference/web-exploitation.html
+      - text: — SQLi, file inclusion, upload-to-shell, reverse shells.
+    - listitem [ref=e142]:
+      - strong [ref=e143]:
+        - link "Linux Privesc Cheatsheet" [ref=e144] [cursor=pointer]:
+          - /url: reference/linux-privesc.html
+      - text: — sudo, SUID, cron, capabilities, kernel.
+    - listitem [ref=e145]:
+      - strong [ref=e146]:
+        - link "Windows Privesc Cheatsheet" [ref=e147] [cursor=pointer]:
+          - /url: reference/windows-privesc.html
+      - text: — tokens, services, registry, stored creds.
+    - listitem [ref=e148]:
+      - strong [ref=e149]:
+        - link "Password Attacks Cheatsheet" [ref=e150] [cursor=pointer]:
+          - /url: reference/password-attacks.html
+      - text: — hashcat modes, john, hydra, spraying, reuse.
+    - listitem [ref=e151]:
+      - strong [ref=e152]:
+        - link "Active Directory Cheatsheet" [ref=e153] [cursor=pointer]:
+          - /url: reference/active-directory.html
+      - text: — enumeration, Kerberos attacks, lateral movement, DCSync.
+    - listitem [ref=e154]:
+      - strong [ref=e155]:
+        - link "Pivoting Cheatsheet" [ref=e156] [cursor=pointer]:
+          - /url: reference/pivoting.html
+      - text: — SSH tunnels, chisel, ligolo-ng, proxychains.
+    - listitem [ref=e157]:
+      - strong [ref=e158]:
+        - link "Report Writing Cheatsheet" [ref=e159] [cursor=pointer]:
+          - /url: reference/report-writing.html
+      - text: — structure, proof, templates, failure modes.
+    - listitem [ref=e160]:
+      - strong [ref=e161]:
+        - link "Useful Links" [ref=e162] [cursor=pointer]:
+          - /url: reference/links.html
+      - text: — TJ Null's list, HackTricks, IppSec, 0xdf, and more.
+  - generic [ref=e163]:
+    - generic [ref=e164]: How to use this course
+    - text: Read a lesson, then immediately do its practice task on a real box — each lesson now names specific picks, all collected in the
+    - link "Practice Box Map" [ref=e165] [cursor=pointer]:
+      - /url: reference/practice-boxes.html
+    - text: (cross-checked against
+    - link "TJ Null's list" [ref=e166] [cursor=pointer]:
+      - /url: reference/links.html
+    - text: ). The reading is fast; the
+    - emphasis [ref=e167]: doing
+    - text: is where the skill forms. Bring your box notes back and ask your teacher to review them.
+  - generic [ref=e168]: This course has a teacher The roadmap is a guide, not a cage — if you want to jump to Active Directory, slow down on privesc, or detour into a box you're stuck on, just say so. Ask for the next lesson, a walkthrough, a deeper dive, or a notes review. The workspace remembers where you are between sessions.
+  - contentinfo [ref=e169]:
+    - generic [ref=e170]: OSCP Course · Contents
+    - generic [ref=e171]:
+      - link "Links" [ref=e172] [cursor=pointer]:
+        - /url: reference/links.html
+      - text: ·
+      - link "Glossary" [ref=e173] [cursor=pointer]:
+        - /url: reference/glossary.html

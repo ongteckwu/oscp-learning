@@ -51,11 +51,42 @@
     ["reference/links.html", "Useful Links"]
   ];
 
+  // Collapsed/expanded state is global: persisted in localStorage (this browser)
+  // and applied as a class on <html>, so it carries across every page. The
+  // single-file bundle reimplements this same behaviour in build-artifact.py
+  // (the two TOCs are built separately), so keep them in sync by hand.
+  var TOC_KEY = "oscp:toc-collapsed";
+  function collapsed() {
+    try { return localStorage.getItem(TOC_KEY) === "1"; } catch (e) { return false; }
+  }
+  function applyCollapsed(on) {
+    document.documentElement.classList.toggle("toc-collapsed", on);
+  }
+
   function build() {
     var here = location.pathname.split("/").pop() || "index.html";
+    var isCollapsed = collapsed();
+    applyCollapsed(isCollapsed);   // before the nav is inserted — no flash
+
     var nav = document.createElement("nav");
     nav.className = "toc";
+    nav.id = "toc";
     nav.setAttribute("aria-label", "Course sections");
+
+    var toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "toc-toggle";
+    toggle.setAttribute("aria-controls", "toc");
+    toggle.setAttribute("aria-expanded", String(!isCollapsed));
+    toggle.innerHTML = '<span class="chev" aria-hidden="true">▾</span>Sections';
+    toggle.addEventListener("click", function () {
+      var on = !document.documentElement.classList.contains("toc-collapsed");
+      applyCollapsed(on);
+      try { localStorage.setItem(TOC_KEY, on ? "1" : "0"); } catch (e) { /* no persist */ }
+      toggle.setAttribute("aria-expanded", String(!on));
+    });
+    nav.appendChild(toggle);
+
     PAGES.forEach(function (page) {
       var href = page[0], label = page[1], home = page[2];
       var a = document.createElement("a");
